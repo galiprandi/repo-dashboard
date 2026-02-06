@@ -1,62 +1,62 @@
 # Seki Web
 
-Aplicación web para visualizar pipelines de CI/CD del ecosistema Seki (Cencosud-xlabs).
+Web application for visualizing CI/CD pipelines from the Seki ecosystem (Cencosud-xlabs).
 
-## Características
+## Features
 
-- Visualización de estados de pipelines en tiempo real
-- Integración con API Seki BFF
-- UI moderna con Tailwind CSS y componentes shadcn/ui
-- Enrutamiento con TanStack Router
-- Gestión de estado de servidor con TanStack Query
+- Real-time pipeline status visualization
+- Integration with Seki BFF API
+- Modern UI with Tailwind CSS and shadcn/ui components
+- Routing with TanStack Router
+- Server state management with TanStack Query
 
-## Stack Tecnológico
+## Tech Stack
 
 - **Framework:** React 19 + Vite (Rolldown)
-- **Lenguaje:** TypeScript
-- **Estilos:** Tailwind CSS 4
-- **Enrutador:** TanStack Router
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS 4
+- **Router:** TanStack Router
 - **Data Fetching:** TanStack Query + Axios
-- **Íconos:** Lucide React
+- **Icons:** Lucide React
 
-## Requisitos
+## Requirements
 
-- Node.js (versión especificada en `.nvmrc`)
+- Node.js (version specified in `.nvmrc`)
 - npm
 
-## Configuración
+## Setup
 
-1. Clonar el repositorio
-2. Instalar dependencias:
+1. Clone the repository
+2. Install dependencies:
    ```bash
    npm install
    ```
-3. Copiar variables de entorno:
+3. Copy environment variables:
    ```bash
    cp .env.example .env
    ```
-4. Configurar `VITE_SEKI_API_URL` y `VITE_SEKI_API_TOKEN` en `.env`
+4. Configure `VITE_SEKI_API_URL` and `VITE_SEKI_API_TOKEN` in `.env`
 
-## Scripts Disponibles
+## Available Scripts
 
-| Comando | Descripción |
+| Command | Description |
 |---------|-------------|
-| `npm run dev` | Iniciar servidor de desarrollo |
-| `npm run build` | Compilar para producción |
-| `npm run preview` | Previsualizar build de producción |
-| `npm run lint` | Ejecutar ESLint |
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
 
-## Estructura del Proyecto
+## Project Structure
 
 ```
 src/
-├── api/           # Cliente API y tipos
+├── api/           # API client and types
 ├── hooks/         # Custom React hooks
-├── lib/           # Utilidades
+├── lib/           # Utilities
 ├── providers/     # React context providers
-└── routes/        # Rutas de la aplicación
+└── routes/        # Application routes
 ```
 
-## Licencia
+## License
 
-Proyecto privado - Cencosud-xlabs
+Private project - Cencosud-xlabs
