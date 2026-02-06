@@ -1,6 +1,36 @@
 import axios from 'axios'
 import type { PipelineStatusResponse } from './seki.type'
 
+// Helper to serialize params with bracket notation for nested objects
+const serializeParams = (params: Record<string, unknown>): string => {
+  const parts: string[] = []
+  
+  const encode = (key: string, value: unknown) => {
+    if (value === null || value === undefined) return
+    
+    if (typeof value === 'object' && !Array.isArray(value)) {
+      // Nested object - use bracket notation
+      Object.entries(value).forEach(([subKey, subValue]) => {
+        encode(`${key}[${subKey}]`, subValue)
+      })
+    } else if (Array.isArray(value)) {
+      // Array
+      value.forEach((item, index) => {
+        encode(`${key}[${index}]`, item)
+      })
+    } else {
+      // Primitive value
+      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+    }
+  }
+  
+  Object.entries(params).forEach(([key, value]) => {
+    encode(key, value)
+  })
+  
+  return parts.join('&')
+}
+
 export const apiSeki = axios.create({
   baseURL: '/api',
   headers: {
@@ -8,17 +38,22 @@ export const apiSeki = axios.create({
     'Accept-Language': 'en-US',
     'Authorization': `bearer ${import.meta.env.VITE_SEKI_API_TOKEN}`,
   },
+  paramsSerializer: {
+    serialize: serializeParams
+  }
 })
 
 /**
- * Fetch pipeline status for specific commit
+ * Fetch pipeline status for specific commit with optional tag
+ * Used for production pipelines that have both commit and tag
  */
-export const fetchPipeline = (
+export const fetchPipelineWithTag = (
   product: string, // organization/product
-  commit: string
+  commit: string,
+  tag: string
 ) => {
   return apiSeki.get<PipelineStatusResponse>(
-    `/products/${product}/pipelines/${commit}`
+    `/products/${product}/pipelines/${commit}/${tag}`
   )
 }
 

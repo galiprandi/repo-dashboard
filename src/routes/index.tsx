@@ -178,12 +178,14 @@ function FavoriteRow({
   event,
   onToggleFavorite,
 }: FavoriteRowProps) {
+  const [org, name] = product.split('/')
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['pipeline', product, stage, 'latest'],
     queryFn: async () => {
-      // Fetch recent pipelines without complex filters to avoid 500 errors
       const response = await listPipelines(product, {
         limit: 50,
+        sort: { updated_at: 'desc' },
       })
       // Filter client-side by stage and event
       const items = response.data.items
@@ -193,18 +195,36 @@ function FavoriteRow({
       return matching || null
     },
     retry: 1,
+    refetchOnWindowFocus: false,
   })
-
-  const [org, name] = product.split('/')
 
   if (isLoading) {
     return (
-      <tr>
-        <td colSpan={6} className="px-4 py-3">
-          <div className="flex items-center gap-2 text-muted-foreground">
+      <tr className="border-t">
+        <td className="px-4 py-3">
+          <Link
+            to="/product/$org/$product"
+            params={{ org, product: name }}
+            search={{ stage, event }}
+            className="font-medium hover:text-primary"
+          >
+            {product}
+          </Link>
+        </td>
+        <td colSpan={4} className="px-4 py-3">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Loader2 className="w-4 h-4 animate-spin" />
-            Cargando {product}...
+            Cargando...
           </div>
+        </td>
+        <td className="px-4 py-3 text-center">
+          <button
+            onClick={() => onToggleFavorite(product)}
+            className="text-yellow-500 hover:text-yellow-600"
+            title="Quitar de favoritos"
+          >
+            <Star className="w-5 h-5 fill-current" />
+          </button>
         </td>
       </tr>
     )
@@ -217,7 +237,8 @@ function FavoriteRow({
           <Link
             to="/product/$org/$product"
             params={{ org, product: name }}
-            className="text-blue-500 hover:underline"
+            search={{ stage, event }}
+            className="font-medium hover:text-primary"
           >
             {product}
           </Link>
@@ -243,12 +264,43 @@ function FavoriteRow({
       ? data.git.commit.slice(0, 7)
       : data.git.ref.replace('refs/tags/', '')
 
+  const statusConfig: Record<string, { icon: React.ReactNode; className: string; label: string }> = {
+    SUCCESS: {
+      icon: <CheckCircle2 className="w-3 h-3" />,
+      className: 'bg-lime-100 text-lime-700',
+      label: 'Success',
+    },
+    STARTED: {
+      icon: <Loader2 className="w-3 h-3 animate-spin" />,
+      className: 'bg-blue-100 text-blue-700',
+      label: 'Running',
+    },
+    FAILED: {
+      icon: <XCircle className="w-3 h-3" />,
+      className: 'bg-red-100 text-red-700',
+      label: 'Failed',
+    },
+    WARN: {
+      icon: <AlertTriangle className="w-3 h-3" />,
+      className: 'bg-amber-100 text-amber-700',
+      label: 'Warning',
+    },
+    IDLE: {
+      icon: <Clock className="w-3 h-3" />,
+      className: 'bg-gray-100 text-gray-700',
+      label: 'Idle',
+    },
+  }
+
+  const status = statusConfig[data.state] || statusConfig.IDLE
+
   return (
     <tr className="border-t hover:bg-muted/50">
       <td className="px-4 py-3">
         <Link
           to="/product/$org/$product"
           params={{ org, product: name }}
+          search={{ stage, event }}
           className="font-medium hover:text-primary"
         >
           {product}
@@ -265,7 +317,10 @@ function FavoriteRow({
         </div>
       </td>
       <td className="px-4 py-3">
-        <StatusBadge state={data.state} />
+        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${status.className}`}>
+          {status.icon}
+          {status.label}
+        </span>
       </td>
       <td className="px-4 py-3 text-sm text-muted-foreground">
         <div className="flex items-center gap-1">
@@ -289,50 +344,6 @@ function FavoriteRow({
         </button>
       </td>
     </tr>
-  )
-}
-
-function StatusBadge({ state }: { state: string }) {
-  const configs: Record<
-    string,
-    { icon: React.ReactNode; className: string; label: string }
-  > = {
-    SUCCESS: {
-      icon: <CheckCircle2 className="w-4 h-4" />,
-      className: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-400',
-      label: 'Success',
-    },
-    STARTED: {
-      icon: <Loader2 className="w-4 h-4 animate-spin" />,
-      className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-      label: 'Running',
-    },
-    FAILED: {
-      icon: <XCircle className="w-4 h-4" />,
-      className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-      label: 'Failed',
-    },
-    WARN: {
-      icon: <AlertTriangle className="w-4 h-4" />,
-      className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-      label: 'Warning',
-    },
-    IDLE: {
-      icon: <Clock className="w-4 h-4" />,
-      className: 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400',
-      label: 'Idle',
-    },
-  }
-
-  const config = configs[state] || configs.IDLE
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${config.className}`}
-    >
-      {config.icon}
-      {config.label}
-    </span>
   )
 }
 

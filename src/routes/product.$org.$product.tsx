@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { listPipelines } from '@/api/seki'
+import { fetchPipelineWithTag } from '@/api/seki'
 import { useFavorites } from '@/hooks/useFavorites'
 import {
   GitCommit,
@@ -13,56 +13,20 @@ import {
   User,
   Star,
   ArrowLeft,
-  Search,
 } from 'lucide-react'
 import { useState } from 'react'
 
 export const Route = createFileRoute('/product/$org/$product')({
   component: ProductDetail,
-  notFoundComponent: ProductNotFound,
 })
 
 function ProductDetail() {
   const { org, product } = Route.useParams()
   const fullProduct = `${org}/${product}`
-  const { isFavorite, toggleFavorite, addFavorite } = useFavorites()
+  const { isFavorite, toggleFavorite } = useFavorites()
   const [activeStage, setActiveStage] = useState<'staging' | 'production'>('staging')
 
   const favorite = isFavorite(fullProduct)
-
-  // Check if product exists by fetching pipelines
-  const {
-    data: pipelines,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['pipelines', fullProduct, 'exists'],
-    queryFn: async () => {
-      const response = await listPipelines(fullProduct, { limit: 1 })
-      return response.data
-    },
-    retry: 1,
-  })
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    )
-  }
-
-  // Product doesn't exist (no pipelines)
-  if (error || !pipelines || pipelines.total === 0) {
-    return (
-      <ProductNotFoundView
-        org={org}
-        product={product}
-        fullProduct={fullProduct}
-        onAddToFavorites={addFavorite}
-      />
-    )
-  }
 
   return (
     <div className="space-y-6">
@@ -123,77 +87,6 @@ function ProductDetail() {
   )
 }
 
-function ProductNotFound() {
-  const { org, product } = Route.useParams()
-  const fullProduct = `${org}/${product}`
-  const { addFavorite } = useFavorites()
-
-  return (
-    <ProductNotFoundView
-      org={org}
-      product={product}
-      fullProduct={fullProduct}
-      onAddToFavorites={addFavorite}
-    />
-  )
-}
-
-interface ProductNotFoundViewProps {
-  org: string
-  product: string
-  fullProduct: string
-  onAddToFavorites: (product: string) => void
-}
-
-function ProductNotFoundView({
-  org,
-  product,
-  fullProduct,
-  onAddToFavorites,
-}: ProductNotFoundViewProps) {
-  const [added, setAdded] = useState(false)
-
-  return (
-    <div className="flex flex-col items-center justify-center h-96 space-y-4">
-      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-        <Search className="w-8 h-8 text-muted-foreground" />
-      </div>
-      <div className="text-center space-y-2">
-        <h2 className="text-xl font-semibold">Producto no encontrado</h2>
-        <p className="text-muted-foreground">
-          <code className="bg-muted px-1 py-0.5 rounded text-sm">
-            {org}/{product}
-          </code>
-        </p>
-        <p className="text-sm text-muted-foreground max-w-md">
-          No se encontraron pipelines para este producto en Seki. Es posible que el
-          producto no exista o no tenga deployments registrados.
-        </p>
-      </div>
-      <div className="flex gap-2">
-        <Link
-          to="/"
-          className="flex items-center gap-2 px-4 py-2 border rounded-md hover:bg-muted"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Volver al dashboard
-        </Link>
-        <button
-          onClick={() => {
-            onAddToFavorites(fullProduct)
-            setAdded(true)
-          }}
-          disabled={added}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
-        >
-          <Star className={`w-4 h-4 ${added ? 'fill-current' : ''}`} />
-          {added ? 'Agregado a favoritos' : 'Agregar a favoritos'}
-        </button>
-      </div>
-    </div>
-  )
-}
-
 interface StageDetailProps {
   org: string
   product: string
@@ -202,23 +95,66 @@ interface StageDetailProps {
 
 function StageDetail({ org, product, stage }: StageDetailProps) {
   const fullProduct = `${org}/${product}`
-  const eventType = stage === 'staging' ? 'commit' : 'tag'
+  const [commit, setCommit] = useState('')
+  const [tag, setTag] = useState('')
 
   const { data: pipeline, isLoading, error } = useQuery({
-    queryKey: ['pipeline', fullProduct, stage, 'latest'],
+    queryKey: ['pipeline', fullProduct, stage, commit, tag],
     queryFn: async () => {
-      // Fetch recent pipelines without complex filters to avoid 500 errors
-      const response = await listPipelines(fullProduct, {
-        limit: 50,
-      })
-      // Filter client-side by stage and event
-      const items = response.data.items
-      const matching = items.find(
-        (item) => item.git.stage === stage && item.git.event === eventType
+      if (!commit) return null
+      if (stage === 'production' && !tag) return null
+      
+      // Use the specific endpoint that works (commit/tag)
+      const response = await fetchPipelineWithTag(
+        fullProduct,
+        commit,
+        stage === 'production' ? tag : commit
       )
-      return matching || null
+      return response.data
     },
+    enabled: !!commit && (stage === 'staging' || !!tag),
   })
+
+  // Form to input commit/tag
+  if (!commit || (stage === 'production' && !tag)) {
+    return (
+      <div className="p-8 border rounded-lg text-center space-y-4">
+        <GitCommit className="w-12 h-12 mx-auto text-muted-foreground" />
+        <h3 className="font-medium">Ingresar versión para ver</h3>
+        <div className="max-w-md mx-auto space-y-3">
+          <input
+            type="text"
+            value={commit}
+            onChange={(e) => setCommit(e.target.value)}
+            placeholder={stage === 'staging' ? 'Commit SHA (ej: d7e07f6...)' : 'Commit SHA'}
+            className="w-full px-3 py-2 border rounded-md"
+          />
+          {stage === 'production' && (
+            <input
+              type="text"
+              value={tag}
+              onChange={(e) => setTag(e.target.value)}
+              placeholder="Tag (ej: v2.2.3)"
+              className="w-full px-3 py-2 border rounded-md"
+            />
+          )}
+          <button
+            onClick={() => {}} // Triggered by state change enabling the query
+            disabled={!commit || (stage === 'production' && !tag)}
+            className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
+          >
+            Ver Pipeline
+          </button>
+          <p className="text-sm text-muted-foreground">
+            Ejemplo: Commit <code>d7e07f63cedb3029b6ead5144ee8e25b54349462</code>
+            {stage === 'production' && (
+              <>, Tag <code>v2.2.3</code></>
+            )}
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (
