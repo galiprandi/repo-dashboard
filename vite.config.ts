@@ -61,6 +61,106 @@ export default defineConfig({
           })
         })
 
+        // List all repos from user's accessible organizations via gh CLI
+        server.middlewares.use('/api/repos/list', async (req, res) => {
+          if (req.method !== 'GET') {
+            res.statusCode = 405
+            res.end('Method not allowed')
+            return
+          }
+
+          const org = req.url?.includes('?') 
+            ? new URL(req.url || '', `http://localhost`).searchParams.get('org') || 'Cencosud-xlabs'
+            : 'Cencosud-xlabs'
+
+          try {
+            // Check if gh is available and configured
+            const { stdout: ghAuthStatus } = await execAsync('gh auth status 2>&1 || echo "not authenticated"')
+            const isAuthenticated = !ghAuthStatus.includes('not authenticated') && !ghAuthStatus.includes('not logged')
+            
+            if (!isAuthenticated) {
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ results: [], error: 'gh not configured' }))
+              return
+            }
+
+            // Get repos from specific organization
+            const { stdout } = await execAsync(
+              `gh repo list ${org} --limit 1000 --json name,description,pushedAt 2>/dev/null || echo "[]"`
+            )
+            
+            const repos = JSON.parse(stdout) as Array<{ name: string; description: string; pushedAt: string }>
+            const results = repos.map((repo) => ({
+              fullName: `${org}/${repo.name}`,
+              name: repo.name,
+              description: repo.description || '',
+              updatedAt: repo.pushedAt,
+            }))
+
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ results }))
+          } catch (error) {
+            // Graceful fallback: return empty array
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ 
+              results: [],
+              error: error instanceof Error ? error.message : 'Failed to list repos'
+            }))
+          }
+        })
+
+        server.middlewares.use('/api/repos/search', async (req, res) => {
+          if (req.method !== 'GET') {
+            res.statusCode = 405
+            res.end('Method not allowed')
+            return
+          }
+
+          const url = new URL(req.url || '', `http://localhost`)
+          const query = url.searchParams.get('q')
+          const org = url.searchParams.get('org') || 'Cencosud-xlabs'
+
+          if (!query || query.length < 2) {
+            res.statusCode = 400
+            res.end(JSON.stringify({ error: 'Query must be at least 2 characters' }))
+            return
+          }
+
+          try {
+            // Use GitHub API REST directly (no gh CLI)
+            const apiUrl = `https://api.github.com/search/repositories?q=${encodeURIComponent(query)}+org:${org}&per_page=100`
+            const response = await fetch(apiUrl, {
+              headers: {
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'seki-web',
+              }
+            })
+            
+            if (!response.ok) {
+              throw new Error(`GitHub API error: ${response.status}`)
+            }
+            
+            const data = await response.json() as { items: Array<{ name: string; description: string; updated_at: string }> }
+            const repos = data.items || []
+            
+            const results = repos.map((repo: { name: string; description: string; updated_at: string }) => ({
+              fullName: `${org}/${repo.name}`,
+              name: repo.name,
+              description: repo.description || '',
+              updatedAt: repo.updated_at,
+            }))
+
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ results }))
+          } catch (error) {
+            res.statusCode = 500
+            res.end(JSON.stringify({ 
+              error: error instanceof Error ? error.message : 'Search failed',
+              results: []
+            }))
+          }
+        })
+
         server.middlewares.use('/api/git', async (req, res) => {
           if (req.method !== 'GET') {
             res.statusCode = 405

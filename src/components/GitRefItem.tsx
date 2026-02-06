@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Link } from '@tanstack/react-router'
 import { GitCommit, Tag, ExternalLink, Eye, MoreHorizontal, Copy, Check } from 'lucide-react'
 
 export type GitRefType = 'commit' | 'tag'
@@ -15,6 +16,8 @@ export interface GitRefItemProps {
   showMessage?: boolean
   showAuthor?: boolean
   className?: string
+  navigateOnClick?: boolean
+  stage?: 'staging' | 'production'
 }
 
 interface MenuOption {
@@ -37,6 +40,8 @@ export function GitRefItem({
   showMessage = false,
   showAuthor = false,
   className = '',
+  navigateOnClick = false,
+  stage,
 }: GitRefItemProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -45,6 +50,10 @@ export function GitRefItem({
 
   const displayValue = type === 'commit' ? hash?.slice(0, 7) : name
   const fullValue = type === 'commit' ? hash : name
+
+  // Determine the stage based on type if not provided
+  const itemStage = stage || (type === 'commit' ? 'staging' : 'production')
+  const event = type === 'commit' ? 'commit' : 'tag'
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -116,20 +125,37 @@ export function GitRefItem({
 
   return (
     <div className={`relative inline-flex items-center gap-2 ${className}`}>
-      <button
-        ref={buttonRef}
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="inline-flex items-center gap-2 px-2 py-1 rounded-md bg-muted hover:bg-muted/80 transition-colors cursor-pointer group"
-        title="Click para ver opciones"
-      >
-        {type === 'commit' ? (
-          <GitCommit className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-        ) : (
-          <Tag className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
-        )}
-        <span className="font-mono text-sm">{displayValue || '-'}</span>
-        <MoreHorizontal className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-      </button>
+      {navigateOnClick ? (
+        <Link
+          to="/product/$org/$product"
+          params={{ org, product: repo }}
+          search={{ stage: itemStage, event }}
+          className="inline-flex items-center gap-2 px-2 py-1 rounded-md bg-muted hover:bg-muted/80 transition-colors cursor-pointer group"
+          title={`Ver detalle de ${displayValue || '-'}`}
+        >
+          {type === 'commit' ? (
+            <GitCommit className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          ) : (
+            <Tag className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          )}
+          <span className="font-mono text-sm">{displayValue || '-'}</span>
+        </Link>
+      ) : (
+        <button
+          ref={buttonRef}
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+          className="inline-flex items-center gap-2 px-2 py-1 rounded-md bg-muted hover:bg-muted/80 transition-colors cursor-pointer group"
+          title="Click para ver opciones"
+        >
+          {type === 'commit' ? (
+            <GitCommit className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          ) : (
+            <Tag className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          )}
+          <span className="font-mono text-sm">{displayValue || '-'}</span>
+          <MoreHorizontal className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        </button>
+      )}
 
       {showMessage && message && (
         <span className="text-sm text-muted-foreground truncate max-w-[200px]">{message}</span>
@@ -139,8 +165,8 @@ export function GitRefItem({
         <span className="text-xs text-muted-foreground">{author}</span>
       )}
 
-      {/* Context Menu */}
-      {isMenuOpen && (
+      {/* Context Menu - only show when not in navigate mode */}
+      {!navigateOnClick && isMenuOpen && (
         <div
           ref={menuRef}
           className="absolute top-full left-0 mt-1 z-50 min-w-[160px] bg-white border rounded-md shadow-lg py-1 animate-in fade-in slide-in-from-top-1"

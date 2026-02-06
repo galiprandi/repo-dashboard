@@ -1,17 +1,15 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useFavorites } from '@/hooks/useFavorites'
 import { useGitRepoInfo } from '@/hooks/useGitRepoInfo'
+import { useCommit } from '@/hooks/useCommit'
 import {
   GitCommit,
-  Tag,
   Loader2,
   Clock,
   User,
   Star,
-  Plus,
-  Search,
+  Tag,
 } from 'lucide-react'
-import { useState } from 'react'
 
 export const Route = createFileRoute('/')({
   component: Dashboard,
@@ -19,115 +17,54 @@ export const Route = createFileRoute('/')({
 
 function Dashboard() {
   const { favorites, toggleFavorite } = useFavorites()
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [newProduct, setNewProduct] = useState('')
+
+  const favoriteRepos = favorites
+    .filter((f) => f.includes('/'))
+    .map((f) => ({
+      fullName: f,
+      name: f.split('/')[1],
+      description: '',
+      updatedAt: '',
+    }))
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <button
-          onClick={() => setShowAddDialog(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-        >
-          <Plus className="w-4 h-4" />
-          Agregar Producto
-        </button>
+        <h1 className="text-2xl font-bold">Favoritos</h1>
       </div>
 
-      {/* Staging Table */}
+      {/* Favorites Table */}
       <section>
-        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-          <GitCommit className="w-5 h-5 text-blue-500" />
-          Favoritos Staging
-        </h2>
-        <FavoritesTable
+        <ReposTable
+          repos={favoriteRepos}
           favorites={favorites}
-          stage="staging"
-          event="commit"
           onToggleFavorite={toggleFavorite}
         />
       </section>
-
-      {/* Production Table */}
-      <section>
-        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-          <Tag className="w-5 h-5 text-purple-500" />
-          Favoritos Production
-        </h2>
-        <FavoritesTable
-          favorites={favorites}
-          stage="production"
-          event="tag"
-          onToggleFavorite={toggleFavorite}
-        />
-      </section>
-
-      {/* Add Product Dialog */}
-      {showAddDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-background rounded-lg p-6 max-w-md w-full space-y-4">
-            <h3 className="text-lg font-semibold">Agregar Producto</h3>
-            <p className="text-sm text-muted-foreground">
-              Ingresa el nombre del producto en formato org/product
-            </p>
-            <input
-              type="text"
-              value={newProduct}
-              onChange={(e) => setNewProduct(e.target.value)}
-              placeholder="Cencosud-xlabs/yumi-iam"
-              className="w-full px-3 py-2 border rounded-md"
-            />
-            <div className="flex gap-2 justify-end">
-              <button
-                onClick={() => setShowAddDialog(false)}
-                className="px-4 py-2 text-muted-foreground hover:text-foreground"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => {
-                  if (newProduct.includes('/')) {
-                    toggleFavorite(newProduct)
-                    setNewProduct('')
-                    setShowAddDialog(false)
-                  }
-                }}
-                disabled={!newProduct.includes('/')}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
-              >
-                <Star className="w-4 h-4 inline mr-1" />
-                Agregar a Favoritos
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
 
-interface FavoritesTableProps {
+interface RepoInfo {
+  fullName: string
+  name: string
+  description: string
+  updatedAt: string
+}
+
+interface ReposTableProps {
+  repos: RepoInfo[]
   favorites: string[]
-  stage: 'staging' | 'production'
-  event: 'commit' | 'tag'
   onToggleFavorite: (product: string) => void
 }
 
-function FavoritesTable({
-  favorites,
-  stage,
-  event,
-  onToggleFavorite,
-}: FavoritesTableProps) {
-  const filteredFavorites = favorites.filter((f) => f.includes('/'))
-
-  if (filteredFavorites.length === 0) {
+function ReposTable({ repos, favorites, onToggleFavorite }: ReposTableProps) {
+  if (repos.length === 0) {
     return (
       <div className="border rounded-lg p-8 text-center text-muted-foreground">
-        <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
-        <p>No hay favoritos en {stage}</p>
-        <p className="text-sm">Agrega productos usando el botón +</p>
+        <Star className="w-8 h-8 mx-auto mb-2 opacity-50" />
+        <p>No hay favoritos</p>
+        <p className="text-sm">Agrega repositorios a favoritos desde el buscador</p>
       </div>
     )
   }
@@ -137,21 +74,20 @@ function FavoritesTable({
       <table className="w-full">
         <thead className="bg-muted">
           <tr>
-            <th className="px-4 py-2 text-left text-sm font-medium">Producto</th>
-            <th className="px-4 py-2 text-left text-sm font-medium">Versión</th>
-            <th className="px-4 py-2 text-left text-sm font-medium">Estado</th>
+            <th className="px-4 py-2 text-left text-sm font-medium">Repositorio</th>
+            <th className="px-4 py-2 text-left text-sm font-medium">Tag</th>
+            <th className="px-4 py-2 text-left text-sm font-medium">Commit</th>
             <th className="px-4 py-2 text-left text-sm font-medium">Actualizado</th>
             <th className="px-4 py-2 text-left text-sm font-medium">Autor</th>
             <th className="px-4 py-2 text-center text-sm font-medium">Acciones</th>
           </tr>
         </thead>
         <tbody>
-          {filteredFavorites.map((product) => (
-            <FavoriteRow
-              key={`${product}-${stage}`}
-              product={product}
-              stage={stage}
-              event={event}
+          {repos.map((repo) => (
+            <RepoRow
+              key={repo.fullName}
+              repo={repo}
+              isFavorite={favorites.includes(repo.fullName)}
               onToggleFavorite={onToggleFavorite}
             />
           ))}
@@ -161,34 +97,39 @@ function FavoritesTable({
   )
 }
 
-interface FavoriteRowProps {
-  product: string
-  stage: 'staging' | 'production'
-  event: 'commit' | 'tag'
+interface RepoRowProps {
+  repo: RepoInfo
+  isFavorite: boolean
   onToggleFavorite: (product: string) => void
 }
 
-function FavoriteRow({
-  product,
-  stage,
-  event,
-  onToggleFavorite,
-}: FavoriteRowProps) {
-  const [org, name] = product.split('/')
+function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
+  const [org, name] = repo.fullName.split('/')
 
-  const { data: gitData, isLoading, error } = useGitRepoInfo({
-    repo: product,
+  const { data: gitData, isLoading: isLoadingGit } = useGitRepoInfo({
+    repo: repo.fullName,
   })
 
-  // Get version based on stage
-  const version = stage === 'staging' 
-    ? gitData?.commits[0]?.hash.slice(0, 7) || '-'
-    : gitData?.tags[0]?.name || '-'
+  const latestCommit = gitData?.commits[0]
+  const latestTag = gitData?.tags[0]
 
-  const commitAuthor = gitData?.commits[0]?.author || '-'
-  const commitDate = gitData?.commits[0]?.date 
-    ? formatRelativeTime(gitData.commits[0].date)
+  // Use useCommit for detailed commit info
+  const { data: commitDetails, isLoading: isLoadingCommit } = useCommit({
+    repo: repo.fullName,
+    commitHash: latestCommit?.hash,
+    enabled: !!latestCommit?.hash,
+  })
+
+  const commitHash = latestCommit?.hash.slice(0, 7) || '-'
+  const tagName = latestTag?.name || '-'
+  const author = commitDetails?.author || latestCommit?.author || '-'
+  const updatedAt = commitDetails?.date
+    ? formatRelativeTime(commitDetails.date)
+    : repo.updatedAt
+    ? formatRelativeTime(repo.updatedAt)
     : '-'
+
+  const isLoading = isLoadingGit || isLoadingCommit
 
   if (isLoading) {
     return (
@@ -197,10 +138,10 @@ function FavoriteRow({
           <Link
             to="/product/$org/$product"
             params={{ org, product: name }}
-            search={{ stage, event }}
+            search={{ stage: 'staging', event: 'commit' }}
             className="font-medium hover:text-primary"
           >
-            {product}
+            {repo.fullName}
           </Link>
         </td>
         <td colSpan={4} className="px-4 py-3">
@@ -211,40 +152,11 @@ function FavoriteRow({
         </td>
         <td className="px-4 py-3 text-center">
           <button
-            onClick={() => onToggleFavorite(product)}
-            className="text-yellow-500 hover:text-yellow-600"
-            title="Quitar de favoritos"
+            onClick={() => onToggleFavorite(repo.fullName)}
+            className={`${isFavorite ? 'text-yellow-500' : 'text-muted-foreground'} hover:text-yellow-600`}
+            title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
           >
-            <Star className="w-5 h-5 fill-current" />
-          </button>
-        </td>
-      </tr>
-    )
-  }
-
-  if (error) {
-    return (
-      <tr className="border-t">
-        <td className="px-4 py-3">
-          <Link
-            to="/product/$org/$product"
-            params={{ org, product: name }}
-            search={{ stage, event }}
-            className="font-medium hover:text-primary"
-          >
-            {product}
-          </Link>
-        </td>
-        <td colSpan={4} className="px-4 py-3 text-muted-foreground text-sm">
-          Error al cargar
-        </td>
-        <td className="px-4 py-3 text-center">
-          <button
-            onClick={() => onToggleFavorite(product)}
-            className="text-yellow-500 hover:text-yellow-600"
-            title="Quitar de favoritos"
-          >
-            <Star className="w-5 h-5 fill-current" />
+            <Star className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
           </button>
         </td>
       </tr>
@@ -257,47 +169,43 @@ function FavoriteRow({
         <Link
           to="/product/$org/$product"
           params={{ org, product: name }}
-          search={{ stage, event }}
+          search={{ stage: 'staging', event: 'commit' }}
           className="font-medium hover:text-primary"
         >
-          {product}
+          {repo.fullName}
         </Link>
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-1 text-sm font-mono">
-          {stage === 'staging' ? (
-            <GitCommit className="w-3 h-3" />
-          ) : (
-            <Tag className="w-3 h-3" />
-          )}
-          {version}
+          <Tag className="w-3 h-3 text-purple-500" />
+          {tagName}
         </div>
       </td>
       <td className="px-4 py-3">
-        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-          <Clock className="w-3 h-3" />
-          Desde Git
-        </span>
+        <div className="flex items-center gap-1 text-sm font-mono">
+          <GitCommit className="w-3 h-3 text-blue-500" />
+          {commitHash}
+        </div>
       </td>
       <td className="px-4 py-3 text-sm text-muted-foreground">
         <div className="flex items-center gap-1">
           <Clock className="w-3 h-3" />
-          {commitDate}
+          {updatedAt}
         </div>
       </td>
       <td className="px-4 py-3 text-sm">
         <div className="flex items-center gap-1">
           <User className="w-3 h-3" />
-          {commitAuthor}
+          {author}
         </div>
       </td>
       <td className="px-4 py-3 text-center">
         <button
-          onClick={() => onToggleFavorite(product)}
-          className="text-yellow-500 hover:text-yellow-600"
-          title="Quitar de favoritos"
+          onClick={() => onToggleFavorite(repo.fullName)}
+          className={`${isFavorite ? 'text-yellow-500' : 'text-muted-foreground'} hover:text-yellow-600`}
+          title={isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
         >
-          <Star className="w-5 h-5 fill-current" />
+          <Star className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
         </button>
       </td>
     </tr>
