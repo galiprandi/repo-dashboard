@@ -1,4 +1,6 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient } from '@tanstack/react-query'
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { type ReactNode } from 'react'
 
@@ -6,10 +8,17 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutos
-      refetchOnWindowFocus: false,
-      retry: 1,
+      gcTime: 24 * 60 * 60 * 1000, // 24 horas en caché
+      retry: 2,
+      refetchOnWindowFocus: true,
+      placeholderData: (previousData: unknown) => previousData,
     },
   },
+})
+
+const persister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: 'seki-query-cache',
 })
 
 interface AppProvidersProps {
@@ -18,9 +27,12 @@ interface AppProvidersProps {
 
 export function AppProviders({ children }: AppProvidersProps) {
   return (
-    <QueryClientProvider client={queryClient}>
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{ persister }}
+    >
       {children}
       <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   )
 }

@@ -44,6 +44,18 @@ export const apiSeki = axios.create({
 })
 
 /**
+ * Fetch pipeline status for specific commit
+ */
+export const fetchPipeline = (
+  product: string,
+  commit: string
+) => {
+  return apiSeki.get<PipelineStatusResponse>(
+    `/products/${product}/pipelines/${commit}`
+  )
+}
+
+/**
  * Fetch pipeline status for specific commit with optional tag
  * Used for production pipelines that have both commit and tag
  */

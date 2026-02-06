@@ -1,13 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useFavorites } from '@/hooks/useFavorites'
-import { listPipelines } from '@/api/seki'
-import { useQuery } from '@tanstack/react-query'
+import { useGitRepoInfo } from '@/hooks/useGitRepoInfo'
 import {
   GitCommit,
   Tag,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
   Loader2,
   Clock,
   User,
@@ -180,23 +176,19 @@ function FavoriteRow({
 }: FavoriteRowProps) {
   const [org, name] = product.split('/')
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['pipeline', product, stage, 'latest'],
-    queryFn: async () => {
-      const response = await listPipelines(product, {
-        limit: 50,
-        sort: { updated_at: 'desc' },
-      })
-      // Filter client-side by stage and event
-      const items = response.data.items
-      const matching = items.find(
-        (item) => item.git.stage === stage && item.git.event === event
-      )
-      return matching || null
-    },
-    retry: 1,
-    refetchOnWindowFocus: false,
+  const { data: gitData, isLoading, error } = useGitRepoInfo({
+    repo: product,
   })
+
+  // Get version based on stage
+  const version = stage === 'staging' 
+    ? gitData?.commits[0]?.hash.slice(0, 7) || '-'
+    : gitData?.tags[0]?.name || '-'
+
+  const commitAuthor = gitData?.commits[0]?.author || '-'
+  const commitDate = gitData?.commits[0]?.date 
+    ? formatRelativeTime(gitData.commits[0].date)
+    : '-'
 
   if (isLoading) {
     return (
@@ -230,7 +222,7 @@ function FavoriteRow({
     )
   }
 
-  if (error || !data) {
+  if (error) {
     return (
       <tr className="border-t">
         <td className="px-4 py-3">
@@ -244,7 +236,7 @@ function FavoriteRow({
           </Link>
         </td>
         <td colSpan={4} className="px-4 py-3 text-muted-foreground text-sm">
-          {error ? 'Error al cargar' : 'Sin pipelines'}
+          Error al cargar
         </td>
         <td className="px-4 py-3 text-center">
           <button
@@ -258,41 +250,6 @@ function FavoriteRow({
       </tr>
     )
   }
-
-  const version =
-    stage === 'staging'
-      ? data.git.commit.slice(0, 7)
-      : data.git.ref.replace('refs/tags/', '')
-
-  const statusConfig: Record<string, { icon: React.ReactNode; className: string; label: string }> = {
-    SUCCESS: {
-      icon: <CheckCircle2 className="w-3 h-3" />,
-      className: 'bg-lime-100 text-lime-700',
-      label: 'Success',
-    },
-    STARTED: {
-      icon: <Loader2 className="w-3 h-3 animate-spin" />,
-      className: 'bg-blue-100 text-blue-700',
-      label: 'Running',
-    },
-    FAILED: {
-      icon: <XCircle className="w-3 h-3" />,
-      className: 'bg-red-100 text-red-700',
-      label: 'Failed',
-    },
-    WARN: {
-      icon: <AlertTriangle className="w-3 h-3" />,
-      className: 'bg-amber-100 text-amber-700',
-      label: 'Warning',
-    },
-    IDLE: {
-      icon: <Clock className="w-3 h-3" />,
-      className: 'bg-gray-100 text-gray-700',
-      label: 'Idle',
-    },
-  }
-
-  const status = statusConfig[data.state] || statusConfig.IDLE
 
   return (
     <tr className="border-t hover:bg-muted/50">
@@ -317,21 +274,21 @@ function FavoriteRow({
         </div>
       </td>
       <td className="px-4 py-3">
-        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${status.className}`}>
-          {status.icon}
-          {status.label}
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+          <Clock className="w-3 h-3" />
+          Desde Git
         </span>
       </td>
       <td className="px-4 py-3 text-sm text-muted-foreground">
         <div className="flex items-center gap-1">
           <Clock className="w-3 h-3" />
-          {formatRelativeTime(data.updated_at)}
+          {commitDate}
         </div>
       </td>
       <td className="px-4 py-3 text-sm">
         <div className="flex items-center gap-1">
           <User className="w-3 h-3" />
-          {data.git.commit_author}
+          {commitAuthor}
         </div>
       </td>
       <td className="px-4 py-3 text-center">
