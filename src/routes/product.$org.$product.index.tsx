@@ -3,8 +3,6 @@ import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 import { DisplayInfo } from "@/components/DislpayInfo";
 import { StageCommitsTable } from "@/components/StageCommitsTable";
-import { StageGitInfo } from "@/components/StageGitInfo";
-import { useCommit } from "@/hooks/useCommit";
 import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTags } from "@/hooks/useGitTags";
 
@@ -14,29 +12,9 @@ export const Route = createFileRoute("/product/$org/$product/")({
 
 function ProductIndex() {
 	const { org, product } = Route.useParams();
-	const fullProduct = `${org}/${product}`;
 	const [activeStage, setActiveStage] = useState<"staging" | "production">(
 		"production",
 	);
-
-	const { latestCommit } = useGitCommits({
-		repo: fullProduct,
-	});
-	const { latestTag } = useGitTags({
-		repo: fullProduct,
-	});
-
-	const commitHash =
-		activeStage === "staging" ? latestCommit?.hash : latestTag?.commit;
-
-	const tag = activeStage === "staging" ? latestTag : latestTag;
-
-	const { commit: commitDetails, isLoading: isLoadingCommitDetails } =
-		useCommit({
-			repo: fullProduct,
-			commitHash,
-			enabled: Boolean(commitHash),
-		});
 
 	return (
 		<div>
@@ -72,20 +50,6 @@ function ProductIndex() {
 					Last {activeStage === "staging" ? "Commit" : "Tag"}
 				</h2>
 				<LastDeployCard org={org} product={product} stage={activeStage} />
-			</div>
-
-			{/* Git Info Section */}
-			<div className="mb-8">
-				<h2 className="text-sm text-muted-foreground mb-4 uppercase tracking-wider font-medium">
-					Deployment Details
-				</h2>
-				<StageGitInfo
-					stage={activeStage}
-					commitDetails={commitDetails}
-					commitHash={commitHash}
-					tag={tag}
-					isLoadingCommit={isLoadingCommitDetails}
-				/>
 			</div>
 
 			{/* History Section */}
@@ -124,9 +88,6 @@ function LastDeployCard({ org, product, stage }: LastDeployCardProps) {
 
 	const fullCommitHash = latestCommit?.hash;
 	const tagName = latestTag?.name;
-	const message = isStaging ? latestCommit?.message : latestTag?.commit;
-	const author = isStaging ? latestCommit?.author : null;
-	const date = isStaging ? latestCommit?.date : null;
 
 	// Build navigation params
 	const pipelineIdentifier = isStaging
@@ -158,9 +119,21 @@ function LastDeployCard({ org, product, stage }: LastDeployCardProps) {
 
 					{/* Meta */}
 					<div className="flex items-center gap-4 text-sm text-muted-foreground">
-						{<DisplayInfo type="message" value={message} maxChar={70} />}
-						{<DisplayInfo type="author" value={author} maxChar={30} />}
-						{<DisplayInfo type="dates" value={date} />}
+						{
+							<DisplayInfo
+								type="message"
+								value={latestCommit?.message}
+								maxChar={70}
+							/>
+						}
+						{
+							<DisplayInfo
+								type="author"
+								value={latestCommit?.author}
+								maxChar={30}
+							/>
+						}
+						{<DisplayInfo type="dates" value={latestCommit?.date} />}
 					</div>
 				</div>
 			</div>

@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { type GitCommit, useGitCommits } from "@/hooks/useGitCommits";
 import { type GitTag, useGitTags } from "@/hooks/useGitTags";
+import { DisplayInfo } from "./DislpayInfo";
 
 // Compare semantic versions (e.g., v2.0.7 > v1.0.24)
 function compareVersions(a: string, b: string): number {
@@ -33,23 +34,21 @@ export function StageCommitsTable({
 	stage,
 	org,
 	product,
-	limit = 10,
 }: StageCommitsTableProps) {
 	const fullRepo = `${org}/${product}`;
 
 	const { commits, isLoading: isLoadingCommits } = useGitCommits({
 		repo: fullRepo,
-		limit,
 		enabled: stage === "staging",
 	});
 
 	const { tags, isLoading: isLoadingTags } = useGitTags({
 		repo: fullRepo,
-		limit,
 		enabled: stage === "production",
 	});
 
 	const isLoading = stage === "staging" ? isLoadingCommits : isLoadingTags;
+	const isStaging = stage === "staging";
 	return (
 		<div className="p-4 border rounded-lg space-y-2">
 			<h3 className="font-medium">
@@ -64,7 +63,9 @@ export function StageCommitsTable({
 							</th>
 							<th className="px-4 py-2 text-left font-medium">Fecha</th>
 							<th className="px-4 py-2 text-left font-medium">Autor</th>
-							<th className="px-4 py-2 text-left font-medium">Mensaje</th>
+							{isStaging && (
+								<th className="px-4 py-2 text-left font-medium">Mensaje</th>
+							)}
 						</tr>
 					</thead>
 					<tbody>
@@ -91,11 +92,17 @@ export function StageCommitsTable({
 										</Link>
 									</td>
 									<td className="px-4 py-3 text-muted-foreground">
-										{c.date ? new Date(c.date).toLocaleString() : "-"}
+										<DisplayInfo value={c.date} type="dates" />
 									</td>
-									<td className="px-4 py-3">{c.author || "-"}</td>
+									<td className="px-4 py-3">
+										<DisplayInfo value={c.author} type="author" maxChar={30} />
+									</td>
 									<td className="px-4 py-3 text-muted-foreground truncate max-w-[300px]">
-										{c.message || "-"}
+										<DisplayInfo
+											value={c.message}
+											type="message"
+											maxChar={50}
+										/>
 									</td>
 								</tr>
 							))
@@ -116,11 +123,14 @@ export function StageCommitsTable({
 											</Link>
 										</td>
 										<td className="px-4 py-3 text-muted-foreground">
-											{t.date ? new Date(t.date).toLocaleString() : "-"}
+											<DisplayInfo value={t.date} type="dates" />
 										</td>
-										<td className="px-4 py-3">-</td>
-										<td className="px-4 py-3 text-muted-foreground truncate max-w-[300px]">
-											Tag: {t.name}
+										<td className="px-4 py-3">
+											<DisplayInfo
+												value={t.author.name}
+												type="author"
+												maxChar={50}
+											/>
 										</td>
 									</tr>
 								))
