@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductOrgProductRouteImport } from './routes/product.$org.$product'
+import { Route as ProductOrgProductIndexRouteImport } from './routes/product.$org.$product.index'
+import { Route as ProductOrgProductPipelineStageRouteImport } from './routes/product.$org.$product.pipeline.$stage'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +24,56 @@ const ProductOrgProductRoute = ProductOrgProductRouteImport.update({
   path: '/product/$org/$product',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProductOrgProductIndexRoute = ProductOrgProductIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ProductOrgProductRoute,
+} as any)
+const ProductOrgProductPipelineStageRoute =
+  ProductOrgProductPipelineStageRouteImport.update({
+    id: '/pipeline/$stage',
+    path: '/pipeline/$stage',
+    getParentRoute: () => ProductOrgProductRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/product/$org/$product': typeof ProductOrgProductRoute
+  '/product/$org/$product': typeof ProductOrgProductRouteWithChildren
+  '/product/$org/$product/': typeof ProductOrgProductIndexRoute
+  '/product/$org/$product/pipeline/$stage': typeof ProductOrgProductPipelineStageRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/product/$org/$product': typeof ProductOrgProductRoute
+  '/product/$org/$product': typeof ProductOrgProductIndexRoute
+  '/product/$org/$product/pipeline/$stage': typeof ProductOrgProductPipelineStageRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/product/$org/$product': typeof ProductOrgProductRoute
+  '/product/$org/$product': typeof ProductOrgProductRouteWithChildren
+  '/product/$org/$product/': typeof ProductOrgProductIndexRoute
+  '/product/$org/$product/pipeline/$stage': typeof ProductOrgProductPipelineStageRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/product/$org/$product'
+  fullPaths:
+    | '/'
+    | '/product/$org/$product'
+    | '/product/$org/$product/'
+    | '/product/$org/$product/pipeline/$stage'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/product/$org/$product'
-  id: '__root__' | '/' | '/product/$org/$product'
+  to: '/' | '/product/$org/$product' | '/product/$org/$product/pipeline/$stage'
+  id:
+    | '__root__'
+    | '/'
+    | '/product/$org/$product'
+    | '/product/$org/$product/'
+    | '/product/$org/$product/pipeline/$stage'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ProductOrgProductRoute: typeof ProductOrgProductRoute
+  ProductOrgProductRoute: typeof ProductOrgProductRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +92,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductOrgProductRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/product/$org/$product/': {
+      id: '/product/$org/$product/'
+      path: '/'
+      fullPath: '/product/$org/$product/'
+      preLoaderRoute: typeof ProductOrgProductIndexRouteImport
+      parentRoute: typeof ProductOrgProductRoute
+    }
+    '/product/$org/$product/pipeline/$stage': {
+      id: '/product/$org/$product/pipeline/$stage'
+      path: '/pipeline/$stage'
+      fullPath: '/product/$org/$product/pipeline/$stage'
+      preLoaderRoute: typeof ProductOrgProductPipelineStageRouteImport
+      parentRoute: typeof ProductOrgProductRoute
+    }
   }
 }
 
+interface ProductOrgProductRouteChildren {
+  ProductOrgProductIndexRoute: typeof ProductOrgProductIndexRoute
+  ProductOrgProductPipelineStageRoute: typeof ProductOrgProductPipelineStageRoute
+}
+
+const ProductOrgProductRouteChildren: ProductOrgProductRouteChildren = {
+  ProductOrgProductIndexRoute: ProductOrgProductIndexRoute,
+  ProductOrgProductPipelineStageRoute: ProductOrgProductPipelineStageRoute,
+}
+
+const ProductOrgProductRouteWithChildren =
+  ProductOrgProductRoute._addFileChildren(ProductOrgProductRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ProductOrgProductRoute: ProductOrgProductRoute,
+  ProductOrgProductRoute: ProductOrgProductRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { listPipelines } from '@/api/seki'
+import { listPipelines, fetchLatestPipeline } from '@/api/seki'
 import type { PipelineStatusResponse } from '@/api/seki.type'
 
 interface UsePipelinesOptions {
@@ -8,6 +8,16 @@ interface UsePipelinesOptions {
   enabled?: boolean
 }
 
+interface UseLatestPipelineOptions {
+  product: string
+  stage: 'staging' | 'production'
+  enabled?: boolean
+}
+
+/**
+ * Lists all pipelines for a product.
+ * Returns pipelines with full 40-character commit hashes.
+ */
 export function usePipelines({
   product,
   limit = 50,
@@ -21,5 +31,23 @@ export function usePipelines({
     },
     enabled: enabled && !!product,
     placeholderData: (previousData) => previousData,
+  })
+}
+
+/**
+ * Fetches the latest pipeline for a specific stage from Seki.
+ * This is the correct way to get the deployed version (not from git tags).
+ */
+export function useLatestPipeline({
+  product,
+  stage,
+  enabled = true,
+}: UseLatestPipelineOptions) {
+  return useQuery<PipelineStatusResponse | null>({
+    queryKey: ['latestPipeline', product, stage],
+    queryFn: async () => {
+      return await fetchLatestPipeline(product, stage, stage === 'production' ? 'tag' : 'commit')
+    },
+    enabled: enabled && !!product,
   })
 }

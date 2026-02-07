@@ -1,6 +1,6 @@
-import { QueryClient } from '@tanstack/react-query'
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
-import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+// import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister'
+// import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { type ReactNode } from 'react'
 
@@ -16,10 +16,10 @@ const queryClient = new QueryClient({
   },
 })
 
-const persister = createSyncStoragePersister({
-  storage: window.localStorage,
-  key: 'seki-query-cache',
-})
+// const persister = createSyncStoragePersister({
+//   storage: window.localStorage,
+//   key: 'seki-query-cache',
+// })
 
 interface AppProvidersProps {
   children: ReactNode
@@ -27,12 +27,9 @@ interface AppProvidersProps {
 
 export function AppProviders({ children }: AppProvidersProps) {
   return (
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{ persister }}
-    >
+    <QueryClientProvider client={queryClient}>
       {children}
       <ReactQueryDevtools initialIsOpen={false} />
-    </PersistQueryClientProvider>
+    </QueryClientProvider>
   )
 }
