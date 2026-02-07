@@ -24,7 +24,11 @@ interface UsePipelineWithTagOptions {
  * Fetches a single pipeline by product and commit hash.
  * ⚠️ Requires the full 40-character commit hash - short hashes (7 chars) will return 404.
  */
-export function usePipeline({ product, commit, enabled = true }: UsePipelineOptions) {
+export function usePipeline({
+  product,
+  commit,
+  enabled = true,
+}: UsePipelineOptions) {
   return useQuery<PipelineStatusResponse>({
     queryKey: ['pipeline', product, commit],
     queryFn: async () => {
@@ -40,7 +44,12 @@ export function usePipeline({ product, commit, enabled = true }: UsePipelineOpti
  * Used for production pipelines that require both identifiers.
  * URL format: /products/{product}/pipelines/{commit}/{tag}
  */
-export function usePipelineWithTag({ product, commit, tag, enabled = true }: UsePipelineWithTagOptions) {
+export function usePipelineWithTag({
+  product,
+  commit,
+  tag,
+  enabled = true,
+}: UsePipelineWithTagOptions) {
   return useQuery<PipelineStatusResponse>({
     queryKey: ['pipeline', product, commit, tag],
     queryFn: async () => {

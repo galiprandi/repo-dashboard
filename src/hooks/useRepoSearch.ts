@@ -8,7 +8,11 @@ interface UseRepoSearchOptions {
   enabled?: boolean
 }
 
-export function useRepoSearch({ query, org = 'Cencosud-xlabs', enabled = true }: UseRepoSearchOptions) {
+export function useRepoSearch({
+  query,
+  org = 'Cencosud-xlabs',
+  enabled = true,
+}: UseRepoSearchOptions) {
   return useQuery<RepoSearchResponse>({
     queryKey: ['repo-search', query, org],
     queryFn: async () => {

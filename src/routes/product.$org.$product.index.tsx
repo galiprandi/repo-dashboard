@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { useGitRepoInfo } from '@/hooks/useGitRepoInfo'
+import { useGitCommits } from '@/hooks/useGitCommits'
+import { useGitTags } from '@/hooks/useGitTags'
 import { useCommit } from '@/hooks/useCommit'
-import { useLatestPipeline } from '@/hooks/usePipelines'
-import { ExternalLink, Clock, GitBranch } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
 import { useState } from 'react'
 import { StageGitInfo } from '@/components/StageGitInfo'
 import { StageCommitsTable } from '@/components/StageCommitsTable'
+import { DisplayInfo } from '@/components/DislpayInfo'
 
 export const Route = createFileRoute('/product/$org/$product/')({
   component: ProductIndex,
@@ -14,21 +15,28 @@ export const Route = createFileRoute('/product/$org/$product/')({
 function ProductIndex() {
   const { org, product } = Route.useParams()
   const fullProduct = `${org}/${product}`
-  const [activeStage, setActiveStage] = useState<'staging' | 'production'>('production')
+  const [activeStage, setActiveStage] = useState<'staging' | 'production'>(
+    'production'
+  )
 
-  const { data: gitData } = useGitRepoInfo({
+  const { latestCommit } = useGitCommits({
+    repo: fullProduct,
+  })
+  const { latestTag } = useGitTags({
     repo: fullProduct,
   })
 
-  const commitHash = activeStage === 'staging' ? gitData?.commits[0]?.hash : gitData?.tags[0]?.commit
-  
-  const { data: commitDetails, isLoading: isLoadingCommit } = useCommit({
-    repo: fullProduct,
-    commitHash,
-    enabled: activeStage === 'staging' && !!commitHash,
-  })
+  const commitHash =
+    activeStage === 'staging' ? latestCommit?.hash : latestTag?.commit
 
-  const tag = gitData?.tags[0]
+  const tag = activeStage === 'staging' ? latestTag : latestTag
+
+  const { commit: commitDetails, isLoading: isLoadingCommitDetails } =
+    useCommit({
+      repo: fullProduct,
+      commitHash,
+      enabled: Boolean(commitHash),
+    })
 
   return (
     <div>
@@ -59,13 +67,9 @@ function ProductIndex() {
       {/* Current Deployment Card - Clean & Minimal */}
       <div className="mb-8">
         <h2 className="text-sm text-muted-foreground mb-4 uppercase tracking-wider font-medium">
-          Current Deployment
+          Last {activeStage === 'staging' ? 'Commit' : 'Tag'}
         </h2>
-        <LastDeployCard
-          org={org}
-          product={product}
-          stage={activeStage}
-        />
+        <LastDeployCard org={org} product={product} stage={activeStage} />
       </div>
 
       {/* Git Info Section */}
@@ -78,7 +82,7 @@ function ProductIndex() {
           commitDetails={commitDetails}
           commitHash={commitHash}
           tag={tag}
-          isLoadingCommit={isLoadingCommit}
+          isLoadingCommit={isLoadingCommitDetails}
         />
       </div>
 
@@ -89,9 +93,9 @@ function ProductIndex() {
         </h2>
         <StageCommitsTable
           stage={activeStage}
-          gitData={gitData}
           org={org}
           product={product}
+          limit={10}
         />
       </div>
     </div>
@@ -106,28 +110,25 @@ interface LastDeployCardProps {
 
 function LastDeployCard({ org, product, stage }: LastDeployCardProps) {
   const fullProduct = `${org}/${product}`
-  
-  // Get latest pipeline from Seki (source of truth for deployments)
-  const { data: pipeline } = useLatestPipeline({
-    product: fullProduct,
-    stage,
+  const { latestTag } = useGitTags({
+    repo: fullProduct,
+  })
+  const { latestCommit } = useGitCommits({
+    repo: fullProduct,
   })
 
-  // For staging: use commit hash from pipeline
-  // For production: use tag name from pipeline
-  const displayVersion = stage === 'staging'
-    ? pipeline?.git?.commit?.slice(0, 7)
-    : pipeline?.git?.ref
+  const isStaging = stage === 'staging'
+  const displayVersion = isStaging ? latestCommit?.shortHash : latestTag?.name
 
-  const fullCommitHash = pipeline?.git?.commit
-  const tagName = pipeline?.git?.ref
-  const message = pipeline?.git?.commit_message
-  const author = pipeline?.git?.commit_author
-  const date = pipeline?.updated_at
+  const fullCommitHash = latestCommit?.hash
+  const tagName = latestTag?.name
+  const message = isStaging ? latestCommit?.message : latestTag?.commit
+  const author = isStaging ? latestCommit?.author : null
+  const date = isStaging ? latestCommit?.date : null
 
   // Build navigation params
-  const pipelineIdentifier = stage === 'staging' 
-    ? { commit: fullCommitHash } 
+  const pipelineIdentifier = isStaging
+    ? { commit: fullCommitHash }
     : { commit: fullCommitHash, tag: tagName }
 
   return (
@@ -138,35 +139,26 @@ function LastDeployCard({ org, product, stage }: LastDeployCardProps) {
       className="group flex items-center justify-between p-5 bg-card border rounded-xl hover:shadow-sm transition-all"
     >
       <div className="flex items-center gap-5">
-        {/* Status Indicator */}
-        <div className={`w-2 h-12 rounded-full ${stage === 'production' ? 'bg-purple-500' : 'bg-blue-500'}`} />
-        
+        <div
+          className={`w-2 h-12 rounded-full ${stage === 'production' ? 'bg-purple-500' : 'bg-blue-500'}`}
+        />
+
         <div>
           {/* Version & Branch */}
           <div className="flex items-center gap-3 mb-1">
-            <span className="font-mono text-lg font-medium">{displayVersion || '—'}</span>
+            <span className="font-mono text-lg font-medium">
+              {displayVersion || '—'}
+            </span>
             <span className="px-2 py-0.5 text-xs rounded-full bg-muted text-muted-foreground">
               {stage}
             </span>
           </div>
-          
+
           {/* Meta */}
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            {message && (
-              <span className="truncate max-w-md">{message}</span>
-            )}
-            {author && (
-              <div className="flex items-center gap-1">
-                <GitBranch className="w-3.5 h-3.5" />
-                {author}
-              </div>
-            )}
-            {date && (
-              <div className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" />
-                {formatRelativeTime(date)}
-              </div>
-            )}
+            {<DisplayInfo type="message" value={message} maxChar={70} />}
+            {<DisplayInfo type="author" value={author} maxChar={30} />}
+            {<DisplayInfo type="dates" value={date} />}
           </div>
         </div>
       </div>
@@ -175,19 +167,4 @@ function LastDeployCard({ org, product, stage }: LastDeployCardProps) {
       <ExternalLink className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
     </Link>
   )
-}
-
-function formatRelativeTime(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
-
-  if (diffMins < 1) return 'now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
-  return date.toLocaleDateString()
 }

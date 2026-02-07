@@ -1,6 +1,15 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { usePipeline, usePipelineWithTag } from '@/hooks/usePipeline'
-import { ArrowLeft, Clock, CheckCircle2, XCircle, Loader2, AlertCircle, GitCommit, User } from 'lucide-react'
+import {
+  ArrowLeft,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  AlertCircle,
+  GitCommit,
+  User,
+} from 'lucide-react'
 
 export const Route = createFileRoute('/product/$org/$product/pipeline/$stage')({
   component: PipelineDetail,
@@ -10,27 +19,31 @@ function PipelineDetail() {
   const { org, product, stage } = Route.useParams()
   const search = Route.useSearch()
   const fullProduct = `${org}/${product}`
-  
+
   // Production uses both commit and tag, Staging uses only commit
   const isProduction = stage === 'production'
   const commit = search.commit as string
   const tag = search.tag as string
-  
+
   // Use both hooks but only enable the appropriate one
   const stagingQuery = usePipeline({
     product: fullProduct,
     commit,
     enabled: !isProduction && !!commit,
   })
-  
+
   const productionQuery = usePipelineWithTag({
     product: fullProduct,
     commit,
     tag,
     enabled: isProduction && !!commit && !!tag,
   })
-  
-  const { data: pipeline, isLoading, error } = isProduction ? productionQuery : stagingQuery
+
+  const {
+    data: pipeline,
+    isLoading,
+    error,
+  } = isProduction ? productionQuery : stagingQuery
 
   if (isLoading) {
     return (
@@ -55,7 +68,9 @@ function PipelineDetail() {
           )}
           <p className="text-xs mt-2 text-muted-foreground">
             Product: {fullProduct}
-            {isProduction ? `, Tag: ${tag}` : `, Commit: ${commit?.slice(0, 7)}...`}
+            {isProduction
+              ? `, Tag: ${tag}`
+              : `, Commit: ${commit?.slice(0, 7)}...`}
           </p>
         </div>
       </div>
@@ -122,8 +137,10 @@ function PipelineDetail() {
         </h2>
         <div className="flex items-center gap-5 p-5 bg-card border rounded-xl">
           {/* Status Indicator */}
-          <div className={`w-2 h-14 rounded-full ${getStatusColor(pipeline.state)}`} />
-          
+          <div
+            className={`w-2 h-14 rounded-full ${getStatusColor(pipeline.state)}`}
+          />
+
           <div className="flex-1">
             {/* Version & Stage */}
             <div className="flex items-center gap-3 mb-1.5">
@@ -138,11 +155,13 @@ function PipelineDetail() {
                 <span className="capitalize">{pipeline.state}</span>
               </span>
             </div>
-            
+
             {/* Meta */}
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               {pipeline.git.commit_message && (
-                <span className="truncate max-w-md">{pipeline.git.commit_message}</span>
+                <span className="truncate max-w-md">
+                  {pipeline.git.commit_message}
+                </span>
               )}
               <span className="flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5" />
@@ -169,7 +188,9 @@ function PipelineDetail() {
           </div>
           {pipeline.git.commit_message && (
             <div className="pt-2 border-t">
-              <p className="text-sm text-muted-foreground">{pipeline.git.commit_message}</p>
+              <p className="text-sm text-muted-foreground">
+                {pipeline.git.commit_message}
+              </p>
             </div>
           )}
         </div>
@@ -182,21 +203,23 @@ function PipelineDetail() {
         </h2>
         <div className="space-y-1">
           {pipeline.events.map((event) => (
-            <div 
-              key={event.id} 
+            <div
+              key={event.id}
               className="group p-4 bg-card border rounded-xl hover:border-muted-foreground/20 transition-colors"
             >
               {/* Event Header */}
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
                   {getStatusIcon(event.state)}
-                  <span className="font-medium">{event.label.es || event.id}</span>
+                  <span className="font-medium">
+                    {event.label.es || event.id}
+                  </span>
                 </div>
                 <span className="text-sm text-muted-foreground">
                   {formatDuration(event.created_at, event.updated_at)}
                 </span>
               </div>
-              
+
               {/* Event Meta */}
               <div className="flex items-center gap-4 text-xs text-muted-foreground ml-7">
                 <span>{new Date(event.created_at).toLocaleTimeString()}</span>
@@ -221,8 +244,8 @@ function PipelineDetail() {
               {event.subevents && event.subevents.length > 0 && (
                 <div className="mt-3 ml-7 space-y-2">
                   {event.subevents.map((subevent) => (
-                    <div 
-                      key={subevent.id} 
+                    <div
+                      key={subevent.id}
                       className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-lg"
                     >
                       <div className="flex items-center gap-2">
@@ -230,7 +253,10 @@ function PipelineDetail() {
                         <span className="text-sm">{subevent.label}</span>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {formatDuration(subevent.created_at, subevent.updated_at)}
+                        {formatDuration(
+                          subevent.created_at,
+                          subevent.updated_at
+                        )}
                       </span>
                     </div>
                   ))}

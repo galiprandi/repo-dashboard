@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from '@tanstack/react-router'
-import { GitCommit, Tag, ExternalLink, Eye, MoreHorizontal, Copy, Check } from 'lucide-react'
+import {
+  GitCommit,
+  Tag,
+  ExternalLink,
+  Eye,
+  MoreHorizontal,
+  Copy,
+  Check,
+} from 'lucide-react'
 
 export type GitRefType = 'commit' | 'tag'
 
@@ -111,7 +119,11 @@ export function GitRefItem({
     {
       id: 'copy',
       label: copied ? 'Copiado!' : 'Copiar',
-      icon: copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />,
+      icon: copied ? (
+        <Check className="w-4 h-4" />
+      ) : (
+        <Copy className="w-4 h-4" />
+      ),
       onClick: handleCopy,
       disabled: !fullValue,
     },
@@ -158,7 +170,9 @@ export function GitRefItem({
       )}
 
       {showMessage && message && (
-        <span className="text-sm text-muted-foreground truncate max-w-[200px]">{message}</span>
+        <span className="text-sm text-muted-foreground truncate max-w-[200px]">
+          {message}
+        </span>
       )}
 
       {showAuthor && author && (
@@ -201,7 +215,9 @@ export function GitRefItemCompact({
   className = '',
 }: GitRefItemProps) {
   return (
-    <div className={`flex items-center gap-2 p-2 bg-muted rounded text-sm group ${className}`}>
+    <div
+      className={`flex items-center gap-2 p-2 bg-muted rounded text-sm group ${className}`}
+    >
       {type === 'commit' ? (
         <GitCommit className="w-4 h-4 text-muted-foreground" />
       ) : (

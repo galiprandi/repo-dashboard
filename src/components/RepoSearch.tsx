@@ -18,7 +18,10 @@ export function RepoSearch() {
   // Close when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false)
       }
     }
@@ -57,12 +60,14 @@ export function RepoSearch() {
   const results = useMemo(() => {
     const allRepos = data?.results || []
     if (!query || query.length < 2) return allRepos.slice(0, 10) // Show first 10 when no query
-    
+
     const lowerQuery = query.toLowerCase()
-    return allRepos.filter((repo) =>
-      repo.name.toLowerCase().includes(lowerQuery) ||
-      repo.fullName.toLowerCase().includes(lowerQuery) ||
-      (repo.description && repo.description.toLowerCase().includes(lowerQuery))
+    return allRepos.filter(
+      (repo) =>
+        repo.name.toLowerCase().includes(lowerQuery) ||
+        repo.fullName.toLowerCase().includes(lowerQuery) ||
+        (repo.description &&
+          repo.description.toLowerCase().includes(lowerQuery))
     )
   }, [data?.results, query])
 
@@ -102,8 +107,8 @@ export function RepoSearch() {
             <div className="p-4 text-center text-muted-foreground">
               <GitBranch className="w-5 h-5 mx-auto mb-2 opacity-50" />
               <p className="text-sm">
-                {query.length >= 2 
-                  ? 'No se encontraron repositorios' 
+                {query.length >= 2
+                  ? 'No se encontraron repositorios'
                   : 'Escribe para buscar repositorios'}
               </p>
             </div>
@@ -139,7 +144,8 @@ export function RepoSearch() {
                             </p>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">
-                            Actualizado: {new Date(repo.updatedAt).toLocaleDateString()}
+                            Actualizado:{' '}
+                            {new Date(repo.updatedAt).toLocaleDateString()}
                           </p>
                         </Link>
                       </div>
@@ -153,9 +159,15 @@ export function RepoSearch() {
                               ? 'text-yellow-500 hover:text-yellow-600'
                               : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-50'
                           }`}
-                          title={isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                          title={
+                            isFav
+                              ? 'Quitar de favoritos'
+                              : 'Agregar a favoritos'
+                          }
                         >
-                          <Star className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`} />
+                          <Star
+                            className={`w-4 h-4 ${isFav ? 'fill-current' : ''}`}
+                          />
                         </button>
                         <button
                           onClick={() => handleOpenInNewTab(repo.fullName)}

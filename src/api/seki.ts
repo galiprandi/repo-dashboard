@@ -4,10 +4,10 @@ import type { PipelineStatusResponse } from './seki.type'
 // Helper to serialize params with bracket notation for nested objects
 const serializeParams = (params: Record<string, unknown>): string => {
   const parts: string[] = []
-  
+
   const encode = (key: string, value: unknown) => {
     if (value === null || value === undefined) return
-    
+
     if (typeof value === 'object' && !Array.isArray(value)) {
       // Nested object - use bracket notation
       Object.entries(value).forEach(([subKey, subValue]) => {
@@ -20,36 +20,35 @@ const serializeParams = (params: Record<string, unknown>): string => {
       })
     } else {
       // Primitive value
-      parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+      parts.push(
+        `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`
+      )
     }
   }
-  
+
   Object.entries(params).forEach(([key, value]) => {
     encode(key, value)
   })
-  
+
   return parts.join('&')
 }
 
 export const apiSeki = axios.create({
   baseURL: '/api',
   headers: {
-    'Accept': 'application/json, text/plain, */*',
+    Accept: 'application/json, text/plain, */*',
     'Accept-Language': 'en-US',
-    'Authorization': `bearer ${import.meta.env.VITE_SEKI_API_TOKEN}`,
+    Authorization: `bearer ${import.meta.env.VITE_SEKI_API_TOKEN}`,
   },
   paramsSerializer: {
-    serialize: serializeParams
-  }
+    serialize: serializeParams,
+  },
 })
 
 /**
  * Fetch pipeline status for specific commit
  */
-export const fetchPipeline = (
-  product: string,
-  commit: string
-) => {
+export const fetchPipeline = (product: string, commit: string) => {
   return apiSeki.get<PipelineStatusResponse>(
     `/products/${product}/pipelines/${commit}`
   )
@@ -88,10 +87,9 @@ export const listPipelines = (
     sort?: Record<string, 'asc' | 'desc'>
   }
 ) => {
-  return apiSeki.get<PipelinesListResponse>(
-    `/products/${product}/pipelines`,
-    { params }
-  )
+  return apiSeki.get<PipelinesListResponse>(`/products/${product}/pipelines`, {
+    params,
+  })
 }
 
 /**

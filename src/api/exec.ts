@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const apiExec = axios.create({
-  baseURL: '/api/exec',
+  baseURL: '/api',
 })
 
 interface ExecResponse {
@@ -10,14 +10,13 @@ interface ExecResponse {
 }
 
 /**
- * Execute a git command via Vite dev server
- * Only commands starting with 'git ' are allowed
- * @param command - Git command to execute (e.g., 'git log --oneline -5')
+ * Execute any bash command via Vite dev server
+ * @param command - Bash command to execute (e.g., 'ls -la', 'gh api repos/...')
  * @returns Promise with stdout and stderr
  */
-export const execGitCommand = async (command: string): Promise<ExecResponse> => {
+export const runCommand = async (command: string): Promise<ExecResponse> => {
   const response = await apiExec.post<ExecResponse>(
-    '',
+    '/exec',
     { command },
     {
       headers: {

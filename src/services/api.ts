@@ -15,11 +15,14 @@ class ApiError extends Error {
   }
 }
 
-async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
+async function fetchWithAuth(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
   const headers = new Headers({
-    'Accept': 'application/json, text/plain, */*',
+    Accept: 'application/json, text/plain, */*',
     'Accept-Language': 'en-US',
-    'Authorization': `bearer ${API_TOKEN}`,
+    Authorization: `bearer ${API_TOKEN}`,
     ...options.headers,
   })
 
@@ -49,7 +52,10 @@ export async function getProductPipeline(
   return response.json()
 }
 
-export async function getPipelines(org: string, project: string): Promise<Product> {
+export async function getPipelines(
+  org: string,
+  project: string
+): Promise<Product> {
   const url = `${API_URL}/products/${org}/${project}/pipelines`
   const response = await fetchWithAuth(url)
   return response.json()

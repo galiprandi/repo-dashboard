@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { execGitCommand } from '@/api/exec'
+import { runCommand } from '@/api/exec'
 
 interface GitUser {
   name: string | null
@@ -7,12 +7,16 @@ interface GitUser {
 }
 
 export function useGitUser() {
+  // Command constants for git user info
+  const GIT_NAME_CMD = 'git config user.name'
+  const GIT_EMAIL_CMD = 'git config user.email'
+
   return useQuery<GitUser>({
-    queryKey: ['git', 'user'],
+    queryKey: ['git', 'user', GIT_NAME_CMD, GIT_EMAIL_CMD],
     queryFn: async () => {
       const [nameResult, emailResult] = await Promise.all([
-        execGitCommand('git config user.name'),
-        execGitCommand('git config user.email'),
+        runCommand(GIT_NAME_CMD),
+        runCommand(GIT_EMAIL_CMD),
       ])
 
       return {

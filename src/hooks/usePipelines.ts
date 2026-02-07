@@ -46,7 +46,11 @@ export function useLatestPipeline({
   return useQuery<PipelineStatusResponse | null>({
     queryKey: ['latestPipeline', product, stage],
     queryFn: async () => {
-      return await fetchLatestPipeline(product, stage, stage === 'production' ? 'tag' : 'commit')
+      return await fetchLatestPipeline(
+        product,
+        stage,
+        stage === 'production' ? 'tag' : 'commit'
+      )
     },
     enabled: enabled && !!product,
   })

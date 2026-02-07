@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { execGitCommand } from '@/api/exec'
+import { runCommand } from '@/api/exec'
 
 export interface CommitDetails {
   hash: string
@@ -28,7 +28,7 @@ function parseCommitOutput(output: string): CommitDetails | null {
   if (!output.trim()) return null
 
   const lines = output.split('\n')
-  
+
   let hash = ''
   let shortHash = ''
   let author = 'Unknown'
@@ -72,39 +72,45 @@ function parseCommitOutput(output: string): CommitDetails | null {
   }
 }
 
-export function useCommit({ repo, commitHash, enabled = true }: UseCommitOptions) {
-  return useQuery<CommitDetails | null>({
+export function useCommit({
+  repo,
+  commitHash,
+  enabled = true,
+}: UseCommitOptions) {
+  const { data: commit, ...rest } = useQuery<CommitDetails | null>({
     queryKey: ['commit', repo, commitHash],
     queryFn: async () => {
       if (!commitHash || !repo) return null
 
       try {
         // Get commit details using git show with custom format
-        const { stdout: commitOutput } = await execGitCommand(
+        const commitOutput = await runCommand(
           `git -C /Users/cenco/Github/${repo} show --no-patch --format="hash:%H%nauthor:%an%nemail:%ae%ndate:%ai%nsubject:%s%nEND" ${commitHash}`
         )
-        
-        const details = parseCommitOutput(commitOutput)
-        
+
+        const details = parseCommitOutput(commitOutput.stdout)
+
         if (!details) return null
 
         // Get changed files
-        const { stdout: filesOutput } = await execGitCommand(
+        const filesOutput = await runCommand(
           `git -C /Users/cenco/Github/${repo} diff-tree --no-commit-id --name-only -r ${commitHash}`
         )
-        
-        details.files = filesOutput
+
+        details.files = filesOutput.stdout
           .split('\n')
-          .map(f => f.trim())
-          .filter(f => f.length > 0)
+          .map((f: string) => f.trim())
+          .filter((f: string) => f.length > 0)
 
         // Get stats
-        const { stdout: statsOutput } = await execGitCommand(
+        const statsOutput = await runCommand(
           `git -C /Users/cenco/Github/${repo} show --stat --format="" ${commitHash}`
         )
-        
+
         // Parse stats like "3 files changed, 42 insertions(+), 10 deletions(-)"
-        const statsMatch = statsOutput.match(/(\d+) files? changed(?:, (\d+) insertions?\(\+\))?(?:, (\d+) deletions?\(-\))?/)
+        const statsMatch = statsOutput.stdout.match(
+          /(\d+) files? changed(?:, (\d+) insertions?\(\+\))?(?:, (\d+) deletions?\(-\))?/
+        )
         if (statsMatch) {
           details.stats = {
             filesChanged: parseInt(statsMatch[1] || '0', 10),
@@ -122,4 +128,9 @@ export function useCommit({ repo, commitHash, enabled = true }: UseCommitOptions
     enabled: enabled && !!commitHash && !!repo,
     placeholderData: (previousData) => previousData,
   })
+
+  return {
+    commit,
+    ...rest,
+  }
 }
