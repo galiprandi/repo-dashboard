@@ -1,5 +1,3 @@
-import { Link } from "@tanstack/react-router";
-import { ExternalLink } from "lucide-react";
 import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTags } from "@/hooks/useGitTags";
 import { DisplayInfo } from "./DislpayInfo";
@@ -26,25 +24,12 @@ export const LastDeployCard = ({
 	const isStaging = stage === "staging";
 	const displayVersion = isStaging ? latestCommit?.shortHash : latestTag?.name;
 
-	const fullCommitHash = latestCommit?.hash;
-	const tagName = latestTag?.name;
-
-	// Build navigation params
-	const pipelineIdentifier = isStaging
-		? { commit: fullCommitHash }
-		: { commit: fullCommitHash, tag: tagName };
-
 	return (
 		<div className="mb-8">
 			<h2 className="text-sm text-muted-foreground mb-4 uppercase tracking-wider font-medium">
 				Last {stage === "staging" ? "Commit" : "Tag"}
 			</h2>
-			<Link
-				to="/product/$org/$product/pipeline/$stage"
-				params={{ org, product, stage }}
-				search={pipelineIdentifier}
-				className="group flex items-center justify-between p-5 bg-card border rounded-xl hover:shadow-sm transition-all"
-			>
+			<div className="group flex items-center justify-between p-5 bg-card border rounded-xl">
 				<div className="flex items-center gap-5">
 					<div
 						className={`w-2 h-12 rounded-full ${stage === "production" ? "bg-purple-500" : "bg-blue-500"}`}
@@ -81,10 +66,7 @@ export const LastDeployCard = ({
 						</div>
 					</div>
 				</div>
-
-				{/* Action */}
-				<ExternalLink className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-			</Link>
+			</div>
 		</div>
 	);
 };

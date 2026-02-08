@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { LastDeployCard } from "@/components/LastDeployCard";
+import { PipelineTimeline } from "@/components/PipelineTimeline";
 import { StageCommitsTable } from "@/components/StageCommitsTable";
+import { useGitCommits } from "@/hooks/useGitCommits";
+import { useGitTags } from "@/hooks/useGitTags";
+import { usePipeline, usePipelineWithTag } from "@/hooks/usePipeline";
 
 export const Route = createFileRoute("/product/$org/$product/")({
 	component: ProductIndex,
@@ -12,6 +16,28 @@ function ProductIndex() {
 	const [activeStage, setActiveStage] = useState<"staging" | "production">(
 		"production",
 	);
+	const fullProduct = `${org}/${product}`;
+	const isStaging = activeStage === "staging";
+
+	// Get latest commit and tag
+	const { latestCommit } = useGitCommits({ repo: fullProduct });
+	const { latestTag } = useGitTags({ repo: fullProduct });
+
+	// Get pipeline data for latest commit/tag
+	const stagingPipeline = usePipeline({
+		product: fullProduct,
+		commit: latestCommit?.hash ?? "",
+		enabled: isStaging && !!latestCommit?.hash,
+	});
+
+	const prodPipeline = usePipelineWithTag({
+		product: fullProduct,
+		commit: latestCommit?.hash ?? "",
+		tag: latestTag?.name ?? "",
+		enabled: !isStaging && !!latestCommit?.hash && !!latestTag?.name,
+	});
+
+	const pipeline = isStaging ? stagingPipeline.data : prodPipeline.data;
 
 	return (
 		<div>
@@ -40,9 +66,12 @@ function ProductIndex() {
 					Staging
 				</button>
 			</div>
+			<PipelineTimeline
+				events={pipeline?.events ?? []}
+				title={`${activeStage} Pipeline`}
+			/>
 
 			<LastDeployCard org={org} product={product} stage={activeStage} />
-
 			<div>
 				<h2 className="text-sm text-muted-foreground mb-4 uppercase tracking-wider font-medium">
 					{activeStage === "staging" ? "Recent Commits" : "Recent Tags"}

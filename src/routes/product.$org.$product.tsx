@@ -1,5 +1,17 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
-import { ArrowLeft, Star } from "lucide-react";
+import {
+	createFileRoute,
+	Link,
+	Outlet,
+	useRouterState,
+} from "@tanstack/react-router";
+import { Home, Star } from "lucide-react";
+import {
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbList,
+	BreadcrumbPage,
+	BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { useFavorites } from "@/hooks/useFavorites";
 
 export const Route = createFileRoute("/product/$org/$product")({
@@ -11,29 +23,61 @@ function ProductLayout() {
 	const fullProduct = `${org}/${product}`;
 	const { isFavorite, toggleFavorite } = useFavorites();
 	const favorite = isFavorite(fullProduct);
+	const router = useRouterState();
+	const currentPath = router.location.pathname;
+	const isPipelinePage = currentPath.includes("/pipeline/");
+	const stage = isPipelinePage
+		? currentPath.split("/pipeline/")[1]?.split("/")[0]
+		: null;
 
 	return (
 		<div className="max-w-6xl mx-auto px-6 py-8">
-			{/* Minimal Header */}
-			<div className="flex items-center gap-4 mb-10">
-				<Link
-					to="/"
-					className="text-muted-foreground hover:text-foreground transition-colors"
-				>
-					<ArrowLeft className="w-5 h-5" />
-				</Link>
-				<div className="flex items-center gap-3">
-					<button
-						type="button"
-						onClick={() => toggleFavorite(fullProduct)}
-						className="text-muted-foreground hover:text-yellow-400 transition-colors"
-					>
-						<Star
-							className={`w-5 h-5 ${favorite ? "fill-yellow-400 text-yellow-400" : ""}`}
-						/>
-					</button>
-					<h1 className="text-xl font-medium tracking-tight">{fullProduct}</h1>
-				</div>
+			{/* Breadcrumb Header */}
+			<div className="flex items-center justify-between mb-10">
+				<Breadcrumb>
+					<BreadcrumbList>
+						<BreadcrumbItem>
+							<Link to="/">
+								<Home className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+							</Link>
+						</BreadcrumbItem>
+						<BreadcrumbSeparator />
+						<BreadcrumbItem>
+							<div className="flex items-center gap-2">
+								<button
+									type="button"
+									onClick={() => toggleFavorite(fullProduct)}
+									className="text-muted-foreground hover:text-yellow-400 transition-colors"
+								>
+									<Star
+										className={`w-4 h-4 ${favorite ? "fill-yellow-400 text-yellow-400" : ""}`}
+									/>
+								</button>
+								{isPipelinePage ? (
+									<Link
+										to="/product/$org/$product"
+										params={{ org, product }}
+										className="text-muted-foreground hover:text-foreground transition-colors"
+									>
+										{fullProduct}
+									</Link>
+								) : (
+									<BreadcrumbPage>{fullProduct}</BreadcrumbPage>
+								)}
+							</div>
+						</BreadcrumbItem>
+						{isPipelinePage && stage && (
+							<>
+								<BreadcrumbSeparator />
+								<BreadcrumbItem>
+									<BreadcrumbPage className="capitalize">
+										Pipeline ({stage})
+									</BreadcrumbPage>
+								</BreadcrumbItem>
+							</>
+						)}
+					</BreadcrumbList>
+				</Breadcrumb>
 			</div>
 
 			{/* Child Routes Render Here */}
