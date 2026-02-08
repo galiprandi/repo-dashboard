@@ -3,14 +3,17 @@ import {
 	AlertCircle,
 	ArrowLeft,
 	CheckCircle2,
-	Clock,
-	GitCommit,
 	Loader2,
-	User,
 	XCircle,
 } from "lucide-react";
 import { LastDeployCard } from "@/components/LastDeployCard";
+import {
+	HoverCard,
+	HoverCardContent,
+	HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { usePipeline, usePipelineWithTag } from "@/hooks/usePipeline";
+import DayJS from "@/lib/dayjs";
 
 export const Route = createFileRoute("/product/$org/$product/pipeline/$stage")({
 	component: PipelineDetail,
@@ -80,27 +83,15 @@ function PipelineDetail() {
 
 	const getStatusIcon = (state: string) => {
 		switch (state) {
-			case "completed":
+			case "SUCCESS":
 				return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-			case "failed":
+			case "FAILED":
 				return <XCircle className="w-4 h-4 text-red-500" />;
-			case "running":
+			case "RUNNING":
+			case "PENDING":
 				return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />;
 			default:
-				return <AlertCircle className="w-4 h-4 text-gray-400" />;
-		}
-	};
-
-	const getStatusColor = (state: string) => {
-		switch (state) {
-			case "completed":
-				return "bg-green-500";
-			case "failed":
-				return "bg-red-500";
-			case "running":
-				return "bg-blue-500";
-			default:
-				return "bg-gray-400";
+				return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
 		}
 	};
 
@@ -111,7 +102,7 @@ function PipelineDetail() {
 		const diffSecs = Math.floor(diffMs / 1000);
 		const mins = Math.floor(diffSecs / 60);
 		const secs = diffSecs % 60;
-		return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
+		return mins > 0 ? `dur ${mins}m ${secs}s` : `dur ${secs}s`;
 	};
 
 	return (
@@ -131,74 +122,132 @@ function PipelineDetail() {
 				</div>
 			</div>
 			<LastDeployCard org={org} product={product} stage={stage} />
-			aqui
-			<div>
+
+			{/* Timeline de Eventos */}
+			<div className="mb-8">
 				<h2 className="text-sm text-muted-foreground mb-4 uppercase tracking-wider font-medium">
-					Events
+					Pipeline Timeline
 				</h2>
-				<div className="space-y-1">
-					{pipeline.events.map((event) => (
-						<div
-							key={event.id}
-							className="group p-4 bg-card border rounded-xl hover:border-muted-foreground/20 transition-colors"
-						>
-							{/* Event Header */}
-							<div className="flex items-center justify-between mb-2">
-								<div className="flex items-center gap-3">
-									{getStatusIcon(event.state)}
-									<span className="font-medium">
-										{event.label.es || event.id}
-									</span>
-								</div>
-								<span className="text-sm text-muted-foreground">
-									{formatDuration(event.created_at, event.updated_at)}
-								</span>
-							</div>
+				<div className="bg-card border rounded-xl p-6">
+					<div className="flex gap-2 justify-center overflow-x-auto">
+						{pipeline.events.map((event, index) => {
+							const isCompleted = event.state === "SUCCESS";
+							const isFailed = event.state === "FAILED";
+							const isRunning =
+								event.state === "RUNNING" || event.state === "PENDING";
 
-							{/* Event Meta */}
-							<div className="flex items-center gap-4 text-xs text-muted-foreground ml-7">
-								<span>{new Date(event.created_at).toLocaleTimeString()}</span>
-								{event.state === "completed" && (
-									<span className="text-green-600">Completed</span>
-								)}
-								{event.state === "failed" && (
-									<span className="text-red-600">Failed</span>
-								)}
-							</div>
-
-							{/* Markdown Output */}
-							{event.markdown && (
-								<div className="mt-3 ml-7">
-									<pre className="text-xs bg-muted/50 p-3 rounded-lg overflow-x-auto whitespace-pre-wrap font-mono text-muted-foreground">
-										{event.markdown}
-									</pre>
-								</div>
-							)}
-
-							{/* Subevents */}
-							{event.subevents && event.subevents.length > 0 && (
-								<div className="mt-3 ml-7 space-y-2">
-									{event.subevents.map((subevent) => (
-										<div
-											key={subevent.id}
-											className="flex items-center justify-between py-2 px-3 bg-muted/30 rounded-lg"
+							return (
+								<div key={event.id} className="flex items-start shrink-0">
+									{/* Step Indicator with HoverCard */}
+									<HoverCard openDelay={100} closeDelay={100}>
+										<HoverCardTrigger asChild>
+											<button
+												type="button"
+												className="flex flex-col items-center gap-2 p-1 rounded-lg transition-all cursor-pointer"
+											>
+												<div
+													className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
+														isCompleted
+															? "bg-green-500 border-green-500 text-white"
+															: isFailed
+																? "bg-red-500 border-red-500 text-white"
+																: isRunning
+																	? "bg-blue-500 border-blue-500 text-white animate-pulse"
+																	: "bg-muted border-muted-foreground/30 text-muted-foreground"
+													}`}
+												>
+													{isCompleted ? (
+														<CheckCircle2 className="w-5 h-5" />
+													) : isFailed ? (
+														<XCircle className="w-5 h-5" />
+													) : isRunning ? (
+														<Loader2 className="w-5 h-5 animate-spin" />
+													) : (
+														<span className="text-sm font-medium">
+															{index + 1}
+														</span>
+													)}
+												</div>
+												<span className="text-xs text-center max-w-[80px] leading-tight text-muted-foreground">
+													{event.label.es}
+												</span>
+											</button>
+										</HoverCardTrigger>
+										<HoverCardContent
+											side="top"
+											align="center"
+											sideOffset={8}
+											className="w-72 p-0"
 										>
-											<div className="flex items-center gap-2">
-												{getStatusIcon(subevent.state)}
-												<span className="text-sm">{subevent.label}</span>
+											<div className="space-y-3 p-4">
+												<h4 className="text-sm font-semibold">
+													{event.label.es}
+												</h4>
+												<div className="space-y-2 text-sm">
+													<div className="flex items-center justify-between rounded-md bg-muted p-2">
+														<span className="text-muted-foreground">
+															Estado
+														</span>
+														<div className="flex items-center gap-2">
+															{getStatusIcon(event.state)}
+															<span
+																className={
+																	event.state === "SUCCESS"
+																		? "text-green-600 font-medium"
+																		: event.state === "FAILED"
+																			? "text-red-600 font-medium"
+																			: "text-blue-600 font-medium"
+																}
+															>
+																{event.state}
+															</span>
+														</div>
+													</div>
+													<div className="flex items-center justify-between rounded-md bg-muted p-2">
+														<span className="text-muted-foreground">
+															Inicio
+														</span>
+														<span className="font-medium">
+															{DayJS(event.created_at).fromNow()}
+														</span>
+													</div>
+													<div className="flex items-center justify-between rounded-md bg-muted p-2">
+														<span className="text-muted-foreground">
+															Duración
+														</span>
+														<span className="font-medium">
+															{formatDuration(
+																event.created_at,
+																event.updated_at,
+															)}
+														</span>
+													</div>
+												</div>
+												<p className="text-xs text-muted-foreground">
+													Haz clic para ver el detalle completo
+												</p>
 											</div>
-											<span className="text-xs text-muted-foreground">
-												{formatDuration(
-													subevent.created_at,
-													subevent.updated_at,
-												)}
-											</span>
+										</HoverCardContent>
+									</HoverCard>
+
+									{/* Connector Line - aligned with circle center */}
+									{index < pipeline.events.length - 1 && (
+										<div className="mt-5">
+											<div
+												className={`h-0.5 w-8 shrink-0 mx-1 ${
+													isCompleted
+														? "bg-green-400"
+														: isFailed
+															? "bg-red-300"
+															: "bg-muted-foreground/20"
+												}`}
+											/>
 										</div>
-									))}
+									)}
 								</div>
-							)}
-						</div>
-					))}
+							);
+						})}
+					</div>
 				</div>
 			</div>
 		</div>
