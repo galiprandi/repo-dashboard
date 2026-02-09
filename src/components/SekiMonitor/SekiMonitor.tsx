@@ -1,9 +1,8 @@
-import { ExternalLink, GitCommit } from "lucide-react";
+import { GitCommit } from "lucide-react";
 import { Fragment } from "react";
 import DayJS from "@/lib/dayjs";
 
 import {
-	extractRoutes,
 	extractSummary,
 	flattenSubEvents,
 	severityRank,
@@ -23,7 +22,6 @@ export function SekiMonitor({ pipeline, stage }: SekiMonitorProps) {
 	const failedSubEvents = subEvents.filter(
 		(item) => item.sub.state === "FAILED",
 	);
-	const routes = extractRoutes(pipeline.events);
 	const sortedEvents = [...pipeline.events].sort(
 		(a, b) => severityRank(a.state) - severityRank(b.state),
 	);
@@ -98,23 +96,6 @@ export function SekiMonitor({ pipeline, stage }: SekiMonitorProps) {
 					</div>
 				</div>
 			</div>
-
-			{routes.length > 0 && (
-				<div className="flex flex-wrap gap-2 text-xs">
-					{routes.map((url) => (
-						<a
-							key={url}
-							href={url}
-							target="_blank"
-							rel="noreferrer"
-							className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition"
-						>
-							<ExternalLink className="w-3.5 h-3.5" />
-							<span className="truncate max-w-[220px]">{url}</span>
-						</a>
-					))}
-				</div>
-			)}
 
 			{failedSubEvents.length > 0 && (
 				<div className="space-y-2">

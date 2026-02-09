@@ -71,6 +71,7 @@ function ProductIndex() {
 				</div>
 			)}
 			<div>
+				<br />
 				<h2 className="text-sm text-muted-foreground mb-4 uppercase tracking-wider font-medium">
 					{activeStage === "staging" ? "Recent Commits" : "Recent Tags"}
 				</h2>

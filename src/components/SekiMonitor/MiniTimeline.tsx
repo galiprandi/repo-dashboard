@@ -1,4 +1,12 @@
-import { AlertTriangle, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import {
+	AlertTriangle,
+	CheckCircle2,
+	Copy,
+	ExternalLink,
+	Loader2,
+	XCircle,
+} from "lucide-react";
+import { useState } from "react";
 import { Streamdown } from "streamdown";
 import type { Event } from "@/api/seki.type";
 import {
@@ -66,55 +74,158 @@ const formatDuration = (start: string, end?: string) => {
 	return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
 };
 
+const extractEventUrls = (event: Event) => {
+	const urls = new Set<string>();
+	const ROUTE_REGEX = /https?:\/\/[^\s"']+/g;
+
+	// Check event markdown
+	if (event.markdown) {
+		const matches = event.markdown.match(ROUTE_REGEX);
+		if (matches) {
+			matches.forEach((match) => {
+				urls.add(match.replace(/"$/, ""));
+			});
+		}
+	}
+
+	// Check subevents markdown
+	event.subevents.forEach((sub) => {
+		const matches = sub.markdown.match(ROUTE_REGEX);
+		if (matches) {
+			matches.forEach((match) => {
+				urls.add(match.replace(/"$/, ""));
+			});
+		}
+	});
+
+	return Array.from(urls);
+};
+
 interface MiniTimelineProps {
 	events: Event[];
+}
+
+interface CopyButtonProps {
+	url: string;
+}
+
+function CopyButton({ url }: CopyButtonProps) {
+	const [copied, setCopied] = useState(false);
+
+	const handleCopy = async () => {
+		try {
+			await navigator.clipboard.writeText(url);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		} catch (err) {
+			console.error("Failed to copy URL:", err);
+		}
+	};
+
+	return (
+		<button
+			type="button"
+			onClick={handleCopy}
+			className={`p-1 text-xs rounded transition-colors ${
+				copied
+					? "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+					: "bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80"
+			}`}
+			title={copied ? "¡Copiado!" : "Copiar URL"}
+		>
+			{copied ? (
+				<svg
+					className="w-3 h-3"
+					fill="none"
+					stroke="currentColor"
+					viewBox="0 0 24 24"
+					aria-label="URL copied successfully"
+				>
+					<path
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						strokeWidth={2}
+						d="M5 13l4 4L19 7"
+					/>
+				</svg>
+			) : (
+				<Copy className="w-3 h-3" aria-label="Copy URL" />
+			)}
+		</button>
+	);
 }
 
 export function MiniTimeline({ events }: MiniTimelineProps) {
 	return (
 		<div className="flex gap-0.5">
-			{events.map((event) => (
-				<HoverCard key={event.id} openDelay={100} closeDelay={100}>
-					<HoverCardTrigger asChild>
-						<button
-							type="button"
-							className={`h-1.5 w-6 rounded-full transition-all hover:opacity-80 ${timelineStatusColor(
-								event.state,
-							)}`}
-						/>
-					</HoverCardTrigger>
-					<HoverCardContent
-						side="top"
-						align="center"
-						sideOffset={6}
-						className="p-4 w-[500px] max-w-[90vw] max-h-[400px] overflow-y-auto"
-					>
-						<div className="space-y-3">
-							<div className="flex items-center gap-2">
-								{timelineStatusIcon(event.state)}
-								<span
-									className={`text-sm font-semibold ${timelineStatusTextColor(
-										event.state,
-									)}`}
-								>
-									{event.label.es}
-								</span>
-							</div>
-							<div className="text-xs text-muted-foreground border-t pt-2">
-								{`${DayJS(event.updated_at || event.created_at).fromNow()} (${formatDuration(
-									event.created_at,
-									event.updated_at,
-								)})`}
-							</div>
-							{event.markdown && (
-								<div className="border-t pt-2 prose prose-sm max-w-none dark:prose-invert">
-									<Streamdown>{event.markdown}</Streamdown>
+			{events.map((event) => {
+				const eventUrls = extractEventUrls(event);
+				return (
+					<HoverCard key={event.id} openDelay={100} closeDelay={100}>
+						<HoverCardTrigger asChild>
+							<button
+								type="button"
+								className={`h-1.5 w-6 rounded-full transition-all hover:opacity-80 ${timelineStatusColor(
+									event.state,
+								)}`}
+							/>
+						</HoverCardTrigger>
+						<HoverCardContent
+							side="top"
+							align="center"
+							sideOffset={6}
+							className="p-4 w-fit min-w-[300px] max-w-[90vw]"
+						>
+							<div className="space-y-3">
+								<div className="flex items-center gap-2">
+									{timelineStatusIcon(event.state)}
+									<span
+										className={`text-sm font-semibold ${timelineStatusTextColor(
+											event.state,
+										)}`}
+									>
+										{event.label.es}
+									</span>
 								</div>
-							)}
-						</div>
-					</HoverCardContent>
-				</HoverCard>
-			))}
+								<div className="text-xs text-muted-foreground border-t pt-2">
+									{`${DayJS(event.updated_at || event.created_at).fromNow()} (${formatDuration(
+										event.created_at,
+										event.updated_at,
+									)})`}
+								</div>
+								{eventUrls.length > 0 && (
+									<div className="border-t pt-2">
+										<div className="text-xs font-medium text-foreground mb-2">
+											URLs relacionadas:
+										</div>
+										<div className="space-y-1 max-w-[250px]">
+											{eventUrls.map((url) => (
+												<div key={url} className="flex items-center gap-1">
+													<a
+														href={url}
+														target="_blank"
+														rel="noreferrer"
+														className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded bg-muted text-muted-foreground hover:text-foreground hover:bg-muted/80 transition flex-1 min-w-0"
+													>
+														<ExternalLink className="w-3 h-3 flex-shrink-0" />
+														<span className="truncate">{url}</span>
+													</a>
+													<CopyButton url={url} />
+												</div>
+											))}
+										</div>
+									</div>
+								)}
+								{event.markdown && (
+									<div className="border-t pt-2 prose prose-sm max-w-none dark:prose-invert">
+										<Streamdown>{event.markdown}</Streamdown>
+									</div>
+								)}
+							</div>
+						</HoverCardContent>
+					</HoverCard>
+				);
+			})}
 		</div>
 	);
 }
