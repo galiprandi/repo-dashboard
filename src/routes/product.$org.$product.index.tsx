@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { LastDeployCard } from "@/components/LastDeployCard";
-import { PipelineTimeline } from "@/components/PipelineTimeline";
+import { SekiMonitor } from "@/components/SekiMonitor/SekiMonitor";
 import { StageCommitsTable } from "@/components/StageCommitsTable";
 import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTags } from "@/hooks/useGitTags";
@@ -19,11 +18,9 @@ function ProductIndex() {
 	const fullProduct = `${org}/${product}`;
 	const isStaging = activeStage === "staging";
 
-	// Get latest commit and tag
 	const { latestCommit } = useGitCommits({ repo: fullProduct });
 	const { latestTag } = useGitTags({ repo: fullProduct });
 
-	// Get pipeline data for latest commit/tag
 	const stagingPipeline = usePipeline({
 		product: fullProduct,
 		commit: latestCommit?.hash ?? "",
@@ -66,12 +63,13 @@ function ProductIndex() {
 					Staging
 				</button>
 			</div>
-			<PipelineTimeline
-				events={pipeline?.events ?? []}
-				title={`${activeStage} Pipeline`}
-			/>
-
-			<LastDeployCard org={org} product={product} stage={activeStage} />
+			{pipeline ? (
+				<SekiMonitor pipeline={pipeline} stage={activeStage} />
+			) : (
+				<div className="mb-8 rounded-xl border border-dashed p-6 text-sm text-muted-foreground">
+					No pipeline data available yet for this stage.
+				</div>
+			)}
 			<div>
 				<h2 className="text-sm text-muted-foreground mb-4 uppercase tracking-wider font-medium">
 					{activeStage === "staging" ? "Recent Commits" : "Recent Tags"}
