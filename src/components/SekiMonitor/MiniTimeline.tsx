@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { Streamdown } from "streamdown";
 import type { Event } from "@/api/seki.type";
 import {
 	HoverCard,
@@ -86,25 +87,30 @@ export function MiniTimeline({ events }: MiniTimelineProps) {
 						side="top"
 						align="center"
 						sideOffset={6}
-						className="p-2 w-fit max-w-xs"
+						className="p-4 w-[500px] max-w-[90vw] max-h-[400px] overflow-y-auto"
 					>
-						<div className="space-y-1.5">
+						<div className="space-y-3">
 							<div className="flex items-center gap-2">
 								{timelineStatusIcon(event.state)}
 								<span
-									className={`text-xs font-semibold ${timelineStatusTextColor(
+									className={`text-sm font-semibold ${timelineStatusTextColor(
 										event.state,
 									)}`}
 								>
 									{event.label.es}
 								</span>
 							</div>
-							<div className="text-[10px] text-muted-foreground border-t pt-1 whitespace-nowrap">
+							<div className="text-xs text-muted-foreground border-t pt-2">
 								{`${DayJS(event.updated_at || event.created_at).fromNow()} (${formatDuration(
 									event.created_at,
 									event.updated_at,
 								)})`}
 							</div>
+							{event.markdown && (
+								<div className="border-t pt-2 prose prose-sm max-w-none dark:prose-invert">
+									<Streamdown>{event.markdown}</Streamdown>
+								</div>
+							)}
 						</div>
 					</HoverCardContent>
 				</HoverCard>
