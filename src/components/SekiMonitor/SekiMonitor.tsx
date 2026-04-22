@@ -1,8 +1,10 @@
 import { GitCommit } from "lucide-react";
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import DayJS from "@/lib/dayjs";
+import { Streamdown } from "streamdown";
 
 import {
+	extractErrorDetails,
 	extractSummary,
 	flattenSubEvents,
 	severityRank,
@@ -10,6 +12,46 @@ import {
 } from "./helpers";
 import { MiniTimeline } from "./MiniTimeline";
 import type { MetaPart, SekiMonitorProps } from "./types";
+import type { FlattenedSubEvent } from "./helpers";
+
+function ErrorCard({ sub, parent }: FlattenedSubEvent) {
+	const [isExpanded, setIsExpanded] = useState(false);
+	const errorDetails = extractErrorDetails(sub.markdown);
+
+	return (
+		<div className="border border-red-200 bg-red-50/70 rounded-lg p-3">
+			<div className="text-sm font-medium text-red-700">
+				{parent.label.es} · {sub.label}
+			</div>
+			{errorDetails && (
+				<div className="mt-2 p-2 bg-red-100/50 rounded border border-red-200">
+					<span className="text-xs text-red-700 font-mono">
+						{errorDetails.message}
+					</span>
+				</div>
+			)}
+			<p className="text-sm text-red-800 mt-1">
+				{extractSummary(sub.markdown)}
+			</p>
+			{sub.markdown && (
+				<div className="mt-2">
+					<button
+						type="button"
+						onClick={() => setIsExpanded(!isExpanded)}
+						className="text-xs text-red-600 hover:text-red-800 underline"
+					>
+						{isExpanded ? "Ocultar detalles" : "Ver detalles completos"}
+					</button>
+					{isExpanded && (
+						<div className="mt-2 p-3 bg-white rounded border border-red-200 prose prose-sm max-w-none dark:prose-invert overflow-auto max-h-96">
+							<Streamdown>{sub.markdown}</Streamdown>
+						</div>
+					)}
+				</div>
+			)}
+		</div>
+	);
+}
 
 export function SekiMonitor({ pipeline, stage, gitDate }: SekiMonitorProps) {
 	if (!pipeline) {
@@ -71,59 +113,51 @@ export function SekiMonitor({ pipeline, stage, gitDate }: SekiMonitorProps) {
 	}
 
 	return (
-		<div className="bg-card border rounded-xl p-4 h-[82px] space-y-4">
-			<div className="flex flex-wrap items-start gap-4">
-				<div
-					className={`w-1 rounded-full self-stretch hidden sm:block ${stageStyle.accent}`}
-				/>
-				<div className="flex-1 min-w-[220px] space-y-2">
-					<div className="flex items-center gap-2">
-						<span className="font-mono text-base font-semibold text-foreground">
-							{displayRef}
-						</span>
-						<span
-							className={`px-2 py-0.5 text-[11px] rounded-full uppercase tracking-wide ${stageStyle.badge}`}
-						>
-							{stage === "staging" ? "COMMIT" : "TAG"}
-						</span>
-					</div>
-					{metaParts.length > 0 && (
-						<div className="text-xs text-muted-foreground flex items-center gap-2 whitespace-nowrap overflow-hidden">
-							{metaParts.map(({ id, node }, index) => (
-								<Fragment key={id}>
-									{index > 0 && <span>·</span>}
-									{node}
-								</Fragment>
-							))}
+		<div className="space-y-2">
+			<div className="bg-card border rounded-xl p-4 h-[82px] space-y-4">
+				<div className="flex flex-wrap items-start gap-4">
+					<div
+						className={`w-1 rounded-full self-stretch hidden sm:block ${stageStyle.accent}`}
+					/>
+					<div className="flex-1 min-w-[220px] space-y-2">
+						<div className="flex items-center gap-2">
+							<span className="font-mono text-base font-semibold text-foreground">
+								{displayRef}
+							</span>
+							<span
+								className={`px-2 py-0.5 text-[11px] rounded-full uppercase tracking-wide ${stageStyle.badge}`}
+							>
+								{stage === "staging" ? "COMMIT" : "TAG"}
+							</span>
 						</div>
-					)}
-				</div>
-				<div className="flex flex-col gap-2 min-w-[200px] items-end">
-					<div className="self-end">
-						<MiniTimeline events={sortedEvents} />
+						{metaParts.length > 0 && (
+							<div className="text-xs text-muted-foreground flex items-center gap-2 whitespace-nowrap overflow-hidden">
+								{metaParts.map(({ id, node }, index) => (
+									<Fragment key={id}>
+										{index > 0 && <span>·</span>}
+										{node}
+									</Fragment>
+								))}
+							</div>
+						)}
+					</div>
+					<div className="flex flex-col gap-2 min-w-[200px] items-end">
+						<div className="self-end">
+							<MiniTimeline events={sortedEvents} />
+						</div>
 					</div>
 				</div>
+
+				{/* Warning details now surface via stage hover only */}
 			</div>
 
 			{failedSubEvents.length > 0 && (
 				<div className="space-y-2">
 					{failedSubEvents.map(({ sub, parent }) => (
-						<div
-							key={sub.id}
-							className="border border-red-200 bg-red-50/70 rounded-lg p-3"
-						>
-							<div className="text-sm font-medium text-red-700">
-								{parent.label.es} · {sub.label}
-							</div>
-							<p className="text-sm text-red-800 mt-1">
-								{extractSummary(sub.markdown)}
-							</p>
-						</div>
+						<ErrorCard key={sub.id} sub={sub} parent={parent} />
 					))}
 				</div>
 			)}
-
-			{/* Warning details now surface via stage hover only */}
 		</div>
 	);
 }

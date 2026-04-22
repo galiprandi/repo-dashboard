@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { runCommand } from "@/api/exec";
 
 export interface GitTag {
@@ -16,7 +16,6 @@ export interface GitTag {
 
 interface UseGitTagsOptions {
 	repo: string;
-	limit?: number;
 	enabled?: boolean;
 }
 
@@ -30,14 +29,15 @@ interface GitTagFromAPI {
 
 export function useGitTags({
 	repo,
-	limit = 15,
 	enabled = true,
 }: UseGitTagsOptions) {
-	const { data: tags, ...rest } = useQuery<GitTag[]>({
-		queryKey: ["git", "tags", repo, limit],
-		queryFn: async () => {
-			// First get the tags list
-			const tagsCommand = `gh api repos/${repo}/tags --paginate --jq '.[] | {name: .name, commit: .commit.sha, zipball_url: .zipball_url, tarball_url: .tarball_url}'`;
+	const { data, ...rest } = useInfiniteQuery<GitTag[]>({
+		queryKey: ["git", "tags", repo],
+		queryFn: async ({ pageParam = 0 }) => {
+			const page = pageParam as number;
+			const perPage = 10;
+			// First get the tags list with pagination
+			const tagsCommand = `gh api "repos/${repo}/tags?per_page=${perPage}&page=${page + 1}" --jq '.[] | {name: .name, commit: .commit.sha, zipball_url: .zipball_url, tarball_url: .tarball_url}'`;
 			const tagsResponse = await runCommand(tagsCommand);
 
 			const tagLines = tagsResponse.stdout
@@ -112,18 +112,22 @@ export function useGitTags({
 				}),
 			);
 
-			return tagsWithDetails
-				.sort(
-					(a: GitTag, b: GitTag) =>
-						new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime(),
-				)
-				.slice(0, limit);
+			return tagsWithDetails.sort(
+				(a: GitTag, b: GitTag) =>
+					new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime(),
+			);
+		},
+		initialPageParam: 0,
+		getNextPageParam: (lastPage, allPages) => {
+			if (lastPage.length < 10) return undefined;
+			return allPages.length;
 		},
 		enabled: enabled && !!repo,
 		staleTime: 30 * 60 * 1000, // 30 minutos - tags históricos no cambian frecuentemente
 		gcTime: 60 * 60 * 1000, // 1 hora - mantener en cache por más tiempo
 	});
 
+	const tags = data?.pages.flat();
 	const latestTag = tags?.[0];
 
 	return { tags, latestTag, ...rest };

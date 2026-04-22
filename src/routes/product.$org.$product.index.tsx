@@ -224,7 +224,6 @@ function ProductIndex() {
 						stage={activeStage}
 						org={org}
 						product={product}
-						limit={10}
 					/>
 				</>
 			)}

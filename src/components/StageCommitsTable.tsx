@@ -3,6 +3,7 @@ import { type GitTag, useGitTags } from "@/hooks/useGitTags";
 import { DisplayInfo } from "./DislpayInfo";
 import { CommitLink } from "./CommitLink";
 import { TagLink } from "./TagLink";
+import { Loader2 } from "lucide-react";
 
 // Compare semantic versions (e.g., v2.0.7 > v1.0.24)
 function compareVersions(a: string, b: string): number {
@@ -28,7 +29,6 @@ interface StageCommitsTableProps {
 	stage: "staging" | "production";
 	org: string;
 	product: string;
-	limit?: number;
 }
 
 export function StageCommitsTable({
@@ -38,18 +38,21 @@ export function StageCommitsTable({
 }: StageCommitsTableProps) {
 	const fullRepo = `${org}/${product}`;
 
-	const { commits, isLoading: isLoadingCommits } = useGitCommits({
+	const { commits, isLoading: isLoadingCommits, hasNextPage, fetchNextPage, isFetchingNextPage } = useGitCommits({
 		repo: fullRepo,
 		enabled: stage === "staging",
 	});
 
-	const { tags, isLoading: isLoadingTags } = useGitTags({
+	const { tags, isLoading: isLoadingTags, hasNextPage: hasNextPageTags, fetchNextPage: fetchNextPageTags, isFetchingNextPage: isFetchingNextPageTags } = useGitTags({
 		repo: fullRepo,
 		enabled: stage === "production",
 	});
 
 	const isLoading = stage === "staging" ? isLoadingCommits : isLoadingTags;
 	const isStaging = stage === "staging";
+	const hasMore = isStaging ? hasNextPage : hasNextPageTags;
+	const loadMore = isStaging ? fetchNextPage : fetchNextPageTags;
+	const isLoadingMore = isStaging ? isFetchingNextPage : isFetchingNextPageTags;
 	return (
 		<div>
 			<div className="overflow-hidden border rounded-lg">
@@ -122,6 +125,19 @@ export function StageCommitsTable({
 					</tbody>
 				</table>
 			</div>
+			{hasMore && !isLoading && (
+				<div className="mt-3 flex justify-center">
+					<button
+						type="button"
+						onClick={() => loadMore()}
+						disabled={isLoadingMore}
+						className="flex items-center gap-2 px-4 py-2 text-sm bg-background hover:bg-accent hover:text-accent-foreground rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						{isLoadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
+						{isLoadingMore ? "Cargando..." : "Ver más"}
+					</button>
+				</div>
+			)}
 		</div>
 	);
 }

@@ -42,7 +42,14 @@ export const extractSummary = (markdown: string) => {
 				!line.startsWith("**Commit") &&
 				!line.startsWith("**Environment"),
 		);
-	return lines[0] ?? "Sin detalle adicional.";
+	const summary = lines[0] ?? "Sin detalle adicional.";
+	// Remove inline markdown formatting (bold, italic, code)
+	return summary
+		.replace(/\*\*/g, "")
+		.replace(/\*/g, "")
+		.replace(/`/g, "")
+		.replace(/__/g, "")
+		.replace(/_/g, "");
 };
 
 export const extractRoutes = (events: Event[]) => {
@@ -72,4 +79,47 @@ export const severityRank = (state: string) => {
 		default:
 			return 4;
 	}
+};
+
+export const extractErrorDetails = (markdown: string) => {
+	if (!markdown) return null;
+
+	// Extraer error de terminal si existe
+	const terminalMatch = markdown.match(/```terminal\n([\s\S]*?)```/);
+	if (terminalMatch) {
+		const errorText = terminalMatch[1].trim();
+		// Extraer primera línea como resumen
+		const firstLine = errorText.split("\n")[0] || "Error";
+		return {
+			message: firstLine,
+			raw: errorText,
+		};
+	}
+
+	return null;
+};
+
+export const extractDockerImages = (markdown: string): string[] => {
+	if (!markdown) return [];
+	const images: string[] = [];
+	const dockerImageRegex = /us-east1-docker\.pkg\.dev\/[^\s\n]+/g;
+	const matches = markdown.match(dockerImageRegex);
+	if (matches) {
+		images.push(...matches);
+	}
+	return images;
+};
+
+export const extractTerraformWarnings = (markdown: string): string[] => {
+	if (!markdown) return [];
+	const warnings: string[] = [];
+	const warningMatch = markdown.match(/Warnings:([\s\S]*?)(?=```|$)/);
+	if (warningMatch) {
+		const warningLines = warningMatch[1]
+			.split("\n")
+			.map((line) => line.trim())
+			.filter((line) => line.startsWith("-"));
+		warnings.push(...warningLines);
+	}
+	return warnings;
 };
