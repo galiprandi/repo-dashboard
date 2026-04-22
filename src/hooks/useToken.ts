@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
-import 'dayjs/locale/en'
+import 'dayjs/locale/es'
 
 dayjs.extend(relativeTime)
-dayjs.locale('en')
+dayjs.locale('es')
 
 const TOKEN_KEY = 'seki_api_token'
 
@@ -64,11 +64,7 @@ function getExpirationDate(token: string): string | null {
   const expDate = dayjs.unix(payload.exp)
   const now = dayjs()
 
-  if (expDate.isBefore(now)) {
-    return `Auth Token expiration: ${expDate.from(now)}`
-  }
-
-  return `Auth Token expiration: ${expDate.from(now)}`
+  return `El token de autenticación expira ${expDate.from(now)}`
 }
 
 /**
@@ -91,7 +87,7 @@ export function useToken() {
     const storedToken = localStorage.getItem(TOKEN_KEY)
     if (storedToken) {
       const exp = getExpirationDate(storedToken)
-      return exp || 'Token has no expiration date'
+      return exp || 'El token no tiene fecha de expiración'
     }
     return null
   })
@@ -102,7 +98,7 @@ export function useToken() {
     setIsExpired(expired)
     setTokenState(expired ? null : newToken)
     const exp = getExpirationDate(newToken)
-    setExpirationDate(exp || 'Token has no expiration date')
+    setExpirationDate(exp || 'El token no tiene fecha de expiración')
   }
 
   const clearToken = () => {

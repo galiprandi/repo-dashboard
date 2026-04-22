@@ -38,6 +38,7 @@ export function usePipeline({
     },
     enabled: enabled && !!product && !!commit,
     refetchInterval: SEKI_CONFIG.refetchInterval,
+    staleTime: 5000, // Mantener datos frescos por 5s para evitar flick
   })
 }
 
@@ -60,5 +61,6 @@ export function usePipelineWithTag({
     },
     enabled: enabled && !!product && !!commit && !!tag,
     refetchInterval: SEKI_CONFIG.refetchInterval,
+    staleTime: 5000, // Mantener datos frescos por 5s para evitar flick
   })
 }

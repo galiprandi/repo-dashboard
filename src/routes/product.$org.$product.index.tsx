@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import "dayjs/locale/es";
 import { SekiMonitor } from "@/components/SekiMonitor/SekiMonitor";
 import { StageCommitsTable } from "@/components/StageCommitsTable";
 import { CreateTagDialog } from "@/components/CreateTagDialog";
@@ -11,6 +14,10 @@ import { useGitTags } from "@/hooks/useGitTags";
 import { usePipeline, usePipelineWithTag } from "@/hooks/usePipeline";
 import { useToken } from "@/hooks/useToken";
 import { useRepoPermission } from "@/hooks/useUserRepos";
+import { SEKI_CONFIG } from "@/config/seki";
+
+dayjs.extend(relativeTime);
+dayjs.locale("es");
 
 export const Route = createFileRoute("/product/$org/$product/")({
 	component: ProductIndex,
@@ -55,6 +62,32 @@ function ProductIndex() {
 	const pipeline = isStaging ? stagingPipeline.data : prodPipeline.data;
 	const isPipelineLoading = isStaging ? stagingPipeline.isLoading : prodPipeline.isLoading;
 	const isPipelineFetching = isStaging ? stagingPipeline.isFetching : prodPipeline.isFetching;
+	const dataUpdatedAt = isStaging ? stagingPipeline.dataUpdatedAt : prodPipeline.dataUpdatedAt;
+
+	// Cuenta regresiva hasta la próxima actualización
+	const [timeUntilNextUpdate, setTimeUntilNextUpdate] = useState<string>("");
+
+	useEffect(() => {
+		if (!dataUpdatedAt) return;
+
+		const updateCountdown = () => {
+			const now = Date.now();
+			const nextUpdate = dataUpdatedAt + SEKI_CONFIG.refetchInterval;
+			const remaining = Math.max(0, nextUpdate - now);
+
+			if (remaining === 0) {
+				setTimeUntilNextUpdate("Actualizando...");
+			} else {
+				const seconds = Math.floor(remaining / 1000);
+				setTimeUntilNextUpdate(`${seconds}s`);
+			}
+		};
+
+		updateCountdown();
+		const interval = setInterval(updateCountdown, 1000);
+
+		return () => clearInterval(interval);
+	}, [dataUpdatedAt]);
 
 	// Usar fecha del commit/tag para consistencia con la tabla
 	const gitDate = isStaging ? latestCommit?.date : latestTag?.date;
@@ -72,8 +105,8 @@ function ProductIndex() {
 				<div className="mb-8 rounded-xl border border-dashed p-6 space-y-3">
 					<p className="text-sm text-muted-foreground">
 						{isExpired
-							? "Your API token has expired. Please enter a new token."
-							: "No API token configured. Please enter your Seki API token to view pipeline data."}
+							? "Tu token de API ha expirado. Por favor ingresa un nuevo token."
+							: "No hay token de API configurado. Por favor ingresa tu token de API de Seki para ver los datos del pipeline."}
 					</p>
 					{expirationDate && (
 						<p className="text-xs text-muted-foreground">
@@ -85,7 +118,7 @@ function ProductIndex() {
 							type="text"
 							value={tokenInput}
 							onChange={(e) => setTokenInput(e.target.value)}
-							placeholder="Enter your JWT token"
+							placeholder="Ingresa tu token JWT"
 							className="flex-1 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 						/>
 						<button
@@ -93,7 +126,7 @@ function ProductIndex() {
 							onClick={handleSaveToken}
 							className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
 						>
-							Save Token
+							Guardar Token
 						</button>
 					</div>
 				</div>
@@ -103,26 +136,36 @@ function ProductIndex() {
 						<div className="mb-8 rounded-xl border border-dashed p-6 flex items-center justify-center">
 							<div className="flex items-center gap-2 text-sm text-muted-foreground">
 								<Loader2 className="w-4 h-4 animate-spin" />
-								Loading pipeline data...
+								Cargando datos del pipeline...
 							</div>
 						</div>
 					) : (
-						<div className="space-y-4 mb-10">
-							<SekiMonitor pipeline={pipeline} stage={activeStage} gitDate={gitDate} />
-							<div className="flex justify-end items-center gap-2">
-								{expirationDate && (
-									<p className="text-xs text-muted-foreground">
-										{expirationDate} •
-									</p>
-								)}
-								<button
-									type="button"
-									onClick={clearToken}
-									className="text-xs text-red-600 hover:text-red-700 hover:underline"
-								>
-									Revoke now
-								</button>
+						<div className="space-y-2 mb-10">
+							<div className="flex justify-between items-center gap-4 px-4">
+								<div className="flex items-center gap-2 text-xs text-muted-foreground">
+									<RefreshCw className="w-3 h-3" />
+									{timeUntilNextUpdate && (
+										<span className="text-foreground">
+											{timeUntilNextUpdate}
+										</span>
+									)}
+								</div>
+								<div className="flex items-center gap-2">
+									{expirationDate && (
+										<p className="text-xs text-muted-foreground">
+											{expirationDate} •
+										</p>
+									)}
+									<button
+										type="button"
+										onClick={clearToken}
+										className="text-xs text-red-600 hover:text-red-700 hover:underline"
+									>
+										Revocar ahora
+									</button>
+								</div>
 							</div>
+							<SekiMonitor pipeline={pipeline} stage={activeStage} gitDate={gitDate} />
 						</div>
 					)}
 					{/* Environment Selector - Pill Style */}
