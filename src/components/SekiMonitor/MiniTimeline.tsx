@@ -90,11 +90,13 @@ const extractEventUrls = (event: Event) => {
 
 	// Check subevents markdown
 	event.subevents.forEach((sub) => {
-		const matches = sub.markdown.match(ROUTE_REGEX);
-		if (matches) {
-			matches.forEach((match) => {
-				urls.add(match.replace(/"$/, ""));
-			});
+		if (sub.markdown) {
+			const matches = sub.markdown.match(ROUTE_REGEX);
+			if (matches) {
+				matches.forEach((match) => {
+					urls.add(match.replace(/"$/, ""));
+				});
+			}
 		}
 	});
 
