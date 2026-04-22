@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
 import { searchRepos } from '@/api/repo-search'
 import type { RepoSearchResponse } from '@/api/repo-search.type'
+import { useQuery } from '@tanstack/react-query'
+
 
 interface UseRepoSearchOptions {
   query: string
@@ -20,6 +21,6 @@ export function useRepoSearch({
       return result
     },
     enabled: enabled && query.length >= 2,
-    placeholderData: (previousData) => previousData,
+    placeholderData: (previousData: RepoSearchResponse | undefined) => previousData,
   })
 }
