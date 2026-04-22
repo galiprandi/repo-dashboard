@@ -1,8 +1,16 @@
 import { useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import * as Dialog from "@radix-ui/react-dialog"
-import { GitCompare, X, Loader2, GitCommit } from "lucide-react"
+import { GitCompare, X, Loader2, GitBranch } from "lucide-react"
 import { runCommand } from "@/api/exec"
+import { CommitLink } from "./CommitLink"
+import { DisplayInfo } from "./DislpayInfo"
+import dayjs from "dayjs"
+import relativeTime from "dayjs/plugin/relativeTime"
+import "dayjs/locale/es"
+
+dayjs.extend(relativeTime)
+dayjs.locale("es")
 
 interface DiffDialogProps {
 	repo: string
@@ -11,11 +19,12 @@ interface DiffDialogProps {
 
 export function DiffDialog({ repo, currentTag }: DiffDialogProps) {
 	const [open, setOpen] = useState(false)
+	const [org, product] = repo.split("/")
 
 	const { data: diffCommits, isLoading, error } = useQuery({
 		queryKey: ["git", "diff", repo, currentTag],
 		queryFn: async () => {
-			const result = await runCommand(`gh api repos/${repo}/compare/main...${currentTag}`)
+			const result = await runCommand(`gh api repos/${repo}/compare/${currentTag}...main`)
 			const data = JSON.parse(result.stdout)
 			return data.commits || []
 		},
@@ -35,9 +44,11 @@ export function DiffDialog({ repo, currentTag }: DiffDialogProps) {
 			</Dialog.Trigger>
 			<Dialog.Portal>
 				<Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-				<Dialog.Content className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full max-w-2xl max-h-[80vh] bg-background rounded-lg shadow-lg border p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] overflow-hidden flex flex-col">
+				<Dialog.Content className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full max-w-4xl max-h-[80vh] bg-background rounded-lg shadow-lg border p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] overflow-hidden flex flex-col">
 					<div className="flex items-center justify-between mb-4 flex-shrink-0">
-						<Dialog.Title className="text-lg font-semibold">Commits entre main y {currentTag}</Dialog.Title>
+						<Dialog.Title className="text-lg font-semibold flex items-center gap-2">
+							Diferencia main <GitBranch className="w-4 h-4" /> {currentTag} ({diffCommits?.length || 0} commits)
+						</Dialog.Title>
 						<Dialog.Close asChild>
 							<button
 								type="button"
@@ -65,27 +76,41 @@ export function DiffDialog({ repo, currentTag }: DiffDialogProps) {
 					)}
 
 					{diffCommits && diffCommits.length > 0 ? (
-						<div className="overflow-y-auto flex-1 space-y-2">
-							{diffCommits.map((commit: { sha: string; commit: { message: string; author: { name: string; date: string } }; author?: { login: string } }) => (
-								<div key={commit.sha} className="border rounded-lg p-3 hover:bg-muted transition-colors">
-									<div className="flex items-start gap-2">
-										<GitCommit className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-										<div className="flex-1 min-w-0">
-											<div className="flex items-center gap-2 mb-1">
-												<span className="font-mono text-xs text-muted-foreground">{commit.sha.substring(0, 7)}</span>
-												<span className="text-sm font-medium truncate">{commit.commit.message.split('\n')[0]}</span>
-											</div>
-											<div className="text-xs text-muted-foreground">
-												{commit.author?.login || commit.commit.author.name} • {new Date(commit.commit.author.date).toLocaleDateString('es-ES')}
-											</div>
-										</div>
-									</div>
-								</div>
-							))}
+						<div className="overflow-hidden border rounded-lg flex-1">
+							<table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
+								<thead className="bg-muted">
+									<tr>
+										<th className="px-3 py-2 text-left font-medium w-[15%]">Hash</th>
+										<th className="px-3 py-2 text-left font-medium w-[15%]">Fecha</th>
+										<th className="px-3 py-2 text-left font-medium w-[20%]">Autor</th>
+										<th className="px-3 py-2 text-left font-medium w-[50%]">Mensaje</th>
+									</tr>
+								</thead>
+								<tbody>
+									{diffCommits.map((commit: { sha: string; commit: { message: string; author: { name: string; date: string } }; author?: { login: string } }) => (
+										<tr key={commit.sha} className="border-t hover:bg-muted/50">
+											<td className="px-3 py-2 w-[15%]">
+												<CommitLink hash={commit.sha} org={org} repo={product} />
+											</td>
+											<td className="px-3 py-2 text-muted-foreground w-[15%]">
+												{dayjs(commit.commit.author.date).fromNow()}
+											</td>
+											<td className="px-3 py-2 w-[20%]">
+												<DisplayInfo value={commit.author?.login || commit.commit.author.name} type="author" maxChar={30} />
+											</td>
+											<td className="px-3 py-2 w-[50%]">
+												<div className="truncate text-muted-foreground" title={commit.commit.message.split('\n')[0]}>
+													{commit.commit.message.split('\n')[0]}
+												</div>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
 						</div>
 					) : (
 						<div className="text-sm text-muted-foreground py-4 flex-shrink-0">
-							No hay commits en el diff entre main y {currentTag}
+							No hay commits en main que no estén en {currentTag}
 						</div>
 					)}
 				</Dialog.Content>
