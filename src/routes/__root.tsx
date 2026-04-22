@@ -1,8 +1,10 @@
-import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
+import { createRootRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { Github } from "lucide-react";
+import { useEffect } from "react";
 import { RepoSearch } from "@/components/RepoSearch";
 import { useGitUser } from "@/hooks/useGitUser";
+import { useGhCliSetup } from "@/hooks/useGhCliSetup";
 
 function UserAvatar() {
 	const { data: user, isLoading } = useGitUser();
@@ -58,8 +60,18 @@ function UserAvatar() {
 	);
 }
 
-export const Route = createRootRoute({
-	component: () => (
+function RootLayout() {
+	const { isInstalled, isAuthenticated, isLoading } = useGhCliSetup();
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		// Si gh cli no está instalado o no está autenticado, redirigir a setup
+		if (!isLoading && (!isInstalled || !isAuthenticated)) {
+			navigate({ to: "/setup" });
+		}
+	}, [isInstalled, isAuthenticated, isLoading, navigate]);
+
+	return (
 		<>
 			<div className="min-h-screen bg-background">
 				<header className="border-b px-4 py-3">
@@ -80,5 +92,9 @@ export const Route = createRootRoute({
 			</div>
 			<TanStackRouterDevtools />
 		</>
-	),
+	);
+}
+
+export const Route = createRootRoute({
+	component: RootLayout,
 });
