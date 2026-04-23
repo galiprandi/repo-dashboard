@@ -13,7 +13,7 @@ function UserAvatar() {
 		return (
 			<div className="flex items-center gap-2 text-sm text-muted-foreground">
 				<div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
-				<span>Cargando...</span>
+				<span>Cargando información...</span>
 			</div>
 		);
 	}

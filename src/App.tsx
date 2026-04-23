@@ -7,7 +7,7 @@ function App() {
     <div className="min-h-screen bg-background p-8">
       <h1 className="text-2xl font-bold mb-4">ReleaseHub</h1>
 
-      {isLoading && <p>Cargando repositorios...</p>}
+      {isLoading && <p>Cargando información de repositorios...</p>}
       {error && <p className="text-red-500">Error: {error.message}</p>}
       {data && (
         <div className="space-y-4">
@@ -30,7 +30,7 @@ function App() {
                   {repo.description}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Actualizado: {repo.updatedAt}
+                  Actualización: {repo.updatedAt}
                 </p>
               </div>
             ))}

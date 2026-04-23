@@ -76,7 +76,7 @@ export function StageCommitsTable({
 									colSpan={4}
 									className="px-4 py-8 text-center text-muted-foreground"
 								>
-									Cargando...
+									Cargando información...
 								</td>
 							</tr>
 						) : stage === "staging" ? (
@@ -134,7 +134,7 @@ export function StageCommitsTable({
 						className="flex items-center gap-2 px-4 py-2 text-sm bg-background hover:bg-accent hover:text-accent-foreground rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						{isLoadingMore && <Loader2 className="w-4 h-4 animate-spin" />}
-						{isLoadingMore ? "Cargando..." : "Ver más"}
+						{isLoadingMore ? "Cargando..." : "Cargar más"}
 					</button>
 				</div>
 			)}

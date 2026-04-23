@@ -63,7 +63,7 @@ export function DiffDialog({ repo, currentTag }: DiffDialogProps) {
 					</Dialog.Description>
 					<div className="flex items-center justify-between mb-4 flex-shrink-0">
 						<Dialog.Title className="text-lg font-semibold flex items-center gap-2">
-							Diferencia main <GitBranch className="w-4 h-4" /> {currentTag} ({diffCommits?.length || 0} commits)
+							Diferencia main <GitBranch className="w-4 h-4" /> {currentTag} ({diffCommits?.length || 0} Commits)
 						</Dialog.Title>
 						<div className="flex items-center gap-2">
 							<RefetchButton
@@ -88,14 +88,14 @@ export function DiffDialog({ repo, currentTag }: DiffDialogProps) {
 						<div className="flex items-center justify-center py-8 flex-shrink-0">
 							<div className="flex items-center gap-2 text-sm text-muted-foreground">
 								<Loader2 className="w-4 h-4 animate-spin" />
-								Cargando diff...
+								Cargando información de Diff...
 							</div>
 						</div>
 					)}
 
 					{error && (
 						<div className="text-sm text-red-600 flex-shrink-0">
-							Error al cargar el diff: {error instanceof Error ? error.message : "Error desconocido"}
+							Error detectado durante la carga de Diff: {error instanceof Error ? error.message : "Error desconocido"}
 						</div>
 					)}
 
@@ -142,14 +142,14 @@ export function DiffDialog({ repo, currentTag }: DiffDialogProps) {
 										className="flex items-center gap-2 px-4 py-2 text-sm bg-background hover:bg-accent hover:text-accent-foreground rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 									>
 										{isFetchingNextPage && <Loader2 className="w-4 h-4 animate-spin" />}
-										{isFetchingNextPage ? "Cargando..." : "Ver más"}
+										{isFetchingNextPage ? "Cargando..." : "Cargar más"}
 									</button>
 								</div>
 							)}
 						</div>
 					) : (
 						<div className="text-sm text-muted-foreground py-4 flex-shrink-0">
-							No hay commits en main que no estén en {currentTag}
+							Sin Commits en main pendientes de incluir en {currentTag}
 						</div>
 					)}
 				</Dialog.Content>
