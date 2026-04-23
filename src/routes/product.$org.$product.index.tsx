@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -13,7 +12,6 @@ import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTags } from "@/hooks/useGitTags";
 import { usePipeline, usePipelineWithTag } from "@/hooks/usePipeline";
 import { useToken } from "@/hooks/useToken";
-import { useRepoPermission } from "@/hooks/useRepoPermission";
 
 dayjs.extend(relativeTime);
 dayjs.locale("es");
@@ -31,19 +29,10 @@ function ProductIndex() {
 	const { saveToken, clearToken, isExpired, needsToken, expirationDate } = useToken();
 	const fullProduct = `${org}/${product}`;
 	const isStaging = activeStage === "staging";
-	const queryClient = useQueryClient();
 
 	const { latestCommit } = useGitCommits({ repo: fullProduct });
 	const { latestTag } = useGitTags({ repo: fullProduct });
-	const { data: repoPermission, isLoading: isLoadingPermissions } = useRepoPermission({ repo: fullProduct });
 
-	const canCreateTags =
-		repoPermission?.permissions?.push ||
-		repoPermission?.permissions?.maintain ||
-		repoPermission?.permissions?.admin ||
-		repoPermission?.viewerPermission === 'WRITE' ||
-		repoPermission?.viewerPermission === 'ADMIN' ||
-		repoPermission?.viewerCanAdminister;
 
 	const stagingPipeline = usePipeline({
 		product: fullProduct,

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import * as Dialog from "@radix-ui/react-dialog"
-import { Rocket, X, Loader2, GitBranch, GitCompare, AlertCircle, ChevronRight, ChevronLeft, CheckCircle2 } from "lucide-react"
+import { Rocket, X, Loader2, GitBranch, GitCompare, ChevronRight, ChevronLeft, CheckCircle2 } from "lucide-react"
 import axios from "axios"
 import { runCommand } from "@/api/exec"
 import { CommitLink } from "./CommitLink"

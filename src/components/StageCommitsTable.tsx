@@ -6,25 +6,6 @@ import { CommitLink } from "./CommitLink";
 import { TagLink } from "./TagLink";
 import { Loader2 } from "lucide-react";
 
-// Compare semantic versions (e.g., v2.0.7 > v1.0.24)
-function compareVersions(a: string, b: string): number {
-	const parseVersion = (v: string) => {
-		const match = v.match(/v?(\d+)\.(\d+)\.(\d+)/);
-		if (!match) return [0, 0, 0];
-		return [
-			parseInt(match[1], 10),
-			parseInt(match[2], 10),
-			parseInt(match[3], 10),
-		];
-	};
-
-	const [majorA, minorA, patchA] = parseVersion(a);
-	const [majorB, minorB, patchB] = parseVersion(b);
-
-	if (majorB !== majorA) return majorB - majorA;
-	if (minorB !== minorA) return minorB - minorA;
-	return patchB - patchA;
-}
 
 interface StageCommitsTableProps {
 	stage: "staging" | "production";
