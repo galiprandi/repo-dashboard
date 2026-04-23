@@ -10,6 +10,15 @@ Web application for visualizing CI/CD pipelines and managing GitHub releases.
 - Routing with TanStack Router
 - Server state management with TanStack Query
 
+## Release Strategy
+
+ReleaseHub follows a **Trunk-Based Development** model with **Tag-based promotion**:
+
+- **Staging**: Automatically deploys the latest commits from the `main` branch.
+- **Production**: Deploys are triggered manually by creating a **GitHub Tag**, promoting a validated version from Staging to Production.
+
+The app leverages the **GitHub CLI (`gh`)** to perform these operations remotely, ensuring it remains stateless and can manage multiple repositories without local clones.
+
 ## Tech Stack
 
 - **Framework:** React 19 + Vite (Rolldown)

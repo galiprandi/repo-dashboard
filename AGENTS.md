@@ -1,8 +1,20 @@
 # ReleaseHub - Architecture and Development Guide
 
-## Summary
-
 ReleaseHub is a React application for visualizing and managing CI/CD pipelines and GitHub repositories. The architecture combines a CI/CD API with remote operations via GitHub CLI, avoiding local git operations.
+
+## Filosofía y Estrategia de Release
+
+ReleaseHub está diseñado para soportar una estrategia de **Trunk-Based Development** con un flujo de promoción basado en **Tags**.
+
+### Flujo de Trabajo
+1. **Staging (Integración Continua)**: Cualquier commit mergeado a la rama principal (`main`) se despliega automáticamente en el entorno de Staging. Esto permite una validación rápida y constante de las nuevas funcionalidades.
+2. **Producción (Entrega Continua)**: El despliegue a Producción no es automático tras el commit. Requiere la creación de un **GitHub Tag**. Este tag actúa como una "promoción" explícita de una versión validada en Staging hacia el entorno productivo.
+
+### Por qué esta App y sus Herramientas
+*   **Visibilidad Unificada**: Centraliza el estado de múltiples microservicios/repositorios que siguen este mismo patrón, permitiendo ver qué commit está en Staging vs qué Tag está en Producción.
+*   **GitHub CLI (`gh`) como Motor**: La app utiliza `gh` para interactuar con la API de GitHub de forma remota. Esto permite que la aplicación sea **stateless** respecto al sistema de archivos local; no necesita clonar repositorios ni gestionar estados de `git` localmente, lo que facilita el monitoreo de cientos de repositorios de forma instantánea.
+*   **Seki API Integration**: Conecta con los eventos de despliegue reales para proporcionar una línea de tiempo visual del progreso de cada release.
+
 
 ## Stack Tecnológico
 
