@@ -1,90 +1,42 @@
-import { useState, useEffect, useRef } from "react"
+import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import * as Dialog from "@radix-ui/react-dialog"
-import { Rocket, X, Loader2, GitBranch, GitCompare, ChevronRight, ChevronLeft, CheckCircle2 } from "lucide-react"
+import * as Tooltip from "@radix-ui/react-tooltip"
+import { Rocket, X, Loader2, CheckCircle2 } from "lucide-react"
 import axios from "axios"
 import { runCommand } from "@/api/exec"
-import { CommitLink } from "./CommitLink"
-import { DisplayInfo } from "./DisplayInfo"
-import { RefetchButton } from "./ui/RefetchButton"
 import { useRepoPermission } from "../hooks/useRepoPermission"
-import { usePromoteCommits } from "../hooks/usePromoteCommits"
-import dayjs from "dayjs"
-import relativeTime from "dayjs/plugin/relativeTime"
-import "dayjs/locale/es"
-
-dayjs.extend(relativeTime)
-dayjs.locale("es")
 
 interface PromoteDialogProps {
 	repo: string
 	latestTag?: string
+	iconOnly?: boolean
 }
 
-type Step = 'list' | 'config' | 'success'
+type Step = 'config' | 'success'
 
-export function PromoteDialog({ repo, latestTag }: PromoteDialogProps) {
+export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDialogProps) {
 	const queryClient = useQueryClient()
 	const [open, setOpen] = useState(false)
-	const [step, setStep] = useState<Step>('list')
-	const [selectedShas, setSelectedShas] = useState<Set<string>>(new Set())
+	const [step, setStep] = useState<Step>('config')
 	const [tagName, setTagName] = useState("")
 	const [tagMessage, setTagMessage] = useState("")
 	const [isCreating, setIsCreating] = useState(false)
 	const [error, setError] = useState("")
-	const [org, product] = repo.split("/")
-	const loadMoreRef = useRef<HTMLDivElement>(null)
 
 	const { data: permissions, isLoading: isLoadingPerms } = useRepoPermission({ repo })
-
-	const { 
-		data, 
-		isLoading, 
-		error: fetchError, 
-		hasNextPage, 
-		fetchNextPage, 
-		isFetchingNextPage, 
-		refetch, 
-		dataUpdatedAt 
-	} = usePromoteCommits({ repo, latestTag, enabled: open })
-
-	const commits = data?.pages.flat() || []
 	const suggestedTag = latestTag ? incrementVersion(latestTag) : "v1.0.0"
 
 	const handleOpenChange = (newOpen: boolean) => {
 		setOpen(newOpen)
 		if (newOpen) {
-			setStep('list')
-			setSelectedShas(new Set())
+			setStep('config')
 			setTagName(suggestedTag)
 			setTagMessage(`Release ${suggestedTag}`)
 			setError("")
 		}
 	}
 
-	// Infinite scroll
-	useEffect(() => {
-		if (step !== 'list' || !hasNextPage || isFetchingNextPage || !open) return
-		const observer = new IntersectionObserver(
-			(entries) => { if (entries[0].isIntersecting) fetchNextPage() },
-			{ threshold: 0.1 }
-		)
-		const currentRef = loadMoreRef.current
-		if (currentRef) observer.observe(currentRef)
-		return () => { if (currentRef) observer.unobserve(currentRef); observer.disconnect() }
-	}, [step, hasNextPage, isFetchingNextPage, fetchNextPage, open])
-
-	const toggleCommit = (hash: string) => {
-		const newSelected = new Set(selectedShas)
-		if (newSelected.has(hash)) newSelected.delete(hash)
-		else newSelected.add(hash)
-		setSelectedShas(newSelected)
-	}
-
-	const toggleAll = () => {
-		if (selectedShas.size === commits.length) setSelectedShas(new Set())
-		else setSelectedShas(new Set(commits.map(c => c.hash)))
-	}
 
 	const canCreateTags =
 		permissions?.permissions?.push ||
@@ -96,7 +48,11 @@ export function PromoteDialog({ repo, latestTag }: PromoteDialogProps) {
 
 	const handleCreateTag = async () => {
 		if (!tagName.trim()) { setError("El nombre del Tag es requerido"); return }
-		const targetCommit = selectedShas.size > 0 ? Array.from(selectedShas)[0] : (commits[0]?.hash || "main")
+		// Obtener el commit más reciente de main
+		const latestCommitResult = await runCommand(`gh api repos/${repo}/commits/main --jq '.sha'`)
+		const targetCommit = latestCommitResult.stdout.trim()
+		if (!targetCommit) throw new Error("No se pudo obtener el commit más reciente de main")
+		
 		setIsCreating(true)
 		setError("")
 		try {
@@ -123,23 +79,38 @@ export function PromoteDialog({ repo, latestTag }: PromoteDialogProps) {
 		}
 	}
 
-	const dialogWidth = step === 'success'
-		? 'max-w-sm'
-		: step === 'config'
-			? 'max-w-lg'
-			: 'max-w-3xl'
+	const dialogWidth = step === 'success' ? 'max-w-sm' : 'max-w-lg'
 
 	return (
 		<Dialog.Root open={open} onOpenChange={handleOpenChange}>
-			<Dialog.Trigger asChild>
-				<button
-					type="button"
-					className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-				>
-					<Rocket className="w-3 h-3" />
-					Promocionar
-				</button>
-			</Dialog.Trigger>
+			<Tooltip.Provider>
+				<Tooltip.Root>
+					<Tooltip.Trigger asChild>
+						<Dialog.Trigger asChild>
+							<button
+								type="button"
+								className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+							>
+								<Rocket className="w-3 h-3" />
+								{!iconOnly && <span>Promocionar</span>}
+							</button>
+						</Dialog.Trigger>
+					</Tooltip.Trigger>
+					<Tooltip.Portal>
+						<Tooltip.Content
+							className="bg-popover text-popover-foreground border px-3 py-2 rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+							sideOffset={5}
+						>
+							<div className="text-xs space-y-1">
+								<div className="font-medium">Crear tag para promocionar a producción</div>
+								<div className="text-muted-foreground">
+									Crear un nuevo tag en el commit más reciente de main
+								</div>
+							</div>
+						</Tooltip.Content>
+					</Tooltip.Portal>
+				</Tooltip.Root>
+			</Tooltip.Provider>
 			<Dialog.Portal>
 				<Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
 				<Dialog.Content className={`fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full ${dialogWidth} max-h-[80vh] bg-background rounded-lg shadow-lg border p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] overflow-hidden flex flex-col transition-all duration-200`}>
@@ -150,25 +121,10 @@ export function PromoteDialog({ repo, latestTag }: PromoteDialogProps) {
 					{/* Header — same pattern as DiffDialog */}
 					<div className="flex items-center justify-between mb-4 flex-shrink-0">
 						<Dialog.Title className="text-lg font-semibold flex items-center gap-2">
-							{step === 'list' && (
-								<>
-									<GitCompare className="w-4 h-4" />
-									{latestTag ? `Promocionar: main → ${latestTag}` : `Primer lanzamiento: ${repo}`}
-									{commits.length > 0 && <span className="text-muted-foreground font-normal">({commits.length} commits)</span>}
-								</>
-							)}
 							{step === 'config' && <><Rocket className="w-4 h-4" /> Configurar Lanzamiento</>}
 							{step === 'success' && <><CheckCircle2 className="w-4 h-4 text-green-600" /> Lanzamiento Exitoso</>}
 						</Dialog.Title>
 						<div className="flex items-center gap-2">
-							{step === 'list' && (
-								<RefetchButton
-									onRefetch={() => refetch()}
-									isRefetching={isLoading || isFetchingNextPage}
-									showFeedback={true}
-									targetTime={dataUpdatedAt}
-								/>
-							)}
 							<Dialog.Close asChild>
 								<button
 									type="button"
@@ -181,119 +137,7 @@ export function PromoteDialog({ repo, latestTag }: PromoteDialogProps) {
 						</div>
 					</div>
 
-					{/* Step 1: Commit List */}
-					{step === 'list' && (
-						<>
-							{isLoading && !commits.length && (
-								<div className="flex items-center justify-center py-8 flex-shrink-0">
-									<div className="flex items-center gap-2 text-sm text-muted-foreground">
-										<Loader2 className="w-4 h-4 animate-spin" />
-										Analizando commits...
-									</div>
-								</div>
-							)}
-
-							{fetchError && (
-								<div className="text-sm text-red-600 flex-shrink-0">
-									Error al cargar: {fetchError instanceof Error ? fetchError.message : "Error desconocido"}
-								</div>
-							)}
-
-							{!isLoading && commits.length === 0 && !fetchError && (
-								<div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
-									<GitBranch className="w-8 h-8 mb-2 opacity-30" />
-									<p className="text-sm">No hay commits pendientes de promoción.</p>
-								</div>
-							)}
-
-							{commits.length > 0 && (
-								<div className="flex flex-col flex-1 overflow-hidden">
-									<div className="overflow-hidden border rounded-lg flex-1 overflow-y-auto">
-										<table className="w-full text-sm" style={{ tableLayout: 'fixed' }}>
-											<thead className="bg-muted sticky top-0 z-10">
-												<tr>
-													<th className="px-3 py-2 text-left font-medium w-[40px]">
-														<input
-															type="checkbox"
-															className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-															checked={commits.length > 0 && selectedShas.size === commits.length}
-															onChange={toggleAll}
-														/>
-													</th>
-													<th className="px-3 py-2 text-left font-medium w-[15%]">Hash</th>
-													<th className="px-3 py-2 text-left font-medium w-[15%]">Fecha</th>
-													<th className="px-3 py-2 text-left font-medium w-[20%]">Autor</th>
-													<th className="px-3 py-2 text-left font-medium w-[45%]">Mensaje</th>
-												</tr>
-											</thead>
-											<tbody>
-												{commits.map((commit) => (
-													<tr
-														key={commit.hash}
-														className={`border-t hover:bg-muted/50 transition-colors cursor-pointer ${selectedShas.has(commit.hash) ? 'bg-red-50/30 dark:bg-red-900/10' : ''}`}
-														onClick={() => toggleCommit(commit.hash)}
-													>
-														<td className="px-3 py-2 w-[40px]" onClick={(e) => e.stopPropagation()}>
-															<input
-																type="checkbox"
-																className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-																checked={selectedShas.has(commit.hash)}
-																onChange={() => toggleCommit(commit.hash)}
-															/>
-														</td>
-														<td className="px-3 py-2 w-[15%]">
-															<CommitLink hash={commit.hash} org={org} repo={product} />
-														</td>
-														<td className="px-3 py-2 text-muted-foreground w-[15%]">
-															{dayjs(commit.date).fromNow()}
-														</td>
-														<td className="px-3 py-2 w-[20%]">
-															<DisplayInfo value={commit.author} type="author" maxChar={30} />
-														</td>
-														<td className="px-3 py-2 w-[45%]">
-															<div className="truncate text-muted-foreground" title={commit.message.split('\n')[0]}>
-																{commit.message.split('\n')[0]}
-															</div>
-														</td>
-													</tr>
-												))}
-											</tbody>
-										</table>
-										{/* Infinite scroll sensor */}
-										<div ref={loadMoreRef} className="flex items-center justify-center py-3 border-t text-xs text-muted-foreground">
-											{isFetchingNextPage ? (
-												<><Loader2 className="w-3 h-3 animate-spin mr-1" /> Cargando más commits...</>
-											) : hasNextPage ? "Desliza para cargar más" : "Fin del historial"}
-										</div>
-									</div>
-
-									<div className="mt-4 pt-4 border-t flex items-center justify-between flex-shrink-0">
-										<div className="flex flex-col">
-											<div className="text-sm font-medium">
-												{selectedShas.size > 0 ? (
-													<span className="text-orange-600">Hotfix: {selectedShas.size} commit{selectedShas.size > 1 ? 's' : ''} seleccionado{selectedShas.size > 1 ? 's' : ''}</span>
-												) : (
-													<span className="text-red-600">Full Promotion: {commits.length} commits</span>
-												)}
-											</div>
-											<div className="text-xs text-muted-foreground mt-0.5">
-												{selectedShas.size > 0 ? "Se creará el tag en el commit seleccionado más reciente" : "Se creará el tag en el commit más reciente"}
-											</div>
-										</div>
-										<button
-											onClick={() => setStep('config')}
-											className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 transition-colors"
-										>
-											Configurar Tag
-											<ChevronRight className="w-4 h-4" />
-										</button>
-									</div>
-								</div>
-							)}
-						</>
-					)}
-
-					{/* Step 2: Tag Config */}
+					{/* Step 1: Tag Config */}
 					{step === 'config' && (
 						<div className="flex flex-col flex-1 overflow-y-auto">
 							<div className="space-y-4">
@@ -341,14 +185,7 @@ export function PromoteDialog({ repo, latestTag }: PromoteDialogProps) {
 								)}
 							</div>
 
-							<div className="mt-4 pt-4 border-t flex justify-between gap-2 flex-shrink-0">
-								<button
-									onClick={() => setStep('list')}
-									className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-muted transition-colors inline-flex items-center gap-1"
-								>
-									<ChevronLeft className="w-4 h-4" />
-									Volver
-								</button>
+							<div className="mt-4 pt-4 border-t flex justify-end flex-shrink-0">
 								<button
 									onClick={handleCreateTag}
 									disabled={isCreating || !tagName.trim() || (!canCreateTags && !isLoadingPerms)}

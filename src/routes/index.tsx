@@ -3,6 +3,7 @@ import { Loader2, Star, Github } from "lucide-react";
 import { DisplayInfo } from "@/components/DisplayInfo";
 import { CommitLink } from "@/components/CommitLink";
 import { TagLink } from "@/components/TagLink";
+import { PromoteDialog } from "@/components/PromoteDialog";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTagsSimple } from "@/hooks/useGitTagsSimple";
@@ -289,6 +290,7 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 			</td>
 			<td className="px-4 py-3 text-center">
 				<div className="flex items-center justify-center gap-2">
+					<PromoteDialog repo={repo.fullName} latestTag={latestTag?.name} iconOnly={true} />
 					<a
 						href={`https://github.com/${org}/${name}`}
 						target="_blank"
