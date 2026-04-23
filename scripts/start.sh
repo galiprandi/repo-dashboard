@@ -19,10 +19,14 @@ else
     # 🔍 Auto-update check
     if [ -d ".git" ]; then
         echo "🔍 Checking for updates..."
-        # Try a quick fetch (timeout prevents hanging if offline)
-        if git fetch --timeout=3 origin main &>/dev/null; then
+        # Ensure upstream is set
+        if ! git rev-parse @{u} &>/dev/null; then
+            git branch --set-upstream-to=origin/main main &>/dev/null || true
+        fi
+        # Fetch with longer timeout to avoid failures
+        if git fetch origin main &>/dev/null; then
             LOCAL=$(git rev-parse HEAD)
-            REMOTE=$(git rev-parse @{u})
+            REMOTE=$(git rev-parse @{u} 2>/dev/null || git rev-parse origin/main)
             if [ "$LOCAL" != "$REMOTE" ]; then
                 echo "✨ New version detected. Updating $APP_NAME..."
                 git pull origin main
@@ -30,6 +34,8 @@ else
                 npm run build
                 echo "✅ Update complete!"
             fi
+        else
+            echo "⚠️  Could not check for updates (offline or network issue)."
         fi
     fi
 
