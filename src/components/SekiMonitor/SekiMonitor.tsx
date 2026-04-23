@@ -45,7 +45,7 @@ export function SekiMonitor({ pipeline, stage, gitDate }: SekiMonitorProps) {
 		return (
 			<div className="bg-card border rounded-xl p-4 h-[82px] flex items-center justify-center">
 				<p className="text-sm text-muted-foreground">
-					No pipeline data available yet for this stage.
+					Información de Pipeline no disponible para este Stage.
 				</p>
 			</div>
 		);

@@ -87,7 +87,7 @@ export function RepoSearch() {
             setIsOpen(true)
           }}
           onFocus={() => query.length >= 2 && setIsOpen(true)}
-          placeholder={`Buscar en ${data?.results?.length || 0} repos... (Cmd+K)`}
+          placeholder={`Búsqueda en ${data?.results?.length || 0} repositorios... (Cmd+K)`}
           className="w-[28rem] pl-9 pr-4 py-2 bg-muted rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
         />
         {isLoading && (
@@ -101,15 +101,15 @@ export function RepoSearch() {
           {isLoading ? (
             <div className="p-4 text-center text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
-              <p className="text-sm">Cargando repositorios...</p>
+              <p className="text-sm">Cargando información de repositorios...</p>
             </div>
           ) : !hasResults ? (
             <div className="p-4 text-center text-muted-foreground">
               <GitBranch className="w-5 h-5 mx-auto mb-2 opacity-50" />
               <p className="text-sm">
                 {query.length >= 2
-                  ? 'No se encontraron repositorios'
-                  : 'Escribe para buscar repositorios'}
+                  ? 'Sin resultados coincidentes'
+                  : 'Ingreso de texto para iniciar búsqueda'}
               </p>
             </div>
           ) : (
@@ -144,7 +144,7 @@ export function RepoSearch() {
                             </p>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">
-                            Actualizado:{' '}
+                            Actualización:{' '}
                             {new Date(repo.updatedAt).toLocaleDateString()}
                           </p>
                         </Link>
@@ -161,7 +161,7 @@ export function RepoSearch() {
                           }`}
                           title={
                             isFav
-                              ? 'Quitar de favoritos'
+                              ? 'Eliminar de favoritos'
                               : 'Agregar a favoritos'
                           }
                         >
@@ -172,7 +172,7 @@ export function RepoSearch() {
                         <button
                           onClick={() => handleOpenInNewTab(repo.fullName)}
                           className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                          title="Ver en GitHub"
+                          title="Abrir en GitHub"
                         >
                           <ExternalLink className="w-4 h-4" />
                         </button>
@@ -186,7 +186,7 @@ export function RepoSearch() {
 
           {/* Footer hint */}
           <div className="px-3 py-2 bg-muted/30 border-t text-xs text-muted-foreground flex items-center justify-between">
-            <span>{results.length} resultados</span>
+            <span>{results.length} resultados encontrados</span>
             <span>Esc para cerrar</span>
           </div>
         </div>

@@ -37,17 +37,17 @@ export function CreateTagDialog({ latestTag, repo, product, commit, canCreateTag
 
 	const handleCreateTag = async () => {
 		if (!tagName.trim()) {
-			setError("El nombre del tag es requerido")
+			setError("El nombre del Tag es requerido para proceder")
 			return
 		}
 
 		if (!commit) {
-			setError("No hay commit disponible para crear el tag")
+			setError("Sin Commit disponible para la creación del Tag")
 			return
 		}
 
 		if (!canCreateTags) {
-			setError("No tienes permisos para crear tags en este repositorio")
+			setError("Permisos insuficientes para la creación de Tags en este repositorio")
 			return
 		}
 
@@ -59,7 +59,7 @@ export function CreateTagDialog({ latestTag, repo, product, commit, canCreateTag
 			const tokenResult = await runCommand('gh auth token')
 			const token = tokenResult.stdout.trim()
 			if (!token) {
-				throw new Error("No hay token de GitHub configurado en gh CLI")
+				throw new Error("Sin token de GitHub configurado en gh CLI")
 			}
 
 			// Step 1: Create tag object
@@ -103,7 +103,7 @@ export function CreateTagDialog({ latestTag, repo, product, commit, canCreateTag
 			setOpen(false)
 			onSuccess?.()
 		} catch (err) {
-			setError(err instanceof Error ? err.message : "Error al crear el tag")
+			setError(err instanceof Error ? err.message : "Error detectado durante la creación del Tag")
 		} finally {
 			setIsCreating(false)
 		}
@@ -126,7 +126,7 @@ export function CreateTagDialog({ latestTag, repo, product, commit, canCreateTag
 					type="button"
 					disabled
 					className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-red-600 text-white rounded-md opacity-50 cursor-not-allowed"
-					title={isLoadingPermissions ? "Verificando permisos..." : canCreateTags === false ? "No tienes permisos para crear tags en este repositorio" : "Verificando permisos..."}
+					title={isLoadingPermissions ? "Verificando permisos de acceso..." : canCreateTags === false ? "Permisos insuficientes para la creación de Tags" : "Verificando permisos de acceso..."}
 				>
 					<Plus className="w-3 h-3" />
 					Tag
@@ -136,7 +136,7 @@ export function CreateTagDialog({ latestTag, repo, product, commit, canCreateTag
 				<Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
 				<Dialog.Content className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full max-w-md bg-background rounded-lg shadow-lg border p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
 					<div className="flex items-center justify-between mb-4">
-						<Dialog.Title className="text-lg font-semibold">Crear Nuevo Tag</Dialog.Title>
+						<Dialog.Title className="text-lg font-semibold">Creación de Tag</Dialog.Title>
 						<Dialog.Close asChild>
 							<button
 								type="button"
@@ -151,7 +151,7 @@ export function CreateTagDialog({ latestTag, repo, product, commit, canCreateTag
 					<div className="space-y-4">
 						{latestTag && (
 							<div className="text-sm">
-								<span className="text-muted-foreground">Último tag: </span>
+								<span className="text-muted-foreground">Último Tag: </span>
 								<span className="font-mono font-medium">{latestTag}</span>
 							</div>
 						)}
@@ -178,7 +178,7 @@ export function CreateTagDialog({ latestTag, repo, product, commit, canCreateTag
 								id="tag-message"
 								value={tagMessage}
 								onChange={(e) => setTagMessage(e.target.value)}
-								placeholder="Ingresar una descripción..."
+								placeholder="Ingreso de descripción..."
 								rows={3}
 								className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none"
 							/>
@@ -202,12 +202,12 @@ export function CreateTagDialog({ latestTag, repo, product, commit, canCreateTag
 								onClick={handleCreateTag}
 								disabled={isCreating || !tagName.trim() || !canCreateTags}
 								className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
-								title={!canCreateTags ? "No tienes permisos para crear tags en este repositorio" : undefined}
+								title={!canCreateTags ? "Permisos insuficientes para la creación de Tags" : undefined}
 							>
 								{isCreating ? (
 									<>
 										<Loader2 className="w-4 h-4 animate-spin" />
-										Creando...
+										Procesando...
 									</>
 								) : (
 									"Publicar Tag"

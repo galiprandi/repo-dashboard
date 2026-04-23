@@ -46,9 +46,9 @@ function ReposTable({ repos, favorites, onToggleFavorite }: ReposTableProps) {
 		return (
 			<div className="border rounded-lg p-8 text-center text-muted-foreground">
 				<Star className="w-8 h-8 mx-auto mb-2 opacity-50" />
-				<p>No hay favoritos</p>
+				<p>Sin favoritos</p>
 				<p className="text-sm">
-					Agrega repositorios a favoritos desde el buscador
+					Búsqueda de repositorios para agregar a favoritos
 				</p>
 			</div>
 		);
@@ -65,7 +65,7 @@ function ReposTable({ repos, favorites, onToggleFavorite }: ReposTableProps) {
 						<th className="px-4 py-2 text-left text-sm font-medium">Tag</th>
 						<th className="px-4 py-2 text-left text-sm font-medium">Commit</th>
 						<th className="px-4 py-2 text-left text-sm font-medium">
-							Actualizado
+							Actualización
 						</th>
 						<th className="px-4 py-2 text-left text-sm font-medium">Autor</th>
 						<th className="px-4 py-2 text-center text-sm font-medium">
@@ -123,7 +123,7 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 				<td colSpan={4} className="px-4 py-3">
 					<div className="flex items-center gap-2 text-muted-foreground text-sm">
 						<Loader2 className="w-4 h-4 animate-spin" />
-						Cargando...
+						Cargando información...
 					</div>
 				</td>
 				<td className="px-4 py-3 text-center">
@@ -133,7 +133,7 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 							target="_blank"
 							rel="noopener noreferrer"
 							className="text-muted-foreground hover:text-primary"
-							title="Ver en GitHub"
+							title="Abrir en GitHub"
 						>
 							<Github className="w-5 h-5" />
 						</a>
@@ -141,7 +141,7 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 							type="button"
 							onClick={() => onToggleFavorite(repo.fullName)}
 							className={`${isFavorite ? "text-yellow-500" : "text-muted-foreground"} hover:text-yellow-600`}
-							title={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+							title={isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
 						>
 							<Star className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
 						</button>
@@ -184,7 +184,7 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 						target="_blank"
 						rel="noopener noreferrer"
 						className="text-muted-foreground hover:text-primary"
-						title="Ver en GitHub"
+						title="Abrir en GitHub"
 					>
 						<Github className="w-5 h-5" />
 					</a>
@@ -192,7 +192,7 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 						type="button"
 						onClick={() => onToggleFavorite(repo.fullName)}
 						className={`${isFavorite ? "text-yellow-500" : "text-muted-foreground"} hover:text-yellow-600`}
-						title={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+						title={isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
 					>
 						<Star className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
 					</button>

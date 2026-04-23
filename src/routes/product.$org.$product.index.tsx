@@ -81,8 +81,8 @@ function ProductIndex() {
 				<div className="mb-8 rounded-xl border border-dashed p-6 space-y-3">
 					<p className="text-sm text-muted-foreground">
 						{isExpired
-							? "Tu token de API ha expirado. Por favor ingresa un nuevo token."
-							: "No hay token de API configurado. Por favor ingresa tu token de API de Seki para ver los datos del pipeline."}
+							? "Token de API expirado. Se requiere el ingreso de un nuevo token para continuar."
+							: "Sin token de API configurado. El ingreso del token de API de Seki es necesario para visualizar los datos del Pipeline."}
 					</p>
 					{expirationDate && (
 						<p className="text-xs text-muted-foreground">
@@ -94,7 +94,7 @@ function ProductIndex() {
 							type="text"
 							value={tokenInput}
 							onChange={(e) => setTokenInput(e.target.value)}
-							placeholder="Ingresa tu token JWT"
+							placeholder="Ingreso de token JWT"
 							className="flex-1 px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 						/>
 						<button
@@ -102,7 +102,7 @@ function ProductIndex() {
 							onClick={handleSaveToken}
 							className="px-4 py-2 text-sm bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
 						>
-							Guardar Token
+							Guardar token
 						</button>
 					</div>
 				</div>
@@ -112,7 +112,7 @@ function ProductIndex() {
 						<div className="mb-8 rounded-xl border border-dashed p-6 flex items-center justify-center">
 							<div className="flex items-center gap-2 text-sm text-muted-foreground">
 								<Loader2 className="w-4 h-4 animate-spin" />
-								Cargando datos del pipeline...
+								Cargando información del Pipeline...
 							</div>
 						</div>
 					) : (
@@ -135,7 +135,7 @@ function ProductIndex() {
 										onClick={clearToken}
 										className="text-xs text-red-600 hover:text-red-700 hover:underline"
 									>
-										Revocar ahora
+										Revocar acceso
 									</button>
 								</div>
 							</div>
