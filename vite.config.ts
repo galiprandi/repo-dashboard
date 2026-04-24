@@ -161,6 +161,27 @@ export default defineConfig({
 			"@": "/src",
 		},
 	},
+	build: {
+		chunkSizeWarningLimit: 1000,
+		rollupOptions: {
+			output: {
+				manualChunks: (id) => {
+					// React ecosystem
+					if (id.includes("react") || id.includes("react-dom")) {
+						return "react";
+					}
+					// TanStack ecosystem
+					if (id.includes("@tanstack/react-query") || id.includes("@tanstack/react-router")) {
+						return "tanstack";
+					}
+					// UI components
+					if (id.includes("lucide-react")) {
+						return "ui";
+					}
+				},
+			},
+		},
+	},
 	server: {
 		proxy: {
 			"/api": {
