@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, Star, Github } from "lucide-react";
+import { Loader2, Star, Github, Building2 } from "lucide-react";
 import { DisplayInfo } from "@/components/DisplayInfo";
 import { CommitLink } from "@/components/CommitLink";
 import { TagLink } from "@/components/TagLink";
@@ -59,15 +59,10 @@ function Dashboard() {
 		<div className="space-y-10">
 			{sortedOrgs.map(org => (
 				<section key={org} className="space-y-3">
-					<div className="flex items-center gap-2 px-1">
-						<div className="w-1 h-6 bg-primary rounded-full" />
-						<h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-							{org}
-							<span className="text-[10px] bg-muted px-1.5 py-0.5 rounded-full text-muted-foreground font-medium">
-								{groupedRepos[org].length}
-							</span>
-						</h2>
-					</div>
+					<h2 className="text-lg font-semibold text-foreground px-4 flex items-center gap-2">
+						<Building2 className="w-5 h-5" />
+						{org}
+					</h2>
 					<ReposTable
 						repos={groupedRepos[org]}
 						favorites={favorites}
