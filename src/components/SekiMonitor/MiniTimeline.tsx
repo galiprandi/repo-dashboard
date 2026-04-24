@@ -170,6 +170,7 @@ function CopyButton({ url }: CopyButtonProps) {
 export function MiniTimeline({ events, runningEventId }: MiniTimelineProps) {
 	const [hoveredEventId, setHoveredEventId] = useState<string | null>(null);
 	const [selectedSubEvent, setSelectedSubEvent] = useState<{ id: string; label: string; markdown: string } | null>(null);
+	const [runningTooltipClosed, setRunningTooltipClosed] = useState(false);
 
 	return (
 		<>
@@ -178,7 +179,7 @@ export function MiniTimeline({ events, runningEventId }: MiniTimelineProps) {
 					const eventUrls = extractEventUrls(event);
 					const isRunning = event.state === "STARTED" || event.state === "RUNNING";
 					const isRunningEvent = runningEventId === event.id && isRunning;
-					const isOpen = hoveredEventId === event.id || (isRunningEvent && !hoveredEventId);
+					const isOpen = hoveredEventId === event.id || (isRunningEvent && !hoveredEventId && !runningTooltipClosed);
 					return (
 						<HoverCard
 							key={event.id}
@@ -190,12 +191,22 @@ export function MiniTimeline({ events, runningEventId }: MiniTimelineProps) {
 									setHoveredEventId(event.id);
 								} else {
 									setHoveredEventId(null);
+									// Si se cierra el tooltip del running event, marcarlo como cerrado manualmente
+									if (isRunningEvent) {
+										setRunningTooltipClosed(true);
+									}
 								}
 							}}
 						>
 							<HoverCardTrigger asChild>
 								<button
 									type="button"
+									onClick={() => {
+										// Si es el running event y está abierto manualmente, cerrarlo
+										if (isRunningEvent && !runningTooltipClosed) {
+											setRunningTooltipClosed(true);
+										}
+									}}
 									className={`h-1.5 w-6 rounded-full transition-all hover:opacity-80 ${timelineStatusColor(
 										event.state,
 									)}`}
@@ -227,8 +238,18 @@ export function MiniTimeline({ events, runningEventId }: MiniTimelineProps) {
 									</div>
 									{event.subevents && event.subevents.length > 0 && (
 										<div className="border-t pt-2">
-											<div className="text-xs font-medium text-foreground mb-2">
-												Progreso ({event.subevents.length}):
+											<div className="flex items-center gap-3 mb-2">
+												<div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+													<div
+														className="h-full bg-emerald-500 transition-all duration-500"
+														style={{
+															width: `${(event.subevents.filter(s => ['SUCCESS', 'FAILED', 'WARN'].includes(s.state)).length / event.subevents.length) * 100}%`,
+														}}
+													/>
+												</div>
+												<span className="text-xs text-muted-foreground">
+													{event.subevents.filter(s => ['SUCCESS', 'FAILED', 'WARN'].includes(s.state)).length}/{event.subevents.length}
+												</span>
 											</div>
 											<div className="space-y-1">
 												{event.subevents.map((sub) => (

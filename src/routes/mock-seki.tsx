@@ -260,6 +260,12 @@ function MockSekiPage() {
 				error={new Error("Error de conexión con la API")}
 			/>
 
+			<h2 className="text-lg font-semibold mb-4 mt-8">Estado: Sin Pipeline</h2>
+			<SekiMonitor
+				pipeline={undefined}
+				stage="staging"
+			/>
+
 			<h2 className="text-lg font-semibold mb-4 mt-8">Estado: Normal (STARTED)</h2>
 			<SekiMonitor
 				pipeline={mockPipeline}

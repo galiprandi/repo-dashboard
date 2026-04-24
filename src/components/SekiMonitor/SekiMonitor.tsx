@@ -1,5 +1,5 @@
-import { GitCommit, Loader2, XCircle, X } from "lucide-react";
-import { Fragment, useState } from "react";
+import { GitCommit, Loader2, XCircle, X, AlertTriangle, WifiOff } from "lucide-react";
+import { Fragment, useState, useEffect } from "react";
 import DayJS from "@/lib/dayjs";
 import { Streamdown } from "streamdown";
 
@@ -41,47 +41,119 @@ function ErrorCard({ sub, parent }: FlattenedSubEvent) {
 	);
 }
 
+interface StatusCardProps {
+	type: 'loading' | 'error' | 'warn' | 'offline';
+	message: string;
+	onClose?: () => void;
+	onRetry?: () => void;
+}
+
+function StatusCard({ type, message, onClose, onRetry }: StatusCardProps) {
+	const styles = {
+		loading: {
+			borderClass: 'border-gray-200',
+			textClass: 'text-gray-600',
+			icon: Loader2,
+			iconClass: 'animate-spin',
+		},
+		error: {
+			borderClass: 'border-red-200',
+			textClass: 'text-red-600',
+			icon: XCircle,
+			iconClass: '',
+		},
+		warn: {
+			borderClass: 'border-amber-200',
+			textClass: 'text-amber-700',
+			icon: AlertTriangle,
+			iconClass: '',
+		},
+		offline: {
+			borderClass: 'border-gray-300',
+			textClass: 'text-gray-500',
+			icon: WifiOff,
+			iconClass: '',
+		},
+	};
+
+	const style = styles[type];
+	const Icon = style.icon;
+
+	return (
+		<div className={`bg-card border-2 ${style.borderClass} rounded-xl p-4 h-[82px] flex items-center justify-between`}>
+			<div className="flex items-center gap-2 text-sm">
+				<Icon className={`w-4 h-4 ${style.iconClass} ${style.textClass}`} />
+				<p className={style.textClass}>{message}</p>
+			</div>
+			<div className="flex items-center gap-2">
+				{onRetry && type === 'error' && (
+					<button
+						type="button"
+						onClick={onRetry}
+						className="text-xs bg-red-100 text-red-700 hover:bg-red-200 px-2 py-1 rounded transition-colors"
+					>
+						Reintentar
+					</button>
+				)}
+				{onClose && (
+					<button
+						type="button"
+						onClick={onClose}
+						className="text-muted-foreground hover:text-foreground transition-colors"
+						title="Cerrar"
+					>
+						<X className="w-4 h-4" />
+					</button>
+				)}
+			</div>
+		</div>
+	);
+}
+
 export function SekiMonitor({ pipeline, stage, gitDate, isLoading, error }: SekiMonitorProps) {
 	const [dismissedError, setDismissedError] = useState(false);
+	const [dismissedWarn, setDismissedWarn] = useState(false);
+	const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+	useEffect(() => {
+		const handleOnline = () => setIsOffline(false);
+		const handleOffline = () => setIsOffline(true);
+
+		window.addEventListener('online', handleOnline);
+		window.addEventListener('offline', handleOffline);
+
+		return () => {
+			window.removeEventListener('online', handleOnline);
+			window.removeEventListener('offline', handleOffline);
+		};
+	}, []);
+
+	if (isOffline) {
+		return <StatusCard type="offline" message="Sin conexión a internet. Verifica tu conexión." />;
+	}
 
 	if (isLoading) {
-		return (
-			<div className="bg-card border rounded-xl p-4 h-[82px] flex items-center justify-center">
-				<div className="flex items-center gap-2 text-sm text-muted-foreground">
-					<Loader2 className="w-4 h-4 animate-spin" />
-					<p>Cargando información del pipeline...</p>
-				</div>
-			</div>
-		);
+		return <StatusCard type="loading" message="Cargando información del pipeline..." />;
 	}
 
 	if (error && !dismissedError) {
 		return (
-			<div className="bg-card border border-red-200 rounded-xl p-4 h-[82px] flex items-center justify-between">
-				<div className="flex items-center gap-2 text-sm text-red-600">
-					<XCircle className="w-4 h-4" />
-					<p>Error al cargar el pipeline: {error.message}</p>
-				</div>
-				<button
-					type="button"
-					onClick={() => setDismissedError(true)}
-					className="text-muted-foreground hover:text-foreground transition-colors"
-					title="Cerrar"
-				>
-					<X className="w-4 h-4" />
-				</button>
-			</div>
+			<StatusCard
+				type="error"
+				message={`Error al cargar el pipeline: ${error.message}`}
+				onClose={() => setDismissedError(true)}
+				onRetry={() => window.location.reload()}
+			/>
 		);
 	}
 
+	if (!pipeline && !dismissedWarn) {
+		return <StatusCard type="warn" message="Información de Pipeline no disponible para este Stage." onClose={() => setDismissedWarn(true)} />;
+	}
+
+	// Si pipeline es null después de todos los checks, no renderizar nada
 	if (!pipeline) {
-		return (
-			<div className="bg-card border rounded-xl p-4 h-[82px] flex items-center justify-center">
-				<p className="text-sm text-muted-foreground">
-					Información de Pipeline no disponible para este Stage.
-				</p>
-			</div>
-		);
+		return null;
 	}
 
 	// Mostrar tag en producción, commit hash en staging

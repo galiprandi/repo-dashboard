@@ -21,6 +21,18 @@ interface UsePipelineWithTagOptions {
 }
 
 /**
+ * Check if there are any running sub-events in the pipeline
+ */
+const hasRunningSubEvents = (data: PipelineStatusResponse | undefined): boolean => {
+  if (!data?.events) return false
+  return data.events.some(event =>
+    event.subevents?.some(sub =>
+      ['started', 'running'].includes(sub.state.toLowerCase())
+    )
+  )
+}
+
+/**
  * Fetches a single pipeline by product and commit hash.
  * ⚠️ Requires the full 40-character commit hash - short hashes (7 chars) will return 404.
  */
@@ -38,9 +50,20 @@ export function usePipeline({
     enabled: enabled && !!product && !!commit,
     refetchInterval: (query) => {
       const data = query.state.data as PipelineStatusResponse | undefined
-      const status = data?.state?.toLowerCase()
-      const inProgressStatuses = ['started', 'in_progress', 'running', 'pending']
-      return status && inProgressStatuses.includes(status) ? 30000 : false
+      const pipelineState = data?.state?.toLowerCase()
+      const inProgressPipelineStates = ['started', 'in_progress', 'running', 'pending']
+
+      // Polling si pipeline en progreso
+      if (pipelineState && inProgressPipelineStates.includes(pipelineState)) {
+        return 30000 // 30s para pipeline en progreso
+      }
+
+      // Polling si hay sub-eventos corriendo (más frecuente)
+      if (hasRunningSubEvents(data)) {
+        return 15000 // 15s para sub-eventos activos
+      }
+
+      return false // Sin polling si está quieto
     },
     staleTime: 5000, // Mantener datos frescos por 5s para evitar flick
   })
@@ -66,9 +89,20 @@ export function usePipelineWithTag({
     enabled: enabled && !!product && !!commit && !!tag,
     refetchInterval: (query) => {
       const data = query.state.data as PipelineStatusResponse | undefined
-      const status = data?.state?.toLowerCase()
-      const inProgressStatuses = ['started', 'in_progress', 'running', 'pending']
-      return status && inProgressStatuses.includes(status) ? 30000 : false
+      const pipelineState = data?.state?.toLowerCase()
+      const inProgressPipelineStates = ['started', 'in_progress', 'running', 'pending']
+
+      // Polling si pipeline en progreso
+      if (pipelineState && inProgressPipelineStates.includes(pipelineState)) {
+        return 30000 // 30s para pipeline en progreso
+      }
+
+      // Polling si hay sub-eventos corriendo (más frecuente)
+      if (hasRunningSubEvents(data)) {
+        return 15000 // 15s para sub-eventos activos
+      }
+
+      return false // Sin polling si está quieto
     },
     staleTime: 5000, // Mantener datos frescos por 5s para evitar flick
   })

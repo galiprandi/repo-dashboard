@@ -57,8 +57,35 @@ apiSeki.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `bearer ${token}`
   }
+
+  // Agregar If-None-Match si hay un ETag guardado para esta URL
+  if (config.url) {
+    const cacheKey = `etag_${config.url}`
+    const cachedEtag = localStorage.getItem(cacheKey)
+    if (cachedEtag) {
+      config.headers['If-None-Match'] = cachedEtag
+    }
+  }
+
   return config
 })
+
+// Add response interceptor to handle ETag caching
+apiSeki.interceptors.response.use(
+  (response) => {
+    // Guardar ETag si está presente en la respuesta
+    const etag = response.headers['etag']
+    if (etag) {
+      // Guardar en localStorage usando la URL como clave
+      const cacheKey = `etag_${response.config.url}`
+      localStorage.setItem(cacheKey, etag)
+    }
+    return response
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
+)
 
 /**
  * Fetch pipeline status for specific commit

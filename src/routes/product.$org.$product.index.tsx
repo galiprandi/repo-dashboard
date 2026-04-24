@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/es";
@@ -101,45 +100,42 @@ function ProductIndex() {
 				</div>
 			) : (
 				<>
-					{isPipelineLoading || isPipelineFetching ? (
-						<div className="mb-8 rounded-xl border border-dashed p-6 flex items-center justify-center">
-							<div className="flex items-center gap-2 text-sm text-muted-foreground">
-								<Loader2 className="w-4 h-4 animate-spin" />
-								Cargando información del Pipeline...
-							</div>
+					<div className="flex justify-between items-center gap-4 px-4 mb-2">
+						<RefetchButton
+							onRefetch={() => {
+								// Invalida todas las queries relacionadas con este repo
+								queryClient.invalidateQueries({ queryKey: ["git", "commits", fullProduct] });
+								queryClient.invalidateQueries({ queryKey: ["git", "tags", fullProduct] });
+								queryClient.invalidateQueries({ queryKey: ["pipeline", fullProduct] });
+							}}
+							isRefetching={isPipelineFetching}
+							showFeedback={true}
+							targetTime={dataUpdatedAt}
+						/>
+						<div className="flex items-center gap-2">
+							{expirationDate && (
+								<p className="text-xs text-muted-foreground">
+									{expirationDate} •
+								</p>
+							)}
+							<button
+								type="button"
+								onClick={clearToken}
+								className="text-xs text-red-600 hover:text-red-700 hover:underline"
+							>
+								Revocar acceso
+							</button>
 						</div>
-					) : (
-						<div className="space-y-2 mb-10">
-							<div className="flex justify-between items-center gap-4 px-4">
-								<RefetchButton
-									onRefetch={() => {
-										// Invalida todas las queries relacionadas con este repo
-										queryClient.invalidateQueries({ queryKey: ["git", "commits", fullProduct] });
-										queryClient.invalidateQueries({ queryKey: ["git", "tags", fullProduct] });
-										queryClient.invalidateQueries({ queryKey: ["pipeline", fullProduct] });
-									}}
-									isRefetching={isPipelineFetching}
-									showFeedback={true}
-									targetTime={dataUpdatedAt}
-								/>
-								<div className="flex items-center gap-2">
-									{expirationDate && (
-										<p className="text-xs text-muted-foreground">
-											{expirationDate} •
-										</p>
-									)}
-									<button
-										type="button"
-										onClick={clearToken}
-										className="text-xs text-red-600 hover:text-red-700 hover:underline"
-									>
-										Revocar acceso
-									</button>
-								</div>
-							</div>
-							<SekiMonitor pipeline={pipeline} stage={activeStage} gitDate={gitDate} />
-						</div>
-					)}
+					</div>
+
+					<div className="space-y-2 mb-6">
+						<SekiMonitor
+							pipeline={pipeline}
+							stage={activeStage}
+							gitDate={gitDate}
+							isLoading={isPipelineLoading || isPipelineFetching}
+						/>
+					</div>
 					{/* Environment Selector - Pill Style */}
 					<div className="flex bg-muted rounded-lg p-1 mb-4 items-center justify-between">
 						<div className="flex gap-2">
