@@ -46,6 +46,8 @@ const execHandler: Connect.NextHandleFunction = async (req, res) => {
 		return;
 	}
 
+	console.log(`RUN: ${command}`);
+
 	try {
 		const { stdout, stderr } = await execAsync(command);
 
@@ -56,6 +58,69 @@ const execHandler: Connect.NextHandleFunction = async (req, res) => {
 		res.end(
 			JSON.stringify({
 				error: error instanceof Error ? error.message : "Command failed",
+				stderr:
+					error instanceof Error && "stderr" in error
+						? (error as { stderr: string }).stderr
+						: "",
+				success: false,
+			}),
+		);
+	}
+};
+
+// Handler for /local/script endpoint - executes scripts based on action
+const scriptHandler: Connect.NextHandleFunction = async (req, res) => {
+	if (req.method !== "POST") {
+		res.statusCode = 405;
+		res.end("Method not allowed");
+		return;
+	}
+
+	let body = "";
+	await new Promise((resolve) => {
+		req.on("data", (chunk) => {
+			body += chunk;
+		});
+		req.on("end", resolve);
+	});
+
+	let repo = "Cencosud-xlabs/yumi-ticket-control";
+	let action = "trigger-staging-redeploy";
+
+	try {
+		const parsed = JSON.parse(body);
+		repo = parsed.repo || repo;
+		action = parsed.action || action;
+	} catch {
+		// Use defaults if body is invalid
+	}
+
+	const scriptPath = `./scripts/${action}.sh`;
+	const command = `${scriptPath} ${repo}`;
+
+	console.log(`RUN: ${command}`);
+
+	try {
+		const { stdout, stderr } = await execAsync(command);
+
+		// Extract PR URL from output
+		const prUrlMatch = stdout.match(/https:\/\/github\.com\/[^/]+\/[^/]+\/pull\/\d+/);
+		const prUrl = prUrlMatch ? prUrlMatch[0] : null;
+
+		res.setHeader("Content-Type", "application/json");
+		res.end(
+			JSON.stringify({
+				prUrl,
+				stdout,
+				stderr,
+				success: true,
+			}),
+		);
+	} catch (error) {
+		res.statusCode = 500;
+		res.end(
+			JSON.stringify({
+				error: error instanceof Error ? error.message : "Script execution failed",
 				stderr:
 					error instanceof Error && "stderr" in error
 						? (error as { stderr: string }).stderr
@@ -81,10 +146,13 @@ export default defineConfig({
 			configureServer(server) {
 				// Generic exec endpoint - executes any bash command
 				server.middlewares.use("/local/exec", execHandler);
+				// Script endpoint - executes scripts based on action
+				server.middlewares.use("/local/script", scriptHandler);
 			},
 			configurePreviewServer(server) {
 				// Same endpoint for preview mode
 				server.middlewares.use("/local/exec", execHandler);
+				server.middlewares.use("/local/script", scriptHandler);
 			},
 		},
 	],

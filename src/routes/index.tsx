@@ -4,6 +4,7 @@ import { DisplayInfo } from "@/components/DisplayInfo";
 import { CommitLink } from "@/components/CommitLink";
 import { TagLink } from "@/components/TagLink";
 import { PromoteDialog } from "@/components/PromoteDialog";
+import { ForceRedeployDialog } from "@/components/ForceRedeployDialog";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTagsSimple } from "@/hooks/useGitTagsSimple";
@@ -116,7 +117,7 @@ function ReposTable({ repos, favorites, onToggleFavorite }: ReposTableProps) {
 }
 
 // Función helper para determinar el estado del deploy basado en subevents de deploy
-function getDeployStatus(events: any[]) {
+function getDeployStatus(events: { state: string; id: string; subevents?: { id: string; state: string }[] }[]) {
 	if (!events || events.length === 0) return undefined;
 
 	const lastEvent = events[events.length - 1];
@@ -290,6 +291,7 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 			</td>
 			<td className="px-4 py-3 text-center">
 				<div className="flex items-center justify-center gap-2">
+					<ForceRedeployDialog repo={repo.fullName} iconOnly={true} />
 					<PromoteDialog repo={repo.fullName} latestTag={latestTag?.name} iconOnly={true} />
 					<a
 						href={`https://github.com/${org}/${name}`}

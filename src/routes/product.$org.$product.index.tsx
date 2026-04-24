@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { SekiMonitor } from "@/components/SekiMonitor/SekiMonitor";
 import { StageCommitsTable } from "@/components/StageCommitsTable";
 import { PromoteDialog } from "@/components/PromoteDialog";
+import { ForceRedeployDialog } from "@/components/ForceRedeployDialog";
 import { RefetchButton } from "@/components/ui/RefetchButton";
 import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTags } from "@/hooks/useGitTags";
@@ -59,7 +60,9 @@ function ProductIndex() {
 
 	const handleSaveToken = () => {
 		if (tokenInput.trim()) {
-			saveToken(tokenInput.trim());
+			// Remove "Bearer " or "bearer " prefix if present
+			const cleanToken = tokenInput.trim().replace(/^(Bearer|bearer)\s+/, "");
+			saveToken(cleanToken);
 			setTokenInput("");
 		}
 	};
@@ -163,10 +166,11 @@ function ProductIndex() {
 							</button>
 						</div>
 						<div className="flex items-center gap-2">
-							<PromoteDialog
-								repo={fullProduct}
-								latestTag={latestTag?.name}
-							/>
+							{isStaging ? (
+								<ForceRedeployDialog repo={fullProduct} />
+							) : (
+								<PromoteDialog repo={fullProduct} latestTag={latestTag?.name} />
+							)}
 						</div>
 					</div>
 					<StageCommitsTable
