@@ -2,10 +2,17 @@
 
 ---
 
+### 🗓️ 24 de Abril de 2026
+
+- ✨ Header: Ahora puedes ver el nombre del producto y alternar favoritos directamente desde el encabezado.
+- 🎉 Code Freeze: Control de congelamiento de código con bloqueo de repositorio y protección de branches.
+- 📢 Discord: Notificaciones automáticas para eventos de code freeze y despliegues.
+
 ### 🗓️ 23 de Abril de 2026
 
 - 🎨 Pipeline: Mejor feedback visual con animación y tarjetas de errores colapsables.
-
+- ⚡ Performance: Optimización del tamaño de la aplicación para carga más rápida.
+- 🎉 Despliegues: Funcionalidad para forzar redeploy en staging con monitoreo de estado de PRs.
 - ✨ Dashboard: Los repositorios favoritos ahora se agrupan por organización con detección de drift.
 - ✨ Commits y Tags: Ahora puedes alternar la visibilidad del estado de despliegue en los enlaces.
 - 📱 Layout: Se agregó pie de página y se mejoró el diseño para pantalla completa.
