@@ -1,17 +1,7 @@
 import type { Event } from "@/api/seki.type";
-import type { StageType } from "@/components/SekiMonitor/types";
+import { stageStyles } from "@/components/pipeline/helpers";
 
-export const stageStyles: Record<StageType, { badge: string; accent: string }> =
-	{
-		production: {
-			badge: "bg-purple-50 text-purple-700 border border-purple-100",
-			accent: "bg-purple-500",
-		},
-		staging: {
-			badge: "bg-blue-50 text-blue-600 border border-blue-100",
-			accent: "bg-blue-500",
-		},
-	};
+export { stageStyles };
 
 const ROUTE_REGEX = /(https?:\/\/[^\s<>"')]+)/gi;
 

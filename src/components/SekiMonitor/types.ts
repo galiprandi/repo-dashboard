@@ -1,8 +1,5 @@
-import type { ReactNode } from "react";
-
 import type { PipelineStatusResponse } from "@/api/seki.type";
-
-export type StageType = "staging" | "production";
+import type { StageType, MetaPart } from "@/components/pipeline/types";
 
 export interface SekiMonitorProps {
 	pipeline?: PipelineStatusResponse;
@@ -12,7 +9,4 @@ export interface SekiMonitorProps {
 	error?: Error | null;
 }
 
-export type MetaPart = {
-	id: string;
-	node: ReactNode;
-};
+export type { MetaPart };

@@ -58,14 +58,15 @@ apiSeki.interceptors.request.use((config) => {
     config.headers.Authorization = `bearer ${token}`
   }
 
-  // Agregar If-None-Match si hay un ETag guardado para esta URL
-  if (config.url) {
-    const cacheKey = `etag_${config.url}`
-    const cachedEtag = localStorage.getItem(cacheKey)
-    if (cachedEtag) {
-      config.headers['If-None-Match'] = cachedEtag
-    }
-  }
+  // Deshabilitar ETag caching temporalmente para depurar
+  // // Agregar If-None-Match si hay un ETag guardado para esta URL
+  // if (config.url) {
+  //   const cacheKey = `etag_${config.url}`
+  //   const cachedEtag = localStorage.getItem(cacheKey)
+  //   if (cachedEtag) {
+  //     config.headers['If-None-Match'] = cachedEtag
+  //   }
+  // }
 
   return config
 })
@@ -91,8 +92,9 @@ apiSeki.interceptors.response.use(
  * Fetch pipeline status for specific commit
  */
 export const fetchPipeline = (product: string, commit: string) => {
+  const [org, name] = product.split('/')
   return apiSeki.get<PipelineStatusResponse>(
-    `/products/${product}/pipelines/${commit}`
+    `/products/${org}/${name}/pipelines/${commit}`
   )
 }
 
@@ -105,8 +107,9 @@ export const fetchPipelineWithTag = (
   commit: string,
   tag: string
 ) => {
+  const [org, name] = product.split('/')
   return apiSeki.get<PipelineStatusResponse>(
-    `/products/${product}/pipelines/${commit}/${tag}`
+    `/products/${org}/${name}/pipelines/${commit}/${tag}`
   )
 }
 

@@ -174,7 +174,7 @@ export function MiniTimeline({ events, runningEventId }: MiniTimelineProps) {
 
 	return (
 		<>
-			<div className="flex gap-0.5">
+			<div className="flex items-start gap-0.5">
 				{events.map((event) => {
 					const eventUrls = extractEventUrls(event);
 					const isRunning = event.state === "STARTED" || event.state === "RUNNING";

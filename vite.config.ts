@@ -51,10 +51,13 @@ const execHandler: Connect.NextHandleFunction = async (req, res) => {
 	try {
 		const { stdout, stderr } = await execAsync(command);
 
+		console.log(`SUCCESS: stdout length: ${stdout.length}, stderr length: ${stderr.length}`);
+
 		res.setHeader("Content-Type", "application/json");
 		res.end(JSON.stringify({ stdout, stderr, success: true }));
 	} catch (error) {
-		res.statusCode = 500;
+		console.error(`ERROR executing command:`, error);
+		res.setHeader("Content-Type", "application/json");
 		res.end(
 			JSON.stringify({
 				error: error instanceof Error ? error.message : "Command failed",
@@ -62,6 +65,9 @@ const execHandler: Connect.NextHandleFunction = async (req, res) => {
 					error instanceof Error && "stderr" in error
 						? (error as { stderr: string }).stderr
 						: "",
+				stdout: error instanceof Error && "stdout" in error
+					? (error as { stdout: string }).stdout
+					: "",
 				success: false,
 			}),
 		);

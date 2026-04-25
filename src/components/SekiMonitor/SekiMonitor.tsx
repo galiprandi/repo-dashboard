@@ -1,16 +1,16 @@
 import { GitCommit, Loader2, XCircle, X, AlertTriangle, WifiOff } from "lucide-react";
-import { Fragment, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import DayJS from "@/lib/dayjs";
 import { Streamdown } from "streamdown";
 
 import {
 	flattenSubEvents,
 	severityRank,
-	stageStyles,
 } from "./helpers";
 import { MiniTimeline } from "./MiniTimeline";
 import type { MetaPart, SekiMonitorProps } from "./types";
 import type { FlattenedSubEvent } from "./helpers";
+import { PipelineCard } from "@/components/pipeline/PipelineCard";
 
 function ErrorCard({ sub, parent }: FlattenedSubEvent) {
 	const [isExpanded, setIsExpanded] = useState(false);
@@ -174,8 +174,9 @@ export function SekiMonitor({ pipeline, stage, gitDate, isLoading, error }: Seki
 	const runningEvent = sortedEvents.find(
 		(e) => e.state === "STARTED" || e.state === "RUNNING"
 	);
+	const isRunning = pipeline.state === "STARTED";
+
 	const metaParts: MetaPart[] = [];
-	const stageStyle = stageStyles[stage];
 
 	if (pipeline.git.commit_author) {
 		metaParts.push({
@@ -207,54 +208,17 @@ export function SekiMonitor({ pipeline, stage, gitDate, isLoading, error }: Seki
 		});
 	}
 
-	const isRunning = pipeline.state === "STARTED";
-
 	return (
 		<div className="space-y-2">
-			<div className={`bg-card border rounded-xl p-4 h-[82px] space-y-4 transition-all duration-500 ${isRunning ? 'ring-1 ring-blue-400/20 bg-blue-50/5 dark:bg-blue-900/5' : ''}`}>
-				<div className="flex flex-wrap items-start gap-4">
-					<div
-						className={`w-1 rounded-full self-stretch hidden sm:block ${isRunning ? 'bg-blue-400 animate-pulse-slow' : stageStyle.accent}`}
-					/>
-					<div className="flex-1 min-w-[220px] space-y-2">
-						<div className="flex items-center justify-between gap-2">
-							<div className="flex items-center gap-2">
-								<span className="font-mono text-base font-semibold text-foreground">
-									{displayRef}
-								</span>
-								<span
-									className={`px-2 py-0.5 text-[11px] rounded-full uppercase tracking-wide ${stageStyle.badge}`}
-								>
-									{stage === "staging" ? "COMMIT" : "TAG"}
-								</span>
-								{isRunning && (
-									<span className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 rounded-md animate-pulse-slow">
-										<Loader2 className="w-3 h-3 animate-spin" />
-										EN PROGRESO
-									</span>
-								)}
-							</div>
-							{metaParts.length > 0 && (
-								<div className="text-xs text-muted-foreground flex items-center gap-2 whitespace-nowrap overflow-hidden">
-									{metaParts.map(({ id, node }, index) => (
-										<Fragment key={id}>
-											{index > 0 && <span>·</span>}
-											{node}
-										</Fragment>
-									))}
-								</div>
-							)}
-						</div>
-					</div>
-					<div className="flex flex-col gap-2 min-w-[200px] items-end">
-						<div className="self-end">
-							<MiniTimeline events={sortedEvents} runningEventId={runningEvent?.id} />
-						</div>
-					</div>
-				</div>
-
-				{/* Warning details now surface via stage hover only */}
-			</div>
+			<PipelineCard
+				stage={stage}
+				displayRef={displayRef}
+				refType={stage === "staging" ? "COMMIT" : "TAG"}
+				isRunning={isRunning}
+				metaParts={metaParts}
+			>
+				<MiniTimeline events={sortedEvents} runningEventId={runningEvent?.id} />
+			</PipelineCard>
 
 			{failedSubEvents.length > 0 && (
 				<div className="space-y-2">

@@ -4,7 +4,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/es";
 import { useQueryClient } from "@tanstack/react-query";
-import { SekiMonitor } from "@/components/SekiMonitor/SekiMonitor";
+import { PipelineMonitor } from "@/components/PipelineMonitor/PipelineMonitor";
 import { StageCommitsTable } from "@/components/StageCommitsTable";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { ForceRedeployDialog } from "@/components/ForceRedeployDialog";
@@ -14,6 +14,7 @@ import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTags } from "@/hooks/useGitTags";
 import { usePipeline, usePipelineWithTag } from "@/hooks/usePipeline";
 import { useToken } from "@/hooks/useToken";
+import { usePipelineDetector } from "@/hooks/usePipelineDetector";
 
 dayjs.extend(relativeTime);
 dayjs.locale("es");
@@ -36,24 +37,36 @@ function ProductIndex() {
 	const { latestCommit } = useGitCommits({ repo: fullProduct });
 	const { latestTag } = useGitTags({ repo: fullProduct });
 
+	// Detect pipeline type
+	const { plugin: detectedPlugin } = usePipelineDetector({
+		org,
+		repo: product,
+	});
+
+	const isSeki = detectedPlugin === "seki";
 
 	const stagingPipeline = usePipeline({
 		product: fullProduct,
 		commit: latestCommit?.hash ?? "",
-		enabled: isStaging && !!latestCommit?.hash,
+		enabled: isSeki && isStaging && !!latestCommit?.hash,
 	});
 
 	const prodPipeline = usePipelineWithTag({
 		product: fullProduct,
 		commit: latestCommit?.hash ?? "",
 		tag: latestTag?.name ?? "",
-		enabled: !isStaging && !!latestCommit?.hash && !!latestTag?.name,
+		enabled: isSeki && !isStaging && !!latestCommit?.hash && !!latestTag?.name, // Require both commit and tag for production
 	});
 
 	const pipeline = isStaging ? stagingPipeline.data : prodPipeline.data;
 	const isPipelineLoading = isStaging ? stagingPipeline.isLoading : prodPipeline.isLoading;
 	const isPipelineFetching = isStaging ? stagingPipeline.isFetching : prodPipeline.isFetching;
 	const dataUpdatedAt = isStaging ? stagingPipeline.dataUpdatedAt : prodPipeline.dataUpdatedAt;
+	const currentPipeline = isStaging ? stagingPipeline : prodPipeline;
+
+	const handleRefetchPipeline = () => {
+		currentPipeline.refetch();
+	};
 
 	// Usar fecha del commit/tag para consistencia con la tabla
 	const gitDate = isStaging ? latestCommit?.date : latestTag?.date;
@@ -129,11 +142,17 @@ function ProductIndex() {
 					</div>
 
 					<div className="space-y-2 mb-6">
-						<SekiMonitor
-							pipeline={pipeline}
-							stage={activeStage}
-							gitDate={gitDate}
-							isLoading={isPipelineLoading || isPipelineFetching}
+						<PipelineMonitor
+							org={org}
+							repo={product}
+							sekiData={{
+								pipeline,
+								stage: activeStage,
+								gitDate,
+								isLoading: isPipelineLoading || isPipelineFetching,
+								refetch: handleRefetchPipeline,
+								tagName: latestTag?.name,
+							}}
 						/>
 					</div>
 					{/* Environment Selector - Pill Style */}

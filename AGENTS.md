@@ -110,3 +110,36 @@ gh api <endpoint>    # Hacer llamada a API de GitHub
 - [GitHub CLI Docs](https://cli.github.com/manual/)
 - [GitHub API Docs](https://docs.github.com/en/rest)
 - [shadcn/ui](https://ui.shadcn.com/)
+
+## Discoveries
+
+### Seki API URL Format Issue
+
+**Problem**: `fetchPipelineWithTag` and `fetchPipeline` were using incorrect URL format for Seki API endpoints.
+
+**Root Cause**: The functions were passing `product` as `org/repo` (e.g., `Cencosud-xlabs/yumi-ticket-control`) directly to the API endpoint, but the Seki API expects separate `organization` and `name` parameters.
+
+**Details**:
+- According to `docs/api-reference.md`, the correct endpoint format is `/products/:organization/:name/pipelines/:commit/:tag?`
+- The functions were using `/products/${product}/pipelines/${commit}/${tag}` which resulted in invalid URLs
+- This caused the API to return empty responses for production pipelines (with tags)
+
+**Solution**: Split the `product` parameter into `org` and `name` using `product.split('/')` and use them separately in the URL construction.
+
+**File Modified**: `src/api/seki.ts` (lines 94-98, 105-113)
+
+**Note**: After fixing the URL format, the API still returns empty data for some tags (e.g., `v1.5.9`). This is expected behavior when the Seki backend doesn't have pipeline data for a specific tag. The frontend correctly handles this by showing "No se detectó un pipeline compatible".
+
+### Debugging Techniques
+
+**Playwright MCP**: Use for automated browser testing and inspection.
+- Navigate to URLs: `mcp5_browser_navigate`
+- Take snapshots: `mcp5_browser_snapshot`
+- Click elements: `mcp5_browser_click`
+- View console logs: `mcp5_browser_console_messages`
+- Close browser: `mcp5_browser_close`
+
+**curl**: Use for testing API endpoints directly.
+- Test endpoints with authentication: `curl -H "Authorization: bearer <token>" <url>`
+- Useful for verifying API responses independently of the frontend
+- Note: Tokens from localStorage may expire, use fresh tokens for testing
