@@ -4,6 +4,7 @@
 
 ### 🗓️ 25 de Abril de 2026
 
+- 🎉 Pulsar: Soporte completo para monitoreo de pipelines de GitHub Actions con visualización en tiempo real y timeline interactivo.
 - ⚙️ Configuración: Nuevo panel de ajustes globales accesible desde el menú superior.
 
 ### 🗓️ 24 de Abril de 2026
