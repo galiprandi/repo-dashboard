@@ -83,6 +83,32 @@ const formatDuration = (start: string, end?: string) => {
 	return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
 };
 
+/**
+ * Limpia una URL extraída de markdown, removiendo tags HTML y caracteres no deseados
+ */
+const cleanUrl = (url: string): string => {
+	return url
+		.replace(/<\/[^>]+>$/g, '') // Remover </tag> al final
+		.replace(/<[^>]+>$/g, '')  // Remover <tag> al final
+		.replace(/"$/, '');        // Remover comillas al final
+};
+
+/**
+ * Verifica si una URL es externa (accesible desde el navegador)
+ * Las URLs internas tipo *.svc.cluster.local no son accesibles desde fuera del cluster
+ */
+const isExternalUrl = (url: string): boolean => {
+	try {
+		const urlObj = new URL(url);
+		const hostname = urlObj.hostname;
+		if (hostname.includes('.svc.cluster.local')) return false;
+		if (hostname.includes('.svc.') || hostname.endsWith('.local')) return false;
+		return true;
+	} catch {
+		return false;
+	}
+};
+
 const extractEventUrls = (event: Event) => {
 	const urls = new Set<string>();
 	const ROUTE_REGEX = /https?:\/\/[^\s"']+/g;
@@ -92,7 +118,8 @@ const extractEventUrls = (event: Event) => {
 		const matches = event.markdown.match(ROUTE_REGEX);
 		if (matches) {
 			matches.forEach((match) => {
-				urls.add(match.replace(/"$/, ""));
+				const url = cleanUrl(match);
+				if (isExternalUrl(url)) urls.add(url);
 			});
 		}
 	}
@@ -103,7 +130,8 @@ const extractEventUrls = (event: Event) => {
 			const matches = sub.markdown.match(ROUTE_REGEX);
 			if (matches) {
 				matches.forEach((match) => {
-					urls.add(match.replace(/"$/, ""));
+					const url = cleanUrl(match);
+					if (isExternalUrl(url)) urls.add(url);
 				});
 			}
 		}

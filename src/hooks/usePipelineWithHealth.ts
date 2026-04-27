@@ -1,0 +1,43 @@
+import { useEffect } from 'react';
+import { usePipeline, usePipelineWithTag } from './usePipeline';
+import { useHealthMonitor } from './useHealthMonitor';
+
+interface UsePipelineWithHealthOptions {
+  /** Full product name in format "org/repo" */
+  product: string;
+  /** Full 40-character commit hash */
+  commit: string;
+  /** Tag name (e.g., "v1.0.0") - required for production pipelines */
+  tag?: string;
+  enabled?: boolean;
+}
+
+/**
+ * Hook that combines pipeline fetching with automatic health endpoint extraction.
+ * When pipeline data is received, it extracts service URLs from deploy events
+ * and adds them to the health monitor.
+ */
+export function usePipelineWithHealth({
+  product,
+  commit,
+  tag,
+  enabled = true,
+}: UsePipelineWithHealthOptions) {
+  const { extractEndpointsFromEvents } = useHealthMonitor();
+
+  // Always call both hooks to satisfy React Hook rules
+  const commitPipeline = usePipeline({ product, commit, enabled: enabled && !tag });
+  const tagPipeline = usePipelineWithTag({ product, commit, tag: tag || '', enabled: enabled && !!tag });
+
+  // Use the appropriate result based on whether we have a tag
+  const pipelineResult = tag ? tagPipeline : commitPipeline;
+
+  // Extract endpoints when pipeline data changes
+  useEffect(() => {
+    if (pipelineResult.data?.events && product) {
+      extractEndpointsFromEvents(product, pipelineResult.data.events);
+    }
+  }, [pipelineResult.data?.events, product, extractEndpointsFromEvents]);
+
+  return pipelineResult;
+}

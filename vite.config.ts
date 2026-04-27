@@ -1,5 +1,6 @@
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
+import https from "node:https";
 import type { Connect } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
@@ -71,6 +72,95 @@ const execHandler: Connect.NextHandleFunction = async (req, res) => {
 				success: false,
 			}),
 		);
+	}
+};
+
+// Handler for /health-proxy endpoint - proxy health checks to avoid CORS
+const healthProxyHandler: Connect.NextHandleFunction = async (req, res) => {
+	if (req.method !== 'GET') {
+		res.statusCode = 405;
+		res.end('Method not allowed');
+		return;
+	}
+
+	const url = new URL(req.url || '', `http://localhost`);
+	const targetUrl = url.searchParams.get('url');
+
+	if (!targetUrl) {
+		res.statusCode = 400;
+		res.end(JSON.stringify({ error: 'Missing url parameter' }));
+		return;
+	}
+
+	const healthUrl = targetUrl.endsWith('/') ? `${targetUrl}health` : `${targetUrl}/health`;
+	console.log(`[health-proxy] Checking: ${healthUrl}`);
+
+	try {
+		const targetUrlObj = new URL(healthUrl);
+
+		const options = {
+			hostname: targetUrlObj.hostname,
+			port: targetUrlObj.port || 443,
+			path: targetUrlObj.pathname + targetUrlObj.search,
+			method: 'GET',
+			rejectUnauthorized: false, // Ignore SSL certificate errors
+			timeout: 5000,
+			headers: {
+				'Accept': 'application/json',
+			},
+		};
+
+		const proxyReq = https.request(options, (proxyRes) => {
+			let data = '';
+			proxyRes.on('data', (chunk) => {
+				data += chunk;
+			});
+			proxyRes.on('end', () => {
+				console.log(`[health-proxy] Success: ${healthUrl} -> ${proxyRes.statusCode}`);
+				res.setHeader('Content-Type', 'application/json');
+				res.statusCode = proxyRes.statusCode || 200;
+				res.end(JSON.stringify({
+					status: proxyRes.statusCode,
+					statusText: proxyRes.statusMessage,
+					data: data,
+					headers: proxyRes.headers,
+				}));
+			});
+		});
+
+		proxyReq.on('error', (error) => {
+			console.error(`[health-proxy] Error: ${healthUrl} ->`, error.message);
+			res.setHeader('Content-Type', 'application/json');
+			res.statusCode = 502;
+			res.end(JSON.stringify({
+				error: error.message,
+				targetUrl: targetUrl,
+				type: error.name,
+			}));
+		});
+
+		proxyReq.on('timeout', () => {
+			console.error(`[health-proxy] Timeout: ${healthUrl}`);
+			proxyReq.destroy();
+			res.setHeader('Content-Type', 'application/json');
+			res.statusCode = 504;
+			res.end(JSON.stringify({
+				error: 'Timeout',
+				targetUrl: targetUrl,
+				type: 'TimeoutError',
+			}));
+		});
+
+		proxyReq.end();
+	} catch (error) {
+		console.error(`[health-proxy] Error: ${targetUrl} ->`, error);
+		res.setHeader('Content-Type', 'application/json');
+		res.statusCode = 502;
+		res.end(JSON.stringify({
+			error: error instanceof Error ? error.message : 'Health check failed',
+			targetUrl: targetUrl,
+			type: error instanceof Error ? error.name : 'Unknown',
+		}));
 	}
 };
 
@@ -154,11 +244,14 @@ export default defineConfig({
 				server.middlewares.use("/local/exec", execHandler);
 				// Script endpoint - executes scripts based on action
 				server.middlewares.use("/local/script", scriptHandler);
+				// Health proxy endpoint - avoids CORS when checking service health
+				server.middlewares.use("/health-proxy", healthProxyHandler);
 			},
 			configurePreviewServer(server) {
 				// Same endpoint for preview mode
 				server.middlewares.use("/local/exec", execHandler);
 				server.middlewares.use("/local/script", scriptHandler);
+				server.middlewares.use("/health-proxy", healthProxyHandler);
 			},
 		},
 	],

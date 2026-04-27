@@ -9,7 +9,7 @@ import { FreezeDialog } from "@/components/FreezeDialog";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTagsSimple } from "@/hooks/useGitTagsSimple";
-import { usePipeline, usePipelineWithTag } from "@/hooks/usePipeline";
+import { usePipelineWithHealth } from "@/hooks/usePipelineWithHealth";
 
 export const Route = createFileRoute("/")({
 	component: Dashboard,
@@ -151,14 +151,14 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 		repo: repo.fullName,
 	});
 
-	// Obtener estado del pipeline usando los mismos hooks que SekiMonitor (reaprovechar cache)
-	const stagingPipeline = usePipeline({
+	// Obtener estado del pipeline con extracción automática de endpoints para health monitor
+	const stagingPipeline = usePipelineWithHealth({
 		product: repo.fullName,
 		commit: latestCommit?.hash ?? "",
 		enabled: !!latestCommit?.hash,
 	});
 
-	const prodPipeline = usePipelineWithTag({
+	const prodPipeline = usePipelineWithHealth({
 		product: repo.fullName,
 		commit: latestCommit?.hash ?? "",
 		tag: latestTag?.name ?? "",

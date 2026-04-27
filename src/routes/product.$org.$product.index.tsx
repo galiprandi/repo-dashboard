@@ -12,8 +12,8 @@ import { FreezeDialog } from "@/components/FreezeDialog";
 import { RefetchButton } from "@/components/ui/RefetchButton";
 import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTags } from "@/hooks/useGitTags";
-import { usePipeline, usePipelineWithTag } from "@/hooks/usePipeline";
 import { usePipelineDetector } from "@/hooks/usePipelineDetector";
+import { usePipelineWithHealth } from "@/hooks/usePipelineWithHealth";
 
 dayjs.extend(relativeTime);
 dayjs.locale("es");
@@ -40,13 +40,13 @@ function ProductIndex() {
 
 	const isSeki = detectedPlugin === "seki";
 
-	const commitsPipeline = usePipeline({
+	const commitsPipeline = usePipelineWithHealth({
 		product: fullProduct,
 		commit: latestCommit?.hash ?? "",
 		enabled: isSeki && isCommits && !!latestCommit?.hash,
 	});
 
-	const tagsPipeline = usePipelineWithTag({
+	const tagsPipeline = usePipelineWithHealth({
 		product: fullProduct,
 		commit: latestCommit?.hash ?? "",
 		tag: latestTag?.name ?? "",
