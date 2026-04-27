@@ -2,6 +2,10 @@
 
 ---
 
+### 🗓️ 27 de Abril de 2026
+
+- 🎉 Monitoreo de Salud: Sistema para verificar el estado de servicios con detección automática de endpoints y filtrado de URLs internas del cluster.
+
 ### 🗓️ 25 de Abril de 2026
 
 - 🎉 Pulsar: Soporte completo para monitoreo de pipelines de GitHub Actions con visualización en tiempo real y timeline interactivo.
