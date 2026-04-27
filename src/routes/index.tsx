@@ -199,7 +199,7 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 					<Link
 						to="/product/$org/$product"
 						params={{ org, product: name }}
-						search={{ stage: "staging", event: "commit" }}
+						search={{ view: "commits" }}
 						className="font-medium hover:text-primary"
 					>
 						{repo.fullName}
@@ -243,7 +243,7 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 					<Link
 						to="/product/$org/$product"
 						params={{ org, product: name }}
-						search={{ stage: "staging", event: "commit" }}
+						search={{ view: "commits" }}
 						className="font-medium hover:text-primary"
 					>
 						{name}

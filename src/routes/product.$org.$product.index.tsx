@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/es";
@@ -24,8 +23,10 @@ export const Route = createFileRoute("/product/$org/$product/")({
 
 function ProductIndex() {
 	const { org, product } = Route.useParams();
+	const navigate = Route.useNavigate();
+	const search = Route.useSearch();
 	const queryClient = useQueryClient();
-	const [viewMode, setViewMode] = useState<"commits" | "tags">("commits");
+	const viewMode = search.view || "commits";
 	const fullProduct = `${org}/${product}`;
 	const isCommits = viewMode === "commits";
 
@@ -102,7 +103,7 @@ function ProductIndex() {
 				<div className="flex gap-2">
 					<button
 						type="button"
-						onClick={() => setViewMode("commits")}
+						onClick={() => navigate({ search: { view: "commits" } })}
 						className={`px-4 py-1.5 text-sm rounded-md transition-all ${
 							viewMode === "commits"
 								? "bg-white shadow-sm text-foreground"
@@ -113,7 +114,7 @@ function ProductIndex() {
 					</button>
 					<button
 						type="button"
-						onClick={() => setViewMode("tags")}
+						onClick={() => navigate({ search: { view: "tags" } })}
 						className={`px-4 py-1.5 text-sm rounded-md transition-all ${
 							viewMode === "tags"
 								? "bg-white shadow-sm text-foreground"
