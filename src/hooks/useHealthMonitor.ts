@@ -17,6 +17,7 @@ export interface HealthEndpoint {
   isHealthy: boolean | null; // null = no verificado aún
   responseTime?: number;
   error?: string;
+  details?: string; // response body from health endpoint
 }
 
 interface StoredEndpoints {
@@ -99,7 +100,7 @@ function detectEnvironment(url: string): Environment {
   return 'staging';
 }
 
-async function checkHealth(url: string): Promise<{ isHealthy: boolean; responseTime: number; error?: string }> {
+async function checkHealth(url: string): Promise<{ isHealthy: boolean; responseTime: number; error?: string; details?: string }> {
   const startTime = performance.now();
 
   try {
@@ -124,11 +125,22 @@ async function checkHealth(url: string): Promise<{ isHealthy: boolean; responseT
     const isHealthy = response.status >= 200 && response.status < 300;
     const responseTime = Math.round(performance.now() - startTime);
 
-    if (!response.ok) {
-      return { isHealthy: false, responseTime, error: `HTTP ${response.status}` };
+    // Capturar el cuerpo de la respuesta para obtener más detalles (siempre)
+    let details: string | undefined;
+    try {
+      const text = await response.text();
+      if (text && text.trim()) {
+        details = text;
+      }
+    } catch {
+      // Si no podemos leer el cuerpo, continuar sin detalles
     }
 
-    return { isHealthy, responseTime };
+    if (!response.ok) {
+      return { isHealthy: false, responseTime, error: `HTTP ${response.status}`, details };
+    }
+
+    return { isHealthy, responseTime, details };
   } catch (error) {
     const responseTime = Math.round(performance.now() - startTime);
 
@@ -214,6 +226,7 @@ export function useHealthMonitor() {
                 isHealthy: result.isHealthy,
                 responseTime: result.responseTime,
                 error: result.error,
+                details: result.details,
                 lastChecked: new Date().toISOString(),
               }
             : ep

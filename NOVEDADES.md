@@ -3,10 +3,12 @@
 ---
 
 ### 🗓️ 27 de Abril de 2026
-
-- 🎉 Monitoreo de Salud: Sistema para verificar el estado de servicios con detección automática de endpoints y filtrado de URLs internas del cluster.
-- ✨ Monitoreo de Salud: Filtros por ambiente con contadores dinámicos, búsqueda de servicios y ordenamiento personalizado.
-- 🎨 Monitoreo de Salud: Diseño refinado con indicador de última verificación y auto-refresh cada 10 minutos.
+- Health Monitor: agregada acción de copiar URL y abrir /health en nueva ventana por endpoint
+- Health Monitor: muestra mensaje de error descriptivo (ej: "unconditional drop overload") en lugar de solo código HTTP
+- Health Monitor: captura respuesta body de health checks para todos los endpoints (con y sin error)
+- Health Monitor: toda la línea del endpoint es clickeable para expandir/colapsar detalles con animación
+- Health Monitor: todos los endpoints son expandibles (con y sin error), muestra JSON formateado
+- Health Monitor: múltiples endpoints pueden estar expandidos simultáneamente para comparar ambientes
 
 ### 🗓️ 25 de Abril de 2026
 
