@@ -9,6 +9,7 @@
 - Health Monitor: toda la línea del endpoint es clickeable para expandir/colapsar detalles con animación
 - Health Monitor: todos los endpoints son expandibles (con y sin error), muestra JSON formateado
 - Health Monitor: múltiples endpoints pueden estar expandidos simultáneamente para comparar ambientes
+- Health Monitor: mejoras de accesibilidad (ARIA attributes, navegación por teclado, aria-labels)
 
 ### 🗓️ 25 de Abril de 2026
 

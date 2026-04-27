@@ -176,6 +176,22 @@ function ProductSection({
                         }
                         setExpandedEndpoints(newSet);
                       }}
+                      role="button"
+                      tabIndex={0}
+                      aria-expanded={expandedEndpoints.has(endpoint.id)}
+                      aria-controls={`details-${endpoint.id}`}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          const newSet = new Set(expandedEndpoints);
+                          if (newSet.has(endpoint.id)) {
+                            newSet.delete(endpoint.id);
+                          } else {
+                            newSet.add(endpoint.id);
+                          }
+                          setExpandedEndpoints(newSet);
+                        }
+                      }}
                     >
                       {/* Status emoji */}
                       <div className="flex-shrink-0">
@@ -243,8 +259,9 @@ function ProductSection({
                         <button
                           onClick={() => onCheckEndpoint(endpoint.id)}
                           disabled={isChecking}
-                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50"
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
                           title="Verificar ahora"
+                          aria-label="Verificar estado del endpoint ahora"
                         >
                           <RefreshCw className={`w-3 h-3 ${isChecking ? 'animate-spin' : ''}`} />
                         </button>
@@ -254,6 +271,7 @@ function ProductSection({
                           }}
                           className="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
                           title="Copiar URL"
+                          aria-label="Copiar URL del endpoint"
                         >
                           <Copy className="w-3 h-3" />
                         </button>
@@ -264,6 +282,7 @@ function ProductSection({
                           onClick={(e) => e.stopPropagation()}
                           className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
                           title="Abrir /health"
+                          aria-label="Abrir endpoint /health en nueva pestaña"
                         >
                           <ExternalLink className="w-3 h-3" />
                         </a>
@@ -271,6 +290,7 @@ function ProductSection({
                           onClick={() => onRemoveEndpoint(endpoint.id)}
                           className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                           title="Eliminar del monitoreo"
+                          aria-label="Eliminar endpoint del monitoreo"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
@@ -288,6 +308,7 @@ function ProductSection({
 
                     {/* Details expandible con animación */}
                     <div
+                      id={`details-${endpoint.id}`}
                       className={`overflow-hidden transition-all duration-300 ease-in-out ${
                         expandedEndpoints.has(endpoint.id) ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                       }`}
