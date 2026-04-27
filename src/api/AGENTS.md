@@ -246,3 +246,19 @@ New unified approach:
 - Use `UnifiedPipelineMonitor` for new code
 - Adapters handle provider-specific logic
 - Single hook `useUnifiedPipeline` replaces multiple hooks
+
+## Workflow Preferences
+
+**Updated**: April 2026
+
+### UI Development Workflow
+
+When working on UI/frontend tasks, always use MCP (Playwright) to iterate, refine, and debug:
+
+- Use Playwright MCP tools to verify visual changes in the browser
+- Take browser snapshots to verify UI state after changes
+- Iterate rapidly by verifying changes in real-time
+- Use browser automation for visual debugging
+- Verify each change visually before continuing
+
+**IMPORTANT**: Do not open unnecessary browser tabs. Vite does hot reload automatically, so use the same existing browser tab and leverage hot reload instead of opening new tabs for each verification.
