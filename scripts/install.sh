@@ -15,6 +15,19 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
+# Check Node.js version (requires 22+)
+NODE_VERSION=$(node -v 2>/dev/null | sed 's/v//')
+if [ -n "$NODE_VERSION" ]; then
+    MAJOR_VERSION=$(echo "$NODE_VERSION" | cut -d. -f1)
+    if [ "$MAJOR_VERSION" -lt 22 ]; then
+        echo "❌ Error: Node.js 22 or higher is required. Found version: $NODE_VERSION"
+        exit 1
+    fi
+else
+    echo "❌ Error: Could not determine Node.js version."
+    exit 1
+fi
+
 if ! command -v gh &> /dev/null; then
     echo "⚠️  Warning: GitHub CLI (gh) is not installed. ReleaseHub requires it to function."
     echo "Please install it: brew install gh"
