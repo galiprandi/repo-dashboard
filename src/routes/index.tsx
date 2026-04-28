@@ -160,9 +160,9 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 
 	const prodPipeline = usePipelineWithHealth({
 		product: repo.fullName,
-		commit: latestCommit?.hash ?? "",
+		commit: latestTag?.commit ?? "",
 		tag: latestTag?.name ?? "",
-		enabled: !!latestCommit?.hash && !!latestTag?.name,
+		enabled: !!latestTag?.commit && !!latestTag?.name,
 	});
 
 	const commitShortHash = latestCommit?.shortHash;
