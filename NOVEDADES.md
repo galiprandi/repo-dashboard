@@ -4,8 +4,8 @@
 
 ### 🗓️ 28 de Abril de 2026
 
-• ✨ Promoción de Releases: Ahora puedes ver los commits pendientes directamente en el diálogo de promoción antes de crear el tag.
-• 🎨 Promoción de Releases: Mejor indicador visual de cambios pendientes con contador más claro en el botón de acción.
+- ✨ Promoción de Releases: Ahora puedes ver los commits pendientes directamente en el diálogo de promoción antes de crear el tag.
+- 🎨 Promoción de Releases: Mejor indicador visual de cambios pendientes con contador más claro en el botón de acción.
 
 ### 🗓️ 27 de Abril de 2026
 
