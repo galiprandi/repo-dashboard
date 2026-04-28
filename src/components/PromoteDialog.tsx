@@ -1,14 +1,17 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import * as Dialog from "@radix-ui/react-dialog"
 import * as Tooltip from "@radix-ui/react-tooltip"
-import { Rocket, X, Loader2, CheckCircle2 } from "lucide-react"
+import { Rocket, X, Loader2, CheckCircle2, ChevronRight, ChevronLeft, GitCommit } from "lucide-react"
 import axios from "axios"
 import { runCommand } from "@/api/exec"
 import { useRepoPermission } from "../hooks/useRepoPermission"
 import { useDiscordChannel } from "@/hooks/useDiscordChannel"
 import { useGitUser } from "@/hooks/useGitUser"
+import { useGitCommits } from "@/hooks/useGitCommits"
+import { useGitTags } from "@/hooks/useGitTags"
 import { DiscordNotification } from "@/components/ui/DiscordNotification"
+import { CommitLink } from "@/components/CommitLink"
 
 interface PromoteDialogProps {
 	repo: string
@@ -26,12 +29,26 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 	const [tagMessage, setTagMessage] = useState("")
 	const [isCreating, setIsCreating] = useState(false)
 	const [error, setError] = useState("")
+	const [showCommits, setShowCommits] = useState(false)
 	const { webhookUrl } = useDiscordChannel(repo)
 	const [notificationsEnabled, setNotificationsEnabled] = useState(!!webhookUrl)
 	const { data: gitUser } = useGitUser()
 
 	const { data: permissions, isLoading: isLoadingPerms } = useRepoPermission({ repo })
 	const suggestedTag = latestTag ? incrementVersion(latestTag) : "v1.0.0"
+
+	// Fetch commits and tags to show pending commits
+	const [org, name] = repo.split("/")
+	const { commits } = useGitCommits({ repo, enabled: open })
+	const { latestTag: latestTagData } = useGitTags({ repo, enabled: open })
+
+	// Calculate pending commits (commits after the production tag)
+	const pendingCommits = useMemo(() => {
+		if (!commits || !latestTagData?.commit) return []
+		const prodCommitIndex = commits.findIndex(c => c.hash === latestTagData.commit)
+		if (prodCommitIndex === -1) return commits // If can't find prod commit, show all
+		return commits.slice(0, prodCommitIndex) // Commits before the prod commit in the list (more recent)
+	}, [commits, latestTagData])
 
 	const handleOpenChange = (newOpen: boolean) => {
 		setOpen(newOpen)
@@ -128,7 +145,8 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 		}
 	}
 
-	const dialogWidth = step === 'success' ? 'max-w-sm' : 'max-w-lg'
+	const hasPendingCommits = pendingCommits.length > 0
+	const dialogWidth = step === 'success' ? 'max-w-sm' : (hasPendingCommits && showCommits ? 'max-w-4xl' : 'max-w-lg')
 
 	return (
 		<Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -188,68 +206,125 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 
 					{/* Step 1: Tag Config */}
 					{step === 'config' && (
-						<div className="flex flex-col flex-1 overflow-y-auto">
-							<div className="space-y-4">
-								{latestTag && (
-									<div className="text-sm">
-										<span className="text-muted-foreground">Último Tag: </span>
-										<span className="font-mono font-medium">{latestTag}</span>
+						<div className={`flex flex-1 overflow-hidden ${showCommits ? 'flex-row gap-6' : 'flex-col overflow-y-auto'}`}>
+							{/* Left column: Form */}
+							<div className={`space-y-4 ${showCommits ? 'w-1/2 flex flex-col' : ''}`}>
+								<div className={`space-y-4 ${showCommits ? 'flex-1 overflow-y-auto pr-2' : ''}`}>
+									{latestTag && (
+										<div className="text-sm">
+											<span className="text-muted-foreground">Último Tag: </span>
+											<span className="font-mono font-medium">{latestTag}</span>
+										</div>
+									)}
+
+									<div>
+										<label htmlFor="promote-tag-name" className="block text-sm font-medium mb-2">
+											Nombre del Tag
+										</label>
+										<input
+											id="promote-tag-name"
+											type="text"
+											value={tagName}
+											onChange={(e) => setTagName(e.target.value)}
+											placeholder={suggestedTag}
+											className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+										/>
 									</div>
-								)}
 
-								<div>
-									<label htmlFor="promote-tag-name" className="block text-sm font-medium mb-2">
-										Nombre del Tag
-									</label>
-									<input
-										id="promote-tag-name"
-										type="text"
-										value={tagName}
-										onChange={(e) => setTagName(e.target.value)}
-										placeholder={suggestedTag}
-										className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+									<div>
+										<label htmlFor="promote-tag-message" className="block text-sm font-medium mb-2">
+											Descripción (opcional)
+										</label>
+										<textarea
+											id="promote-tag-message"
+											value={tagMessage}
+											onChange={(e) => setTagMessage(e.target.value)}
+											placeholder="Descripción del release..."
+											rows={3}
+											className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+										/>
+									</div>
+
+									<DiscordNotification
+										webhookUrl={webhookUrl}
+										enabled={notificationsEnabled}
+										onEnabledChange={setNotificationsEnabled}
+										readonly
 									/>
+
+									{pendingCommits.length > 0 && (
+										<button
+											type="button"
+											onClick={() => setShowCommits(!showCommits)}
+											className="w-full flex items-center justify-between px-3 py-2 bg-muted/50 hover:bg-muted border rounded-md transition-colors text-sm"
+										>
+											<span className="flex items-center gap-2">
+												<GitCommit className="w-4 h-4 text-muted-foreground" />
+												<span className="font-medium">{pendingCommits.length} commit{pendingCommits.length !== 1 ? 's' : ''} a promocionar</span>
+											</span>
+											{showCommits ? (
+												<ChevronRight className="w-4 h-4 text-muted-foreground" />
+											) : (
+												<ChevronLeft className="w-4 h-4 text-muted-foreground" />
+											)}
+										</button>
+									)}
+
+									{error && <p className="text-sm text-red-600">{error}</p>}
+
+									{!canCreateTags && !isLoadingPerms && (
+										<p className="text-xs text-orange-600 bg-orange-50 p-2 rounded border border-orange-100">
+											No tienes permisos de escritura en este repositorio para crear tags.
+										</p>
+									)}
 								</div>
 
-								<div>
-									<label htmlFor="promote-tag-message" className="block text-sm font-medium mb-2">
-										Descripción (opcional)
-									</label>
-									<textarea
-										id="promote-tag-message"
-										value={tagMessage}
-										onChange={(e) => setTagMessage(e.target.value)}
-										placeholder="Descripción del release..."
-										rows={3}
-										className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-									/>
+								<div className="mt-4 pt-4 border-t flex justify-end flex-shrink-0">
+									<button
+										onClick={handleCreateTag}
+										disabled={isCreating || !tagName.trim() || (!canCreateTags && !isLoadingPerms)}
+										className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+									>
+										{isCreating ? <><Loader2 className="w-4 h-4 animate-spin" /> Publicando...</> : <><Rocket className="w-4 h-4" /> Publicar Tag</>}
+									</button>
 								</div>
-
-								<DiscordNotification
-									webhookUrl={webhookUrl}
-									enabled={notificationsEnabled}
-									onEnabledChange={setNotificationsEnabled}
-									readonly
-								/>
-
-								{error && <p className="text-sm text-red-600">{error}</p>}
-
-								{!canCreateTags && !isLoadingPerms && (
-									<p className="text-xs text-orange-600 bg-orange-50 p-2 rounded border border-orange-100">
-										No tienes permisos de escritura en este repositorio para crear tags.
-									</p>
-								)}
 							</div>
 
-							<div className="mt-4 pt-4 border-t flex justify-end flex-shrink-0">
-								<button
-									onClick={handleCreateTag}
-									disabled={isCreating || !tagName.trim() || (!canCreateTags && !isLoadingPerms)}
-									className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
-								>
-									{isCreating ? <><Loader2 className="w-4 h-4 animate-spin" /> Publicando...</> : <><Rocket className="w-4 h-4" /> Publicar Tag</>}
-								</button>
-							</div>
+							{/* Right column: Commits list (only when expanded) */}
+							{showCommits && pendingCommits.length > 0 && (
+								<div className="w-1/2 flex flex-col border-l pl-6">
+									<div className="mb-3">
+										<div className="flex items-center gap-2">
+											<GitCommit className="w-4 h-4 text-muted-foreground" />
+											<span className="font-medium text-sm">Cambios desde {latestTag}</span>
+											<span className="text-xs bg-muted px-2 py-0.5 rounded-full">{pendingCommits.length}</span>
+										</div>
+										<p className="text-xs text-muted-foreground mt-1 pl-6">
+											Commits que se incluirán en este release
+										</p>
+									</div>
+									<div className="flex-1 overflow-y-auto pr-2 space-y-2 max-h-[50vh]">
+										{pendingCommits.map((commit) => (
+											<div
+												key={commit.hash}
+												className="py-1 border-b border-border/50 last:border-0"
+											>
+												<div className="flex items-center gap-2">
+													<CommitLink hash={commit.hash} org={org} repo={name} showStatus={false} />
+													<span className="text-sm truncate flex-1" title={commit.message}>
+														{commit.message.split('\n')[0]}
+													</span>
+												</div>
+												<div className="text-xs text-muted-foreground mt-0.5 pl-6">
+													{new Date(commit.date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+													<span className="mx-1">•</span>
+													{commit.author}
+												</div>
+											</div>
+										))}
+									</div>
+								</div>
+							)}
 						</div>
 					)}
 

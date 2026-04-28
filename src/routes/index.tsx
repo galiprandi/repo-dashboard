@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, Star, Github, Building2 } from "lucide-react";
+import { Loader2, Star, Github, Building2, GitPullRequestCreateArrow } from "lucide-react";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import { DisplayInfo } from "@/components/DisplayInfo";
 import { CommitLink } from "@/components/CommitLink";
 import { TagLink } from "@/components/TagLink";
@@ -144,7 +145,7 @@ function getDeployStatus(events: { state: string; id: string; subevents?: { id: 
 function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 	const [org, name] = repo.fullName.split("/");
 
-	const { latestCommit, isLoading: isLoadingCommits } = useGitCommits({
+	const { commits, latestCommit, isLoading: isLoadingCommits } = useGitCommits({
 		repo: repo.fullName,
 	});
 	const { latestTag, isLoading: isLoadingTags } = useGitTagsSimple({
@@ -164,6 +165,14 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 		tag: latestTag?.name ?? "",
 		enabled: !!latestTag?.commit && !!latestTag?.name,
 	});
+
+	// Calculate pending commits (between production and staging)
+	const pendingCount = (() => {
+		if (!commits || !prodPipeline.data?.git?.commit) return 0;
+		const prodCommitIndex = commits.findIndex(c => c.hash === prodPipeline.data!.git!.commit);
+		if (prodCommitIndex === -1) return commits.length;
+		return prodCommitIndex;
+	})();
 
 	const commitShortHash = latestCommit?.shortHash;
 	const commitAuthor = latestCommit?.author;
@@ -248,11 +257,26 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 					>
 						{name}
 					</Link>
-					{latestCommit?.hash && prodPipeline.data?.git?.commit && latestCommit.hash !== prodPipeline.data.git.commit && (
-						<span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded border border-yellow-200 font-medium">
-							Pendiente
-						</span>
-					)}
+					{pendingCount > 0 && (
+					<Tooltip.Provider>
+						<Tooltip.Root>
+							<Tooltip.Trigger asChild>
+								<span className="inline-flex items-center gap-0.5 text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-200 font-medium cursor-help">
+									<GitPullRequestCreateArrow className="w-3 h-3" />
+									{pendingCount}
+								</span>
+							</Tooltip.Trigger>
+							<Tooltip.Portal>
+								<Tooltip.Content
+									className="bg-popover text-popover-foreground border px-2 py-1 rounded-md shadow-md text-xs z-50"
+									sideOffset={5}
+								>
+									{pendingCount} commit{pendingCount !== 1 ? 's' : ''} pendientes de promoción a producción
+								</Tooltip.Content>
+							</Tooltip.Portal>
+						</Tooltip.Root>
+					</Tooltip.Provider>
+				)}
 				</div>
 			</td>
 			<td className="px-4 py-3 w-20">
