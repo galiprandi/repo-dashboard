@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { FolderPlus, FolderOpen, X, Check, ChevronDown, Plus } from "lucide-react";
-import { useProjects } from "@/hooks/useProjects";
+import { useUserCollections } from "@/hooks/useUserCollections";
 
 interface ProjectSelectorProps {
 	repo: string;
 }
 
 export function ProjectSelector({ repo }: ProjectSelectorProps) {
-	const { projects, createProject, addRepoToProject, removeRepoFromProject, isRepoInProject, getProjectsForRepo } = useProjects();
+	const { projects, createProject, addRepoToProject, removeRepoFromProject, isRepoInProject, getProjectsForRepo } = useUserCollections();
 	const [isOpen, setIsOpen] = useState(false);
 	const [isCreating, setIsCreating] = useState(false);
 	const [newName, setNewName] = useState("");

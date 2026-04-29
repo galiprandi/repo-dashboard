@@ -7,8 +7,8 @@ import { TagLink } from "@/components/TagLink";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { ForceRedeployDialog } from "@/components/ForceRedeployDialog";
 import { FreezeDialog } from "@/components/FreezeDialog";
-import { useFavorites } from "@/hooks/useFavorites";
-import { useProjects } from "@/hooks/useProjects";
+import { useUserCollections } from "@/hooks/useUserCollections";
+import { useUserRepos } from "@/hooks/useUserRepos";
 import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTagsSimple } from "@/hooks/useGitTagsSimple";
 import { usePipelineWithHealth } from "@/hooks/usePipelineWithHealth";
@@ -18,8 +18,8 @@ export const Route = createFileRoute("/")({
 });
 
 function Dashboard() {
-	const { favorites, toggleFavorite } = useFavorites();
-	const { projects, activeTab, setActiveTab } = useProjects();
+	const { favorites, projects, activeTab, setActiveTab, toggleFavorite } = useUserCollections();
+	const { isLoading: isLoadingRepos, data: reposData } = useUserRepos();
 
 	const tabs = [
 		{ id: "favorites", label: "Favoritos", icon: Star, count: favorites.length, description: "" },
@@ -75,7 +75,7 @@ function Dashboard() {
 							}`}
 							title={tab.description}
 						>
-							<Icon className="w-4 h-4" />
+							<Icon className={`w-4 h-4 ${isActive ? "text-primary" : ""}`} />
 							{tab.label}
 							{tab.count > 0 && (
 								<span className="text-xs bg-muted-foreground/20 px-1.5 py-0.5 rounded-full">
@@ -91,13 +91,28 @@ function Dashboard() {
 			{displayRepos.length === 0 ? (
 				<div className="border rounded-xl p-12 text-center text-muted-foreground bg-muted/20 border-dashed">
 					{activeTab === "favorites" ? (
-						<>
-							<Star className="w-10 h-10 mx-auto mb-4 opacity-20" />
-							<h3 className="text-lg font-medium text-foreground mb-1">Sin favoritos</h3>
-							<p className="text-sm max-w-xs mx-auto">
-								Busca repositorios usando la barra superior para agregarlos a tu panel principal.
-							</p>
-						</>
+						isLoadingRepos ? (
+							<>
+								<Loader2 className="w-10 h-10 mx-auto mb-4 opacity-40 animate-spin" />
+								<h3 className="text-lg font-medium text-foreground mb-1">Cargando repositorios</h3>
+								<p className="text-sm max-w-xs mx-auto">
+									Consultando organizaciones y repositorios a los que tienes acceso...
+								</p>
+							</>
+						) : (
+							<>
+								<Star className="w-10 h-10 mx-auto mb-4 opacity-20" />
+								<h3 className="text-lg font-medium text-foreground mb-1">Sin favoritos</h3>
+								<p className="text-sm max-w-xs mx-auto">
+									Busca repositorios usando la barra superior para agregarlos a tu panel principal.
+									{reposData && reposData.results.length > 0 && (
+										<span className="block mt-2 text-xs text-muted-foreground/70">
+											{reposData.results.length} repositorios disponibles
+										</span>
+									)}
+								</p>
+							</>
+						)
 					) : (
 						<>
 							<FolderPlus className="w-10 h-10 mx-auto mb-4 opacity-20" />

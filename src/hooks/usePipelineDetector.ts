@@ -45,16 +45,11 @@ const detectPipeline = async (org: string, repo: string): Promise<{
   hasSeki: boolean
   hasNxBuild: boolean
 }> => {
-  console.log('[Detect Pipeline] ===== START =====')
-  console.log('[Detect Pipeline] Checking', org, repo)
-
   // Check for Nx Build workflow (Pulsar)
   const hasNxBuild = await hasNxBuildWorkflow(org, repo).catch(() => false)
-  console.log('[Detect Pipeline] hasNxBuild:', hasNxBuild)
 
   // If Nx Build exists, return Pulsar
   if (hasNxBuild) {
-    console.log('[Detect Pipeline] Returning pulsar')
     return {
       plugin: 'pulsar',
       hasSeki: false,
@@ -64,11 +59,9 @@ const detectPipeline = async (org: string, repo: string): Promise<{
 
   // If no Nx Build, check if Seki token exists
   const hasToken = hasSekiToken()
-  console.log('[Detect Pipeline] hasSekiToken:', hasToken)
 
   // Only return Seki if there's a token, otherwise return null
   if (!hasToken) {
-    console.log('[Detect Pipeline] No Seki token, returning null')
     return {
       plugin: null,
       hasSeki: false,
@@ -77,8 +70,6 @@ const detectPipeline = async (org: string, repo: string): Promise<{
   }
 
   // If Seki token exists, assume Seki
-  console.log('[Detect Pipeline] Assuming Seki')
-  console.log('[Detect Pipeline] ===== END =====')
   return {
     plugin: 'seki',
     hasSeki: true,

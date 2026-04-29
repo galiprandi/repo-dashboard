@@ -48,6 +48,7 @@ The app leverages the **GitHub CLI (`gh`)** to perform these operations remotely
 - Node.js (v18+)
 - npm
 - GitHub CLI (`gh`) authenticated
+- jq (JSON processor)
 
 ## Setup
 

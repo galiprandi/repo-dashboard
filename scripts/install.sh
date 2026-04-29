@@ -33,6 +33,11 @@ if ! command -v gh &> /dev/null; then
     echo "Please install it: brew install gh"
 fi
 
+if ! command -v jq &> /dev/null; then
+    echo "⚠️  Warning: jq is not installed. ReleaseHub requires it to parse GitHub API responses."
+    echo "Please install it: brew install jq"
+fi
+
 # 2. Clone or Update Repository
 if [ -d "$INSTALL_DIR" ]; then
     echo "🔄 Repository exists at $INSTALL_DIR. Updating..."

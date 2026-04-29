@@ -7,7 +7,7 @@ import { NovedadesDialog } from "@/components/NovedadesDialog";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { useGitUser } from "@/hooks/useGitUser";
 import { useGhCliSetup } from "@/hooks/useGhCliSetup";
-import { useFavorites } from "@/hooks/useFavorites";
+import { useUserCollections } from "@/hooks/useUserCollections";
 
 function UserAvatar() {
 	const { data: user, isLoading } = useGitUser();
@@ -48,7 +48,7 @@ function RootLayout() {
 	const { isInstalled, isAuthenticated, isLoading } = useGhCliSetup();
 	const navigate = useNavigate();
 	const routerState = useRouterState();
-	const { isFavorite, toggleFavorite } = useFavorites();
+	const { isFavorite, toggleFavorite } = useUserCollections();
 
 	// Extract product name from route if on product page
 	const pathname = routerState.location.pathname;

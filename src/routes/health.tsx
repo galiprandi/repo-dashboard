@@ -2,7 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { Activity, RefreshCw, Trash2, ExternalLink, ChevronDown, ChevronUp, Copy } from 'lucide-react';
 import { useHealthMonitor } from '@/hooks/useHealthMonitor';
-import { useFavorites } from '@/hooks/useFavorites';
+import { useUserCollections } from '@/hooks/useUserCollections';
 
 export const Route = createFileRoute('/health')({
   component: HealthMonitorPage,
@@ -359,7 +359,7 @@ function HealthMonitorPage() {
     stats,
   } = useHealthMonitor();
 
-  const { favorites } = useFavorites();
+  const { favorites } = useUserCollections();
 
   // Estado para filtros
   const [environmentFilter, setEnvironmentFilter] = useState<'all' | 'staging' | 'production' | 'unhealthy'>('all');

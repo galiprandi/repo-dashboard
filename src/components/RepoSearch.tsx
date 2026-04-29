@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Search, Star, ExternalLink, Loader2, GitBranch } from 'lucide-react'
 import { useUserRepos } from '@/hooks/useUserRepos'
-import { useFavorites } from '@/hooks/useFavorites'
+import { useUserCollections } from '@/hooks/useUserCollections'
 import { Link } from '@tanstack/react-router'
 
 export function RepoSearch() {
@@ -14,7 +14,7 @@ export function RepoSearch() {
   // Load all repos from user (via gh CLI) - no org specified to get all accessible repos
   const { data, isLoading } = useUserRepos()
 
-  const { toggleFavorite, isFavorite } = useFavorites()
+  const { toggleFavorite, isFavorite } = useUserCollections()
 
   // Close when clicking outside
   useEffect(() => {
