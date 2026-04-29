@@ -2,10 +2,17 @@
 
 ---
 
+### 🗓️ 29 de Abril de 2026
+
+- 🎉 Proyectos: Nuevo sistema de gestión de proyectos integrado con favoritos para organizar mejor tus repositorios.
+- ⚠️ Gestión de Datos (Breaking Change): Unificación del sistema de colecciones de usuario (proyectos y favoritos) con mejor sincronización y estado. 
+- ⚙️ Instalación: Ahora se requiere jq como dependencia adicional para el funcionamiento del sistema.
+
 ### 🗓️ 28 de Abril de 2026
 
 - ✨ Promoción de Releases: Ahora puedes ver los commits pendientes directamente en el diálogo de promoción antes de crear el tag.
 - 🎨 Promoción de Releases: Mejor indicador visual de cambios pendientes con contador más claro en el botón de acción.
+- ⚙️ Instalación: Se agregó verificación de versión de Node.js, ahora requiere v22 o superior.
 
 ### 🗓️ 27 de Abril de 2026
 
