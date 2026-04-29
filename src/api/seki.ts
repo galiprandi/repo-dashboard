@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { PipelineStatusResponse } from './seki.type'
+import { getSekiToken } from '@/utils/sekiToken'
 
 // Helper to serialize params with bracket notation for nested objects
 const serializeParams = (params: Record<string, unknown>): string => {
@@ -33,10 +34,10 @@ const serializeParams = (params: Record<string, unknown>): string => {
   return parts.join('&')
 }
 
-// Helper to get token from localStorage or fallback to env
+// Helper to get token from releasehub_settings or fallback to env
 const getToken = (): string => {
-  const storedToken = localStorage.getItem('seki_api_token')
-  if (storedToken) return storedToken
+  const token = getSekiToken()
+  if (token) return token
   return import.meta.env.VITE_SEKI_API_TOKEN || ''
 }
 

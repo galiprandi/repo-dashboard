@@ -41,11 +41,24 @@ export function usePipeline({
   commit,
   enabled = true,
 }: UsePipelineOptions) {
+  console.log('[usePipeline] ===== START =====')
+  console.log('[usePipeline] product:', product)
+  console.log('[usePipeline] commit:', commit)
+  console.log('[usePipeline] commit length:', commit?.length)
+  console.log('[usePipeline] enabled:', enabled)
+
   return useQuery<PipelineStatusResponse>({
     queryKey: ['pipeline', product, commit],
     queryFn: async () => {
-      const { data } = await fetchPipeline(product, commit)
-      return data
+      console.log('[usePipeline] Fetching pipeline from API...')
+      try {
+        const { data } = await fetchPipeline(product, commit)
+        console.log('[usePipeline] Data received:', data)
+        return data
+      } catch (error) {
+        console.error('[usePipeline] Error fetching pipeline:', error)
+        throw error
+      }
     },
     enabled: enabled && !!product && !!commit,
     refetchInterval: (query) => {

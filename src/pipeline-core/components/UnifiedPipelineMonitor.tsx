@@ -5,6 +5,7 @@
 
 import { GitCommit, ExternalLink } from 'lucide-react'
 import DayJS from '@/lib/dayjs'
+import { useQueryClient } from '@tanstack/react-query'
 import { useUnifiedPipeline, type ViewMode } from '../index'
 import { PipelineCard, type MetaPart, SimpleTimeline } from './index'
 import {
@@ -64,20 +65,30 @@ function LoadingState() {
 /**
  * No provider detected state
  */
-function NoProviderState({ org, repo }: { org: string; repo: string }) {
+function NoProviderState({ org, repo, onRetry }: { org: string; repo: string; onRetry?: () => void }) {
 	return (
-		<div className="flex items-center gap-2 p-4 border-2 border-gray-200 rounded-lg">
-			<div className="text-gray-500">
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-					<circle cx="12" cy="12" r="10" />
-					<path d="M12 16v-4" />
-					<path d="M12 8h.01" />
-				</svg>
+		<div className="flex items-center justify-between gap-2 p-4 border-2 border-gray-200 rounded-lg">
+			<div className="flex items-center gap-2">
+				<div className="text-gray-500">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+						<circle cx="12" cy="12" r="10" />
+						<path d="M12 16v-4" />
+						<path d="M12 8h.01" />
+					</svg>
+				</div>
+				<div className="flex-1">
+					<div className="text-sm text-gray-600">No se detectó un pipeline compatible</div>
+					<div className="text-xs text-gray-500">{org}/{repo}</div>
+				</div>
 			</div>
-			<div className="flex-1">
-				<div className="text-sm text-gray-600">No se detectó un pipeline compatible</div>
-				<div className="text-xs text-gray-500">{org}/{repo}</div>
-			</div>
+			{onRetry && (
+				<button
+					onClick={onRetry}
+					className="px-3 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+				>
+					Reintentar
+				</button>
+			)}
 		</div>
 	)
 }
@@ -108,12 +119,20 @@ function NoDataState({ org, repo, tagName }: { org: string; repo: string; tagNam
 }
 
 export function UnifiedPipelineMonitor({ org, repo, viewMode, ref }: UnifiedPipelineMonitorProps) {
+	const queryClient = useQueryClient()
 	const { data, provider, isLoading, error, refetch } = useUnifiedPipeline({
 		org,
 		repo,
 		viewMode,
 		ref,
 	})
+
+	const handleRetry = () => {
+		// Invalidate pipeline detection cache to force re-detection
+		queryClient.invalidateQueries({ queryKey: ['pipeline-detection', org, repo] })
+		// Also invalidate any pipeline data cache
+		queryClient.invalidateQueries({ queryKey: ['pipeline'] })
+	}
 
 	// Loading state
 	if (isLoading) {
@@ -127,7 +146,7 @@ export function UnifiedPipelineMonitor({ org, repo, viewMode, ref }: UnifiedPipe
 
 	// No provider detected
 	if (!provider) {
-		return <NoProviderState org={org} repo={repo} />
+		return <NoProviderState org={org} repo={repo} onRetry={handleRetry} />
 	}
 
 	// Provider detected but no data available

@@ -9,6 +9,7 @@ import { PromoteDialog } from "@/components/PromoteDialog";
 import { ForceRedeployDialog } from "@/components/ForceRedeployDialog";
 import { FreezeDialog } from "@/components/FreezeDialog";
 import { RefetchButton } from "@/components/ui/RefetchButton";
+import { ProjectSelector } from "@/components/ProjectSelector";
 import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTags } from "@/hooks/useGitTags";
 import { usePipelineDetector } from "@/hooks/usePipelineDetector";
@@ -125,6 +126,8 @@ function ProductIndex() {
 					</button>
 				</div>
 				<div className="flex items-center gap-2">
+					<ProjectSelector repo={fullProduct} />
+					<div className="w-px h-6 bg-border" />
 					<FreezeDialog repo={fullProduct} iconOnly={false} />
 					{isCommits ? (
 						<ForceRedeployDialog repo={fullProduct} />

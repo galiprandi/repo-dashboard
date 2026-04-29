@@ -105,12 +105,6 @@ export function useSettings() {
 
 	const setSekiToken = (token: string | null) => {
 		updateSettings({ sekiToken: token })
-		// Also update legacy key for backward compatibility
-		if (token) {
-			localStorage.setItem('seki_api_token', token)
-		} else {
-			localStorage.removeItem('seki_api_token')
-		}
 	}
 
 	const setDiscordWebhook = (webhook: string | null) => {
@@ -119,7 +113,6 @@ export function useSettings() {
 
 	const clearAll = () => {
 		updateSettings(DEFAULT_SETTINGS)
-		localStorage.removeItem('seki_api_token')
 	}
 
 	return {

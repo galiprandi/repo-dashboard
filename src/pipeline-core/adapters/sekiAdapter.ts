@@ -6,6 +6,7 @@
 import type { PipelineAdapter, PipelineData, PipelineEvent, ViewMode } from '../types'
 import type { PipelineStatusResponse, SubEvent, Event as SekiEvent } from '@/api/seki.type'
 import { fetchPipeline, fetchPipelineWithTag } from '@/api/seki'
+import { hasSekiToken } from '@/utils/sekiToken'
 
 /**
  * Map Seki state to unified PipelineState
@@ -93,24 +94,10 @@ export const sekiAdapter: PipelineAdapter = {
 	name: 'seki',
 	
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	async supports(org: string, _repo: string): Promise<boolean> {
+	async supports(_org: string, _repo: string): Promise<boolean> {
 		// Seki is supported if user has a token
-		const hasToken = !!localStorage.getItem('seki_api_token')
-		if (!hasToken) return false
-		
-		// Optionally verify org is in allowed list
-		try {
-			const token = localStorage.getItem('seki_api_token')
-			if (!token) return false
-			
-			// Try to decode token to check org scope
-			const payload = JSON.parse(atob(token.split('.')[1]))
-			const scopes = payload.scopes || []
-			return scopes.some((scope: string) => scope.includes(org))
-		} catch {
-			// If token parsing fails, assume it's valid
-			return true
-		}
+		// The backend will validate the scope, so we don't need to validate here
+		return hasSekiToken()
 	},
 	
 	async fetch(
@@ -120,6 +107,7 @@ export const sekiAdapter: PipelineAdapter = {
 		ref: string
 	): Promise<PipelineData | null> {
 		const fullProduct = `${org}/${repo}`
+		console.log('[SekiAdapter] Fetching pipeline for', fullProduct, 'viewMode:', viewMode, 'ref:', ref)
 		
 		try {
 			let response
@@ -128,16 +116,25 @@ export const sekiAdapter: PipelineAdapter = {
 				// For production, we need a tag (ref should be the tag name)
 				// Note: This adapter is not used by the old system that uses fetchPipelineWithTag
 				// The old system uses usePipelineWithTag directly
-				if (!ref || ref.length < 5) return null
+				if (!ref || ref.length < 5) {
+					console.log('[SekiAdapter] Invalid ref for tags:', ref)
+					return null
+				}
 				// For the unified system, we would need to pass the commit separately
 				// This is a limitation of the current unified adapter design
+				console.log('[SekiAdapter] Fetching with tag:', ref)
 				response = await fetchPipelineWithTag(fullProduct, '', ref)
 			} else {
 				// For commits view, we need a commit hash
-				if (!ref || ref.length < 7) return null
+				if (!ref || ref.length < 7) {
+					console.log('[SekiAdapter] Invalid ref for commits:', ref)
+					return null
+				}
+				console.log('[SekiAdapter] Fetching with commit:', ref)
 				response = await fetchPipeline(fullProduct, ref)
 			}
 			
+			console.log('[SekiAdapter] Response received:', response.data)
 			// Transform the response to unified format
 			return transformSekiData(response.data, viewMode)
 		} catch (error) {

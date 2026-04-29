@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { runCommand } from '@/api/exec'
+import { hasSekiToken } from '@/utils/sekiToken'
 
 export type PipelinePlugin = 'pulsar' | 'seki' | null
 
@@ -44,6 +45,7 @@ const detectPipeline = async (org: string, repo: string): Promise<{
   hasSeki: boolean
   hasNxBuild: boolean
 }> => {
+  console.log('[Detect Pipeline] ===== START =====')
   console.log('[Detect Pipeline] Checking', org, repo)
 
   // Check for Nx Build workflow (Pulsar)
@@ -61,11 +63,11 @@ const detectPipeline = async (org: string, repo: string): Promise<{
   }
 
   // If no Nx Build, check if Seki token exists
-  const hasSekiToken = !!localStorage.getItem('seki_api_token')
-  console.log('[Detect Pipeline] hasSekiToken:', hasSekiToken)
+  const hasToken = hasSekiToken()
+  console.log('[Detect Pipeline] hasSekiToken:', hasToken)
 
   // Only return Seki if there's a token, otherwise return null
-  if (!hasSekiToken) {
+  if (!hasToken) {
     console.log('[Detect Pipeline] No Seki token, returning null')
     return {
       plugin: null,
@@ -76,6 +78,7 @@ const detectPipeline = async (org: string, repo: string): Promise<{
 
   // If Seki token exists, assume Seki
   console.log('[Detect Pipeline] Assuming Seki')
+  console.log('[Detect Pipeline] ===== END =====')
   return {
     plugin: 'seki',
     hasSeki: true,

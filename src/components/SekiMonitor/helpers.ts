@@ -88,15 +88,17 @@ export const extractRoutes = (events: Event[]) => {
 	flattenSubEvents(events)
 		.filter(({ sub }) => sub.id.toUpperCase().startsWith("DEPLOY"))
 		.forEach(({ sub }) => {
-			const matches = sub.markdown.match(ROUTE_REGEX);
-			if (matches) {
-				matches.forEach((match) => {
-					const url = cleanUrl(match);
-					// Solo incluir URLs externas accesibles desde el navegador
-					if (isExternalUrl(url)) {
-						urls.add(url);
-					}
-				});
+			if (sub.markdown) {
+				const matches = sub.markdown.match(ROUTE_REGEX);
+				if (matches) {
+					matches.forEach((match) => {
+						const url = cleanUrl(match);
+						// Solo incluir URLs externas accesibles desde el navegador
+						if (isExternalUrl(url)) {
+							urls.add(url);
+						}
+					});
+				}
 			}
 		});
 	return Array.from(urls);

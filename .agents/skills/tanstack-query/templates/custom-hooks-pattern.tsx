@@ -1,5 +1,6 @@
 // src/hooks/useUsers.ts - Example of advanced custom hooks pattern
 import { useQuery, useMutation, useQueryClient, queryOptions } from '@tanstack/react-query'
+import { useState } from 'react'
 
 /**
  * Type definitions

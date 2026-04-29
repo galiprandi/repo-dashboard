@@ -6,12 +6,32 @@ import 'dayjs/locale/es'
 dayjs.extend(relativeTime)
 dayjs.locale('es')
 
-const TOKEN_KEY = 'seki_api_token'
+const SETTINGS_KEY = 'releasehub_settings'
 
 interface JWTPayload {
   exp?: number
   iat?: number
   [key: string]: unknown
+}
+
+interface Settings {
+  sekiToken: string | null
+  discordWebhook: string | null
+}
+
+/**
+ * Load settings from localStorage
+ */
+function loadSettings(): Settings {
+  try {
+    const stored = localStorage.getItem(SETTINGS_KEY)
+    if (stored) {
+      return JSON.parse(stored) as Settings
+    }
+  } catch {
+    // If parsing fails, return default
+  }
+  return { sekiToken: null, discordWebhook: null }
 }
 
 /**
@@ -73,27 +93,29 @@ function getExpirationDate(token: string): string | null {
  */
 export function useToken() {
   const [token, setTokenState] = useState<string | null>(() => {
-    const storedToken = localStorage.getItem(TOKEN_KEY)
-    if (storedToken && !isTokenExpired(storedToken)) {
-      return storedToken
+    const settings = loadSettings()
+    if (settings.sekiToken && !isTokenExpired(settings.sekiToken)) {
+      return settings.sekiToken
     }
     return null
   })
   const [isExpired, setIsExpired] = useState(() => {
-    const storedToken = localStorage.getItem(TOKEN_KEY)
-    return storedToken ? isTokenExpired(storedToken) : false
+    const settings = loadSettings()
+    return settings.sekiToken ? isTokenExpired(settings.sekiToken) : false
   })
   const [expirationDate, setExpirationDate] = useState<string | null>(() => {
-    const storedToken = localStorage.getItem(TOKEN_KEY)
-    if (storedToken) {
-      const exp = getExpirationDate(storedToken)
+    const settings = loadSettings()
+    if (settings.sekiToken) {
+      const exp = getExpirationDate(settings.sekiToken)
       return exp || 'El token no tiene fecha de expiración'
     }
     return null
   })
 
   const saveToken = (newToken: string) => {
-    localStorage.setItem(TOKEN_KEY, newToken)
+    const settings = loadSettings()
+    const updated = { ...settings, sekiToken: newToken }
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated))
     const expired = isTokenExpired(newToken)
     setIsExpired(expired)
     setTokenState(expired ? null : newToken)
@@ -102,7 +124,9 @@ export function useToken() {
   }
 
   const clearToken = () => {
-    localStorage.removeItem(TOKEN_KEY)
+    const settings = loadSettings()
+    const updated = { ...settings, sekiToken: null }
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(updated))
     setTokenState(null)
     setIsExpired(false)
     setExpirationDate(null)

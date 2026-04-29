@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, Star, Github, Building2, GitPullRequestCreateArrow } from "lucide-react";
+import { Loader2, Star, Github, Building2, GitPullRequestCreateArrow, FolderOpen, FolderPlus } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { DisplayInfo } from "@/components/DisplayInfo";
 import { CommitLink } from "@/components/CommitLink";
@@ -8,6 +8,7 @@ import { PromoteDialog } from "@/components/PromoteDialog";
 import { ForceRedeployDialog } from "@/components/ForceRedeployDialog";
 import { FreezeDialog } from "@/components/FreezeDialog";
 import { useFavorites } from "@/hooks/useFavorites";
+import { useProjects } from "@/hooks/useProjects";
 import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTagsSimple } from "@/hooks/useGitTagsSimple";
 import { usePipelineWithHealth } from "@/hooks/usePipelineWithHealth";
@@ -18,59 +19,112 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
 	const { favorites, toggleFavorite } = useFavorites();
+	const { projects, activeTab, setActiveTab } = useProjects();
 
-	const favoriteRepos = favorites
-		.filter((f) => f.includes("/"))
-		.map((f) => {
-			const [org, name] = f.split("/");
-			return {
-				fullName: f,
-				name,
-				org,
-				description: "",
-				updatedAt: "",
-			};
-		});
+	const tabs = [
+		{ id: "favorites", label: "Favoritos", icon: Star, count: favorites.length, description: "" },
+		...projects.map(p => ({ id: p.id, label: p.name, icon: FolderOpen, count: p.repos.length, description: p.description })),
+	];
 
-	// Group repos by organization
-	const groupedRepos = favoriteRepos.reduce((acc, repo) => {
-		if (!acc[repo.org]) {
-			acc[repo.org] = [];
+	// Determine repos to show based on active tab
+	let displayRepos: RepoInfo[] = [];
+	if (activeTab === "favorites") {
+		displayRepos = favorites
+			.filter((f) => f.includes("/"))
+			.map((f) => {
+				const [org, name] = f.split("/");
+				return { fullName: f, name, org, description: "", updatedAt: "" };
+			});
+	} else {
+		const project = projects.find((p) => p.id === activeTab);
+		if (project) {
+			displayRepos = project.repos
+				.filter((r) => r.includes("/"))
+				.map((r) => {
+					const [org, name] = r.split("/");
+					return { fullName: r, name, org, description: "", updatedAt: "" };
+				});
 		}
-		acc[repo.org].push(repo);
-		return acc;
-	}, {} as Record<string, typeof favoriteRepos>);
-
-	// Sort organizations alphabetically
-	const sortedOrgs = Object.keys(groupedRepos).sort();
-
-	if (favorites.length === 0) {
-		return (
-			<div className="border rounded-xl p-12 text-center text-muted-foreground bg-muted/20 border-dashed">
-				<Star className="w-10 h-10 mx-auto mb-4 opacity-20" />
-				<h3 className="text-lg font-medium text-foreground mb-1">Sin favoritos</h3>
-				<p className="text-sm max-w-xs mx-auto">
-					Busca repositorios usando la barra superior para agregarlos a tu panel principal.
-				</p>
-			</div>
-		);
 	}
 
+	// Group repos by organization
+	const groupedRepos = displayRepos.reduce((acc, repo) => {
+		if (!acc[repo.org]) acc[repo.org] = [];
+		acc[repo.org].push(repo);
+		return acc;
+	}, {} as Record<string, RepoInfo[]>);
+
+	const sortedOrgs = Object.keys(groupedRepos).sort();
+
 	return (
-		<div className="space-y-10">
-			{sortedOrgs.map(org => (
-				<section key={org} className="space-y-3">
-					<h2 className="text-lg font-semibold text-foreground px-4 flex items-center gap-2">
-						<Building2 className="w-5 h-5" />
-						{org}
-					</h2>
-					<ReposTable
-						repos={groupedRepos[org]}
-						favorites={favorites}
-						onToggleFavorite={toggleFavorite}
-					/>
-				</section>
-			))}
+		<div className="space-y-6">
+			{/* Tabs */}
+			<div className="flex gap-1 bg-muted rounded-lg p-1 overflow-x-auto">
+				{tabs.map((tab) => {
+					const Icon = tab.icon;
+					const isActive = activeTab === tab.id;
+					return (
+						<button
+							key={tab.id}
+							type="button"
+							onClick={() => setActiveTab(tab.id)}
+							className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-all whitespace-nowrap ${
+								isActive
+									? "bg-white shadow-sm text-foreground font-medium"
+									: "text-muted-foreground hover:text-foreground"
+							}`}
+							title={tab.description}
+						>
+							<Icon className="w-4 h-4" />
+							{tab.label}
+							{tab.count > 0 && (
+								<span className="text-xs bg-muted-foreground/20 px-1.5 py-0.5 rounded-full">
+									{tab.count}
+								</span>
+								)}
+						</button>
+					);
+				})}
+			</div>
+
+			{/* Content */}
+			{displayRepos.length === 0 ? (
+				<div className="border rounded-xl p-12 text-center text-muted-foreground bg-muted/20 border-dashed">
+					{activeTab === "favorites" ? (
+						<>
+							<Star className="w-10 h-10 mx-auto mb-4 opacity-20" />
+							<h3 className="text-lg font-medium text-foreground mb-1">Sin favoritos</h3>
+							<p className="text-sm max-w-xs mx-auto">
+								Busca repositorios usando la barra superior para agregarlos a tu panel principal.
+							</p>
+						</>
+					) : (
+						<>
+							<FolderPlus className="w-10 h-10 mx-auto mb-4 opacity-20" />
+							<h3 className="text-lg font-medium text-foreground mb-1">Proyecto vacío</h3>
+							<p className="text-sm max-w-xs mx-auto">
+								Navega a un repositorio y agregalo a este proyecto desde la vista de detalle.
+							</p>
+						</>
+					)}
+				</div>
+			) : (
+				<div className="space-y-10">
+					{sortedOrgs.map((org) => (
+						<section key={org} className="space-y-3">
+							<h2 className="text-lg font-semibold text-foreground px-4 flex items-center gap-2">
+								<Building2 className="w-5 h-5" />
+								{org}
+							</h2>
+							<ReposTable
+								repos={groupedRepos[org]}
+								favorites={favorites}
+								onToggleFavorite={toggleFavorite}
+							/>
+						</section>
+					))}
+				</div>
+			)}
 		</div>
 	);
 }
@@ -342,6 +396,7 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 type RepoInfo = {
 	fullName: string;
 	name: string;
+	org: string;
 	description: string;
 	updatedAt: string;
 };
