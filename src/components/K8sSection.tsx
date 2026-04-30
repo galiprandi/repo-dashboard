@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check } from "lucide-react";
+import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2 } from "lucide-react";
 import { useKubectlNamespaceAccess } from "@/hooks/useKubectlNamespaceAccess";
-import { getPods, getDeployments, getResourceLogs, type PodInfo, type DeploymentInfo } from "@/api/kubectl";
+import { getDeployments, getResourceLogs, getPodsForDeployment } from "@/api/kubectl";
 
 interface K8sSectionProps {
 	namespace: string;
@@ -10,9 +10,11 @@ interface K8sSectionProps {
 
 export function K8sSection({ namespace }: K8sSectionProps) {
 	const { data: access, isLoading: checkingAccess } = useKubectlNamespaceAccess(namespace);
-	const [activeType, setActiveType] = useState<"deployments" | "pods">("deployments");
-	const [selectedItem, setSelectedItem] = useState<string | null>(null);
+	const [selectedDeployment, setSelectedDeployment] = useState<string | null>(null);
+	const [selectedPod, setSelectedPod] = useState<string | null>(null);
 	const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
+	const [logsResourceType, setLogsResourceType] = useState<"deployment" | "pod">("deployment");
+	const [logsName, setLogsName] = useState<string>("");
 	const [logTailSize, setLogTailSize] = useState<number>(100);
 
 	if (checkingAccess) {
@@ -24,58 +26,72 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 		);
 	}
 
-	if (!access?.hasAccess) {
+	if (!access?.hasAccess || !access.canGetDeployments) {
 		return null;
 	}
+
+	const handleViewDeploymentLogs = (deploymentName: string) => {
+		setLogsResourceType("deployment");
+		setLogsName(deploymentName);
+		setIsLogsModalOpen(true);
+	};
+
+	const handleViewPodLogs = (podName: string) => {
+		setLogsResourceType("pod");
+		setLogsName(podName);
+		setIsLogsModalOpen(true);
+	};
 
 	return (
 		<>
 			<div className="border rounded-lg p-3 flex items-center gap-3 bg-muted/30">
 				<Boxes className="w-5 h-5 text-blue-600 flex-shrink-0" />
 				
-				{access.canGetDeployments && access.canGetPods && (
-					<div className="flex gap-1">
-						<button
-							type="button"
-							onClick={() => setActiveType("deployments")}
-							className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
-								activeType === "deployments"
-									? "bg-background text-foreground border"
-									: "text-muted-foreground hover:text-foreground"
-							}`}
-						>
-							Deployments
-						</button>
-						<button
-							type="button"
-							onClick={() => setActiveType("pods")}
-							className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
-								activeType === "pods"
-									? "bg-background text-foreground border"
-									: "text-muted-foreground hover:text-foreground"
-							}`}
-						>
-							Pods
-						</button>
-					</div>
-				)}
-
-				<ResourceDropdown
+				<DeploymentDropdown
 					namespace={namespace}
-					type={activeType}
-					selectedItem={selectedItem}
-					onSelect={setSelectedItem}
-					enabled={activeType === "deployments" ? access.canGetDeployments : access.canGetPods}
+					selectedDeployment={selectedDeployment}
+					onSelect={(deployment) => {
+						setSelectedDeployment(deployment);
+						setSelectedPod(null);
+					}}
 				/>
 
-				{selectedItem && <ResourceStats namespace={namespace} type={activeType} name={selectedItem} />}
+				{selectedDeployment && <DeploymentStats namespace={namespace} name={selectedDeployment} />}
+
+				{selectedDeployment && (
+					<PodDropdown
+						namespace={namespace}
+						deploymentName={selectedDeployment}
+						selectedPod={selectedPod}
+						onSelect={setSelectedPod}
+					/>
+				)}
+
+				{selectedDeployment && (
+					<PodStats
+						namespace={namespace}
+						deploymentName={selectedDeployment}
+						selectedPod={selectedPod}
+					/>
+				)}
 
 				<div className="flex-1" />
 
-				{selectedItem && access.canGetPodLogs && (
+				{selectedDeployment && !selectedPod && (
 					<button
 						type="button"
-						onClick={() => setIsLogsModalOpen(true)}
+						onClick={() => handleViewDeploymentLogs(selectedDeployment)}
+						className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+					>
+						<Search className="w-3.5 h-3.5" />
+						Logs
+					</button>
+				)}
+
+				{selectedPod && (
+					<button
+						type="button"
+						onClick={() => handleViewPodLogs(selectedPod)}
 						className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
 					>
 						<Search className="w-3.5 h-3.5" />
@@ -84,11 +100,11 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 				)}
 			</div>
 
-			{isLogsModalOpen && selectedItem && (
+			{isLogsModalOpen && (
 				<LogsModal
 					namespace={namespace}
-					type={activeType}
-					name={selectedItem}
+					type={logsResourceType}
+					name={logsName}
 					tailSize={logTailSize}
 					onTailSizeChange={setLogTailSize}
 					onClose={() => setIsLogsModalOpen(false)}
@@ -98,98 +114,178 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 	);
 }
 
-function ResourceDropdown({
+function DeploymentDropdown({
 	namespace,
-	type,
-	selectedItem,
+	selectedDeployment,
 	onSelect,
-	enabled,
 }: {
 	namespace: string;
-	type: "deployments" | "pods";
-	selectedItem: string | null;
-	onSelect: (item: string | null) => void;
-	enabled: boolean;
+	selectedDeployment: string | null;
+	onSelect: (deployment: string | null) => void;
 }) {
-	const { data: items, isLoading } = useQuery({
-		queryKey: ["kubectl", type, namespace],
-		queryFn: async () => {
-			if (type === "deployments") {
-				return await getDeployments(namespace);
-			}
-			return await getPods(namespace);
-		},
-		enabled,
+	const { data: deployments, isLoading } = useQuery({
+		queryKey: ["kubectl", "deployments", namespace],
+		queryFn: () => getDeployments(namespace),
 		refetchInterval: 30000,
 	});
 
-	if (!enabled) return null;
-
 	return (
-		<div className="relative">
-			<select
-				value={selectedItem || ""}
-				onChange={(e) => onSelect(e.target.value || null)}
-				disabled={isLoading || !items || items.length === 0}
-				className="min-w-[200px] px-2 py-1 text-sm bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-			>
-				<option value="">Seleccionar {type === "deployments" ? "deployment" : "pod"}</option>
-				{items?.map((item) => (
-					<option key={item.name} value={item.name}>
-						{item.name}
-					</option>
-				))}
-			</select>
-		</div>
+		<select
+			value={selectedDeployment || ""}
+			onChange={(e) => onSelect(e.target.value || null)}
+			disabled={isLoading || !deployments || deployments.length === 0}
+			className="min-w-[200px] px-2 py-1 text-sm bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+		>
+			<option value="">Seleccionar deployment</option>
+			{deployments?.map((deployment) => (
+				<option key={deployment.name} value={deployment.name}>
+					{deployment.name}
+				</option>
+			))}
+		</select>
 	);
 }
 
-function ResourceStats({ namespace, type, name }: { namespace: string; type: "deployments" | "pods"; name: string }) {
-	const { data: item, isLoading } = useQuery({
-		queryKey: ["kubectl", type, namespace, name],
+function DeploymentStats({ namespace, name }: { namespace: string; name: string }) {
+	const { data: deployment, isLoading } = useQuery({
+		queryKey: ["kubectl", "deployment", namespace, name],
 		queryFn: async () => {
-			const items = type === "deployments" ? await getDeployments(namespace) : await getPods(namespace);
-			return items?.find((i) => i.name === name);
+			const deployments = await getDeployments(namespace);
+			return deployments?.find((d) => d.name === name);
 		},
 		enabled: !!name,
 		refetchInterval: 30000,
 	});
 
-	if (isLoading || !item) {
+	if (isLoading || !deployment) {
 		return <div className="text-xs text-muted-foreground">Cargando...</div>;
 	}
 
-	if (type === "deployments") {
-		const deployment = item as DeploymentInfo;
+	return (
+		<div className="flex items-center gap-2 text-xs">
+			<div className="flex items-center gap-1 text-muted-foreground" title={`Pods listos / Pods deseados: ${deployment.ready}`}>
+				<CheckCircle2 className="w-3.5 h-3.5" />
+				<span>{deployment.ready}</span>
+			</div>
+			<div className="flex items-center gap-1 text-muted-foreground" title={`Replicas actualizadas: ${deployment.upToDate}`}>
+				<Activity className="w-3.5 h-3.5" />
+				<span>{deployment.upToDate}</span>
+			</div>
+			<div className="flex items-center gap-1 text-muted-foreground" title={`Replicas disponibles: ${deployment.available}`}>
+				<CheckCircle2 className="w-3.5 h-3.5" />
+				<span>{deployment.available}</span>
+			</div>
+			<div className="flex items-center gap-1 text-muted-foreground" title={`Tiempo desde creación: ${deployment.age}`}>
+				<Clock className="w-3.5 h-3.5" />
+				<span>{deployment.age}</span>
+			</div>
+		</div>
+	);
+}
+
+function PodDropdown({
+	namespace,
+	deploymentName,
+	selectedPod,
+	onSelect,
+}: {
+	namespace: string;
+	deploymentName: string;
+	selectedPod: string | null;
+	onSelect: (pod: string | null) => void;
+}) {
+	const { data: pods, isLoading } = useQuery({
+		queryKey: ["kubectl", "deployment-pods", namespace, deploymentName],
+		queryFn: () => getPodsForDeployment(deploymentName, namespace),
+		enabled: !!deploymentName,
+		refetchInterval: 30000,
+	});
+
+	return (
+		<select
+			value={selectedPod || ""}
+			onChange={(e) => onSelect(e.target.value || null)}
+			disabled={isLoading || !pods || pods.length === 0}
+			className="min-w-[200px] px-2 py-1 text-sm bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+		>
+			<option value="">Todos los pods</option>
+			{pods?.map((pod) => (
+				<option key={pod.name} value={pod.name}>
+					{pod.name}
+				</option>
+			))}
+		</select>
+	);
+}
+
+function PodStats({
+	namespace,
+	deploymentName,
+	selectedPod,
+}: {
+	namespace: string;
+	deploymentName: string;
+	selectedPod: string | null;
+}) {
+	const { data: pods } = useQuery({
+		queryKey: ["kubectl", "deployment-pods", namespace, deploymentName],
+		queryFn: () => getPodsForDeployment(deploymentName, namespace),
+		enabled: !!deploymentName,
+		refetchInterval: 30000,
+	});
+
+	if (!pods || pods.length === 0) {
+		return null;
+	}
+
+	const targetPod = selectedPod ? pods.find((p) => p.name === selectedPod) : null;
+
+	if (targetPod) {
+		// Stats de un pod específico
 		return (
-			<div className="flex items-center gap-3 text-xs">
-				<span className="text-muted-foreground">Ready: {deployment.ready}</span>
-				<span className="text-muted-foreground">Up-to-date: {deployment.upToDate}</span>
-				<span className="text-muted-foreground">Available: {deployment.available}</span>
-				<span className="text-muted-foreground">Age: {deployment.age}</span>
+			<div className="flex items-center gap-2 text-xs">
+				<div className="flex items-center gap-1 text-muted-foreground" title={`Contenedores listos / totales: ${targetPod.ready}`}>
+					<CheckCircle2 className="w-3.5 h-3.5" />
+					<span>{targetPod.ready}</span>
+				</div>
+				<span
+					className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+						targetPod.status === "Running"
+							? "bg-green-100 text-green-700"
+							: targetPod.status === "Completed"
+								? "bg-blue-100 text-blue-700"
+								: targetPod.status === "Error"
+									? "bg-red-100 text-red-700"
+									: "bg-gray-100 text-gray-700"
+					}`}
+					title={`Estado del pod: ${targetPod.status}`}
+				>
+					{targetPod.status}
+				</span>
+				<div className="flex items-center gap-1 text-muted-foreground" title={`Reinicios del pod: ${targetPod.restarts}`}>
+					<RotateCcw className="w-3.5 h-3.5" />
+					<span>{targetPod.restarts}</span>
+				</div>
+				<div className="flex items-center gap-1 text-muted-foreground" title={`Tiempo desde creación: ${targetPod.age}`}>
+					<Clock className="w-3.5 h-3.5" />
+					<span>{targetPod.age}</span>
+				</div>
 			</div>
 		);
 	}
 
-	const pod = item as PodInfo;
+	// Stats de todos los pods
+	const runningPods = pods.filter((p) => p.status === "Running").length;
 	return (
-		<div className="flex items-center gap-3 text-xs">
-			<span className="text-muted-foreground">Ready: {pod.ready}</span>
-			<span
-				className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-					pod.status === "Running"
-						? "bg-green-100 text-green-700"
-						: pod.status === "Completed"
-							? "bg-blue-100 text-blue-700"
-							: pod.status === "Error"
-								? "bg-red-100 text-red-700"
-								: "bg-gray-100 text-gray-700"
-				}`}
-			>
-				{pod.status}
-			</span>
-			<span className="text-muted-foreground">Restarts: {pod.restarts}</span>
-			<span className="text-muted-foreground">Age: {pod.age}</span>
+		<div className="flex items-center gap-2 text-xs">
+			<div className="flex items-center gap-1 text-muted-foreground" title={`Total de pods: ${pods.length}`}>
+				<Activity className="w-3.5 h-3.5" />
+				<span>{pods.length}</span>
+			</div>
+			<div className="flex items-center gap-1 text-muted-foreground" title={`Pods en ejecución: ${runningPods}`}>
+				<CheckCircle2 className="w-3.5 h-3.5" />
+				<span>{runningPods}</span>
+			</div>
 		</div>
 	);
 }
@@ -203,7 +299,7 @@ function LogsModal({
 	onClose,
 }: {
 	namespace: string;
-	type: "deployments" | "pods";
+	type: "deployment" | "pod";
 	name: string;
 	tailSize: number;
 	onTailSizeChange: (size: number) => void;
@@ -211,10 +307,9 @@ function LogsModal({
 }) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [copied, setCopied] = useState(false);
-	const resourceType = type === "deployments" ? "deployment" : "pod";
 	const { data: logs, isLoading, refetch } = useQuery({
-		queryKey: ["kubectl", "logs", resourceType, namespace, name, tailSize],
-		queryFn: () => getResourceLogs(resourceType, name, namespace, tailSize),
+		queryKey: ["kubectl", "logs", type, namespace, name, tailSize],
+		queryFn: () => getResourceLogs(type, name, namespace, tailSize),
 		enabled: !!namespace && !!name,
 	});
 

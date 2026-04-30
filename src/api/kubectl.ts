@@ -126,6 +126,28 @@ export async function getPods(namespace?: string): Promise<PodInfo[]> {
   }
 }
 
+export async function getPodsForDeployment(deploymentName: string, namespace?: string): Promise<PodInfo[]> {
+  try {
+    const nsFlag = namespace ? `-n ${namespace}` : '';
+    const selectorResult = await runCommand(`kubectl get deployment ${deploymentName} ${nsFlag} -o jsonpath='{.spec.selector.matchLabels}'`);
+    const selector = selectorResult.stdout.trim();
+    if (!selector) {
+      return [];
+    }
+    // Convertir selector JSON a formato -l key=value,key2=value2
+    try {
+      const labels = JSON.parse(selector);
+      const labelSelector = Object.entries(labels).map(([k, v]) => `${k}=${v}`).join(',');
+      const result = await runCommand(`kubectl get pods ${nsFlag} -l ${labelSelector}`);
+      return parsePods(result.stdout);
+    } catch {
+      return [];
+    }
+  } catch {
+    return [];
+  }
+}
+
 export async function getResourceLogs(resourceType: 'deployment' | 'pod', name: string, namespace?: string, tail = 100): Promise<string> {
   try {
     const nsFlag = namespace ? `-n ${namespace}` : '';
