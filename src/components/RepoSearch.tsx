@@ -10,6 +10,7 @@ export function RepoSearch() {
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [isEditable, setIsEditable] = useState(false)
+  const searchWidth = 'w-[35dvw]'
 
   // Load all repos from user (via gh CLI) - no org specified to get all accessible repos
   const { data, isLoading } = useUserRepos()
@@ -93,7 +94,7 @@ export function RepoSearch() {
           }}
           onBlur={() => setIsEditable(false)}
           placeholder={`Búsqueda en ${data?.results?.length || 0} repositorios... (Cmd+K)`}
-          className="w-[28rem] pl-9 pr-4 py-2 bg-muted rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+          className={`${searchWidth} pl-9 pr-4 py-2 bg-muted rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
@@ -108,7 +109,7 @@ export function RepoSearch() {
 
       {/* Dropdown Results */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-2 w-96 bg-white border rounded-lg shadow-lg z-50 overflow-hidden">
+        <div className={`absolute top-full left-0 mt-2 ${searchWidth} bg-white border rounded-lg shadow-lg z-50 overflow-hidden`}>
           {isLoading ? (
             <div className="p-4 text-center text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
