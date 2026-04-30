@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles } from "lucide-react";
+import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { useKubectlNamespaceAccess } from "@/hooks/useKubectlNamespaceAccess";
+import { useAISummarizer } from "@/hooks/useAISummarizer";
 import { getDeployments, getResourceLogs, getPodsForDeployment } from "@/api/kubectl";
 
 interface K8sSectionProps {
@@ -355,35 +356,91 @@ function LogsModal({
 
 	const [filter, setFilter] = useState("");
 	const [copied, setCopied] = useState(false);
-	const [aiSummary, setAiSummary] = useState<string | null>(null);
-	const [isSummarizing, setIsSummarizing] = useState(false);
-	const [isAIAvailable, setIsAIAvailable] = useState(false);
 	const [aiSummaryCopied, setAiSummaryCopied] = useState(false);
+	const [isAiSummaryCollapsed, setIsAiSummaryCollapsed] = useState(false);
 
-	// Verificar disponibilidad de API de Chrome AI Summarizer al cargar
-	useEffect(() => {
-		const checkAIAvailability = async () => {
-			const hasAISummarizer = window.ai && window.ai.summarizer;
-			const hasSummarizer = (window as unknown as Record<string, unknown>).Summarizer;
-			setIsAIAvailable(!!hasAISummarizer || !!hasSummarizer);
+	// Usar hook de AI Summarizer
+	const { availability, isGenerating, summary, error: aiError, generate: generateAISummary } = useAISummarizer();
+
+	// Agrupar líneas en logs completos (multi-línea)
+	const groupLogs = (logText: string): string[] => {
+		const lines = logText.split("\n");
+		const logGroups: string[][] = [];
+		let currentGroup: string[] = [];
+
+		// Función para remover ANSI color codes
+		const stripAnsi = (text: string): string => {
+			return text.replace(/\u001b\[[0-9;]*m/g, "");
 		};
-		checkAIAvailability();
-	}, []);
 
-	const filteredLines = logs
-		? logs.split("\n").filter((line) => filter === "" || line.toLowerCase().includes(filter.toLowerCase()))
-		: [];
+		// Patrón para detectar inicio de nuevo log (timestamp o nivel de log)
+		// Detecta: timestamps (2026-04-30), [Nest], [RedisBaseModel], JSON ({, "level":), o líneas que comienzan con texto después de ANSI codes
+		const logStartPattern = (line: string): boolean => {
+			const cleanLine = stripAnsi(line);
+			
+			// Timestamp ISO (2026-04-30)
+			if (/^\d{4}-\d{2}-\d{2}/.test(cleanLine)) return true;
+			
+			// JSON
+			if (/^\{/.test(cleanLine) || /^"level":/.test(cleanLine)) return true;
+			
+			// Corchetes específicos de logs ([Nest], [RedisBaseModel], [Handler], etc.)
+			if (/^\[Nest\]|\[RedisBaseModel\]|\[Handler\]|\[OnUserUpdated\]|\[FCMBase\]|\[PushNotificationStrategy\]|\[PushNotificationClient\]|\[Notifier\]/.test(cleanLine)) return true;
+			
+			// kafka-client logs (info:, silly:, error:)
+			if (/^info:|^silly:|^error:|^warn:/.test(cleanLine)) return true;
+			
+			return false;
+		};
+
+		for (const line of lines) {
+			if (logStartPattern(line)) {
+				// Inicio de nuevo log
+				if (currentGroup.length > 0) {
+					logGroups.push(currentGroup);
+				}
+				currentGroup = [line];
+			} else {
+				// Continuación del log actual
+				currentGroup.push(line);
+			}
+		}
+		if (currentGroup.length > 0) {
+			logGroups.push(currentGroup);
+		}
+
+		return logGroups.map(group => group.join("\n"));
+	};
+
+	const filteredLines = (() => {
+		if (!logs || filter === "") {
+			return logs ? logs.split("\n") : [];
+		}
+
+		// Agrupar logs y filtrar por log completo
+		const logGroups = groupLogs(logs);
+		const filterLower = filter.toLowerCase();
+
+		// Filtrar grupos que coinciden con el filtro
+		const matchingGroups = logGroups.filter(group =>
+			group.toLowerCase().includes(filterLower)
+		);
+
+		// Convertir grupos filtrados de vuelta a líneas individuales
+		return matchingGroups.flatMap(group => group.split("\n"));
+	})();
 
 	const handleCopy = async () => {
-		if (!logs) return;
-		await navigator.clipboard.writeText(logs);
+		const logsToCopy = filter.length > 0 ? filteredLines.join('\n') : logs;
+		if (!logsToCopy) return;
+		await navigator.clipboard.writeText(logsToCopy);
 		setCopied(true);
 		setTimeout(() => setCopied(false), 2000);
 	};
 
 	const handleCopyAiSummary = async () => {
-		if (!aiSummary) return;
-		await navigator.clipboard.writeText(aiSummary);
+		if (!summary) return;
+		await navigator.clipboard.writeText(summary);
 		setAiSummaryCopied(true);
 		setTimeout(() => setAiSummaryCopied(false), 2000);
 	};
@@ -411,87 +468,16 @@ function LogsModal({
 	const handleSummarizeWithAI = async () => {
 		if (!logs) return;
 		
-		setIsSummarizing(true);
-		try {
-			// Verificar si la API de Chrome AI está disponible
-			// Puede estar bajo window.ai.summarizer o directamente como window.Summarizer
-			const hasAISummarizer = window.ai && window.ai.summarizer;
-			const hasSummarizer = (window as unknown as Record<string, unknown>).Summarizer;
+		// Usar logs filtrados si hay filtro activo, si no usar todos los logs
+		const logsToSummarize = filter.length > 0 ? filteredLines.join('\n') : logs;
 
-			if (!hasAISummarizer && !hasSummarizer) {
-				setAiSummary("Chrome AI Summarizer API no está disponible en este navegador. Requiere Chrome 113+ con la característica 'AI Summarizer' habilitada.");
-				return;
-			}
-
-			// Usar logs filtrados si hay filtro activo, si no usar todos los logs
-			const logsToSummarize = filter.length > 0 ? filteredLines.join('\n') : logs;
-
-			// Truncar logs a las últimas 200 líneas para evitar error de input demasiado grande
-			const logLines = logsToSummarize.split('\n');
-			let truncatedLogs = logLines.length > 200 
-				? logLines.slice(-200).join('\n') 
-				: logsToSummarize;
-			
-			// Si aún es muy largo, truncar por caracteres (máximo 10000 caracteres)
-			if (truncatedLogs.length > 10000) {
-				truncatedLogs = truncatedLogs.slice(-10000);
-			}
-
-			// Agregar instrucción de contexto al inicio de los logs para enfocar en anomalías
-			const logsWithContext = `INSTRUCCIÓN: Enfócate en identificar anomalías, errores, advertencias y problemas en los logs. Resalta cualquier comportamiento inusual o que requiera atención.\n\n${truncatedLogs}`;
-
-			// Detectar idioma del navegador (ej: 'es-ES', 'en-US')
-			const browserLanguage = navigator.language || 'en';
-			// Extraer el código de idioma (ej: 'es' de 'es-ES')
-			let languageCode = browserLanguage.split('-')[0];
-			
-			// Si el idioma no es español, usar español por defecto (el usuario habla español)
-			if (languageCode !== 'es') {
-				languageCode = 'es';
-			}
-
-			let summarizerInstance: {
-				summarize: (text: string) => Promise<string>;
-			};
-			
-			if (hasAISummarizer) {
-				// Usar window.ai.summarizer.create() con idioma español
-				summarizerInstance = await window.ai!.summarizer.create({ 
-					outputLanguage: languageCode,
-					type: 'key-points',
-				});
-			} else {
-				// Intentar usar el método create si está disponible en window.Summarizer
-				const SummarizerClass = (window as unknown as Record<string, unknown>).Summarizer as {
-					create: (options?: { outputLanguage?: string; type?: string }) => Promise<{
-						summarize: (text: string) => Promise<string>;
-					}>;
-				};
-				if (typeof SummarizerClass.create === 'function') {
-					summarizerInstance = await SummarizerClass.create({ 
-						outputLanguage: languageCode,
-						type: 'key-points',
-					});
-				} else {
-					setAiSummary("La API Summarizer está disponible pero no tiene método create(). Verifica la documentación de tu navegador.");
-					return;
-				}
-			}
-			
-			// Generar resumen con logs con contexto
-			const summary = await summarizerInstance.summarize(logsWithContext);
-			
-			// Agregar nota si se truncó
-			const summaryWithNote = logLines.length > 200 || logs.length > 10000
-				? `${summary}\n\n*Nota: Resumen generado con las últimas 200 líneas o 10000 caracteres (lo que sea menor) de ${logLines.length} líneas totales.*`
-				: summary;
-			
-			setAiSummary(summaryWithNote);
-		} catch (error) {
-			setAiSummary(`Error al generar resumen: ${error instanceof Error ? error.message : String(error)}`);
-		} finally {
-			setIsSummarizing(false);
-		}
+		// Generar resumen con el hook
+		await generateAISummary(logsToSummarize, {
+			type: 'key-points',
+			context: 'Analiza los logs SOLO para identificar problemas. Si los logs están en formato JSON, extrae el mensaje de error y el nivel (level). REGLAS ESTRICTAS: 1) NO repitas los logs completos o en JSON, 2) NO menciones configuración, rutas, startup, Swagger, mapeo de controladores, debug info, 3) Solo reporta ERRORES, WARNINGS, EXCEPCIONES, TIMEOUTS, FALLOS DE CONEXIÓN en lenguaje natural, 4) Compliance: secretos expuestos, credenciales en texto plano. ESTRUCTURA EXACTA (máximo 4 líneas, texto plano): * Errores críticos: [descripción en lenguaje natural o "ninguno"] * Warnings: [descripción en lenguaje natural o "ninguno"] * Compliance: [problemas o "ninguno"] * Estado general: HEALTHY/DEGRADED/CRITICAL. NO agregues secciones adicionales. Usa minúsculas en las etiquetas.',
+			maxLines: 200,
+			maxChars: 10000,
+		});
 	};
 
 	return (
@@ -524,16 +510,16 @@ function LogsModal({
 						<span className="text-xs text-muted-foreground">({currentType})</span>
 					</div>
 					<div className="flex items-center gap-2">
-						{isAIAvailable && (
+						{availability === "available" && (
 							<button
 								type="button"
 								onClick={handleSummarizeWithAI}
-								disabled={isSummarizing || !logs}
+								disabled={isGenerating || !logs}
 								className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 								title="Resumir con IA"
 							>
-								{isSummarizing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-								{isSummarizing ? "Resumiendo..." : "Resumir"}
+								{isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+								{isGenerating ? "Resumiendo..." : "Resumir"}
 							</button>
 						)}
 						<div className="relative">
@@ -583,23 +569,40 @@ function LogsModal({
 					</div>
 				</div>
 				<div className="flex-1 overflow-auto bg-black text-green-400 p-4 font-mono text-xs">
-					{aiSummary && (
-						<div className="mb-4 p-3 bg-purple-900/20 border border-purple-500/30 rounded-lg">
+					{summary && (
+						<div className="mb-4 p-3 bg-purple-900 border border-purple-500/30 rounded-lg sticky top-0 z-10">
 							<div className="flex items-center justify-between gap-2 mb-2">
 								<div className="flex items-center gap-2">
 									<Sparkles className="w-4 h-4 text-purple-400" />
 									<span className="text-purple-300 font-semibold text-sm">Resumen con IA</span>
 								</div>
-								<button
-									type="button"
-									onClick={handleCopyAiSummary}
-									className="inline-flex items-center gap-1 px-2 py-1 text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-800/30 rounded transition-colors"
-									title="Copiar resumen"
-								>
-									{aiSummaryCopied ? <Check className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
-								</button>
+								<div className="flex items-center gap-1">
+									<button
+										type="button"
+										onClick={() => setIsAiSummaryCollapsed(!isAiSummaryCollapsed)}
+										className="inline-flex items-center gap-1 px-2 py-1 text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-800/30 rounded transition-colors"
+										title={isAiSummaryCollapsed ? "Expandir" : "Colapsar"}
+									>
+										{isAiSummaryCollapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+									</button>
+									<button
+										type="button"
+										onClick={handleCopyAiSummary}
+										className="inline-flex items-center gap-1 px-2 py-1 text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-800/30 rounded transition-colors"
+										title="Copiar resumen"
+									>
+										{aiSummaryCopied ? <Check className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
+									</button>
+								</div>
 							</div>
-							<p className="text-purple-100 text-xs whitespace-pre-wrap">{aiSummary}</p>
+							{!isAiSummaryCollapsed && (
+								<>
+									<p className="text-purple-100 text-xs whitespace-pre-wrap">{summary}</p>
+									{aiError && (
+										<p className="text-red-400 text-xs mt-2">{aiError}</p>
+									)}
+								</>
+							)}
 						</div>
 					)}
 					{isLoading ? (

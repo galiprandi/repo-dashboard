@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
 import { Loader2, Star, Github, Building2, GitPullRequestCreateArrow, FolderOpen, FolderPlus } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { DisplayInfo } from "@/components/DisplayInfo";
@@ -7,7 +8,7 @@ import { TagLink } from "@/components/TagLink";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { ForceRedeployDialog } from "@/components/ForceRedeployDialog";
 import { FreezeDialog } from "@/components/FreezeDialog";
-import { DiffSummaryButton } from "@/components/DiffSummaryButton";
+import { CommitsModal } from "@/components/CommitsModal";
 import { useUserCollections } from "@/hooks/useUserCollections";
 import { useUserRepos } from "@/hooks/useUserRepos";
 import { useGitCommits } from "@/hooks/useGitCommits";
@@ -214,6 +215,7 @@ function getDeployStatus(events: { state: string; id: string; subevents?: { id: 
 
 function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 	const [org, name] = repo.fullName.split("/");
+	const [isCommitsModalOpen, setIsCommitsModalOpen] = useState(false);
 
 	const { commits, latestCommit, isLoading: isLoadingCommits } = useGitCommits({
 		repo: repo.fullName,
@@ -316,99 +318,109 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 	}
 
 	return (
-		<tr className="border-t hover:bg-muted/50">
-			<td className="px-4 py-3 w-auto">
-				<div className="flex items-center gap-2">
-					<Link
-						to="/product/$org/$product"
-						params={{ org, product: name }}
-						search={{ view: "commits" }}
-						className="font-medium hover:text-primary"
-					>
-						{name}
-					</Link>
-					{pendingCount > 0 && (
-					<Tooltip.Provider>
-						<Tooltip.Root>
-							<Tooltip.Trigger asChild>
-								<span className="inline-flex items-center gap-0.5 text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-200 font-medium cursor-help">
-									<GitPullRequestCreateArrow className="w-3 h-3" />
-									{pendingCount}
-								</span>
-							</Tooltip.Trigger>
-							<Tooltip.Portal>
-								<Tooltip.Content
-									className="bg-popover text-popover-foreground border px-2 py-1 rounded-md shadow-md text-xs z-50"
-									sideOffset={5}
-								>
-									{pendingCount} commit{pendingCount !== 1 ? 's' : ''} pendientes de promoción a producción
-								</Tooltip.Content>
-							</Tooltip.Portal>
-						</Tooltip.Root>
-					</Tooltip.Provider>
+		<>
+			<tr className="border-t hover:bg-muted/50">
+				<td className="px-4 py-3 w-auto">
+					<div className="flex items-center gap-2">
+						<Link
+							to="/product/$org/$product"
+							params={{ org, product: name }}
+							search={{ view: "commits" }}
+							className="font-medium hover:text-primary"
+						>
+							{name}
+						</Link>
+						{pendingCount > 0 && (
+						<Tooltip.Provider>
+							<Tooltip.Root>
+								<Tooltip.Trigger asChild>
+									<button
+										type="button"
+										onClick={() => setIsCommitsModalOpen(true)}
+										className="inline-flex items-center gap-0.5 text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-200 font-medium cursor-pointer hover:bg-orange-100 transition-colors"
+									>
+										<GitPullRequestCreateArrow className="w-3 h-3" />
+										{pendingCount}
+									</button>
+								</Tooltip.Trigger>
+								<Tooltip.Portal>
+									<Tooltip.Content
+										className="bg-popover text-popover-foreground border px-2 py-1 rounded-md shadow-md text-xs z-50"
+										sideOffset={5}
+									>
+										{pendingCount} commit{pendingCount !== 1 ? 's' : ''} pendientes de promoción a producción
+									</Tooltip.Content>
+								</Tooltip.Portal>
+							</Tooltip.Root>
+						</Tooltip.Provider>
+						)}
+					</div>
+				</td>
+				<td className="px-4 py-3 w-20">
+					{latestTag?.name && (
+						<TagLink
+							tagName={latestTag.name}
+							org={org}
+							repo={name}
+							pipelineStatus={productionStatus}
+							isLoading={isProdLoading}
+						/>
 					)}
-					{pendingCount > 0 && (
-						<DiffSummaryButton repo={repo.fullName} tagName={latestTag?.name} />
+				</td>
+				<td className="px-4 py-3 w-20">
+					{commitShortHash && (
+						<CommitLink
+							hash={commitShortHash}
+							org={org}
+							repo={name}
+							pipelineStatus={stagingStatus}
+							isLoading={isStagingLoading}
+						/>
 					)}
-				</div>
-			</td>
-			<td className="px-4 py-3 w-20">
-				{latestTag?.name && (
-					<TagLink
-						tagName={latestTag.name}
-						org={org}
-						repo={name}
-						pipelineStatus={productionStatus}
-						isLoading={isProdLoading}
-					/>
-				)}
-			</td>
-			<td className="px-4 py-3 w-20">
-				{commitShortHash && (
-					<CommitLink
-						hash={commitShortHash}
-						org={org}
-						repo={name}
-						pipelineStatus={stagingStatus}
-						isLoading={isStagingLoading}
-					/>
-				)}
-			</td>
-			<td className="px-4 py-3 text-sm text-muted-foreground w-36">
-				<div className="flex items-center gap-1">
-					<DisplayInfo type="dates" value={latestDate} />
-				</div>
-			</td>
-			<td className="px-4 py-3 text-sm" style={{ width: '250px' }}>
-				<div className="truncate" title={commitAuthor || undefined}>
-					<DisplayInfo type="author" value={commitAuthor} hideTooltip={true} />
-				</div>
-			</td>
-			<td className="px-4 py-3 text-center w-16">
-				<div className="flex items-center justify-center gap-2">
-					<FreezeDialog repo={repo.fullName} iconOnly={true} />
-					<ForceRedeployDialog repo={repo.fullName} iconOnly={true} />
-					<PromoteDialog repo={repo.fullName} latestTag={latestTag?.name} iconOnly={true} />
-					<a
-						href={`https://github.com/${org}/${name}`}
-						target="_blank"
-						rel="noopener noreferrer"
-						className="text-muted-foreground hover:text-primary"
-						title="Abrir en GitHub"
-					>
-						<Github className="w-5 h-5" />
-					</a>
-					<button
-						type="button"
-						onClick={() => onToggleFavorite(repo.fullName)}
-						className={`${isFavorite ? "text-yellow-500" : "text-muted-foreground"} hover:text-yellow-600`}
-						title={isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
-					>
-						<Star className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
-					</button>
-				</div>
-			</td>
-		</tr>
+				</td>
+				<td className="px-4 py-3 text-sm text-muted-foreground w-36">
+					<div className="flex items-center gap-1">
+						<DisplayInfo type="dates" value={latestDate} />
+					</div>
+				</td>
+				<td className="px-4 py-3 text-sm" style={{ width: '250px' }}>
+					<div className="truncate" title={commitAuthor || undefined}>
+						<DisplayInfo type="author" value={commitAuthor} hideTooltip={true} />
+					</div>
+				</td>
+				<td className="px-4 py-3 text-center w-16">
+					<div className="flex items-center justify-center gap-2">
+						<FreezeDialog repo={repo.fullName} iconOnly={true} />
+						<ForceRedeployDialog repo={repo.fullName} iconOnly={true} />
+						<PromoteDialog repo={repo.fullName} latestTag={latestTag?.name} iconOnly={true} />
+						<a
+							href={`https://github.com/${org}/${name}`}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="text-muted-foreground hover:text-primary"
+							title="Abrir en GitHub"
+						>
+							<Github className="w-5 h-5" />
+						</a>
+						<button
+							type="button"
+							onClick={() => onToggleFavorite(repo.fullName)}
+							className={`${isFavorite ? "text-yellow-500" : "text-muted-foreground"} hover:text-yellow-600`}
+							title={isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
+						>
+							<Star className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
+						</button>
+					</div>
+				</td>
+			</tr>
+			<CommitsModal
+				isOpen={isCommitsModalOpen}
+				onClose={() => setIsCommitsModalOpen(false)}
+				commits={commits || []}
+				prodCommitHash={prodPipeline.data?.git?.commit || ""}
+				prodTag={latestTag?.name}
+			/>
+		</>
 	);
 }
 

@@ -6,6 +6,8 @@ export interface GitCommit {
 	shortHash: string;
 	author: string;
 	date: string;
+	subject: string;
+	body: string;
 	message: string;
 }
 
@@ -34,12 +36,17 @@ export function useGitCommits({
 				.map((line: string) => {
 					try {
 						const parsed = JSON.parse(line);
+						const message = parsed.message || "";
+						const [subject, ...bodyParts] = message.split('\n');
+						const body = bodyParts.join('\n').trim();
 						return {
 							hash: parsed.hash,
 							shortHash: parsed.hash.slice(0, 7),
 							author: parsed.author,
 							date: parsed.date,
-							message: parsed.message,
+							subject: subject,
+							body: body,
+							message: message,
 						};
 					} catch {
 						return null;
