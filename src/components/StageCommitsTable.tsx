@@ -78,47 +78,49 @@ export function StageCommitsTable({
 	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
 	return (
-		<div>
-			<div className="overflow-hidden border rounded-lg">
-				<table className="w-full text-sm">
-					<thead className="bg-muted">
-						<tr>
-							<th className="px-4 py-2 text-left font-medium">
+		<div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+			<div className="overflow-hidden border rounded-2xl shadow-sm bg-card">
+				<table className="w-full text-sm border-collapse">
+					<thead>
+						<tr className="bg-muted/30 border-b">
+							<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground">
 								{isCommits ? "Hash" : "Tag"}
 							</th>
-							<th className="px-4 py-2 text-left font-medium">Fecha</th>
-							<th className="px-4 py-2 text-left font-medium">Autor</th>
+							<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Fecha</th>
+							<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Autor</th>
 							{isCommits && (
-								<th className="px-4 py-2 text-left font-medium">Mensaje</th>
+								<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Mensaje</th>
 							)}
 						</tr>
 					</thead>
-					<tbody>
+					<tbody className="divide-y divide-border/40">
 						{isLoading && (!commits?.length && !tags?.length) ? (
 							<tr>
 								<td
 									colSpan={4}
-									className="px-4 py-8 text-center text-muted-foreground"
+									className="px-6 py-12 text-center text-muted-foreground"
 								>
-									<div className="flex items-center justify-center gap-2">
-										<Loader2 className="w-4 h-4 animate-spin" />
-										Cargando información...
+									<div className="flex flex-col items-center justify-center gap-3">
+										<Loader2 className="w-6 h-6 animate-spin text-primary" />
+										<span className="font-medium">Cargando historial...</span>
 									</div>
 								</td>
 							</tr>
 						) : isCommits ? (
 							commits?.map((c: GitCommit) => (
-								<tr key={c.hash} className="border-t hover:bg-muted/50 transition-colors">
-									<td className="px-4 py-3">
+								<tr key={c.hash} className="hover:bg-muted/30 transition-colors group">
+									<td className="px-6 py-4 font-mono">
 										<CommitLink hash={c.hash} org={org} repo={product} showStatus={showStatus} />
 									</td>
-									<td className="px-4 py-3 text-muted-foreground">
+									<td className="px-6 py-4 text-xs text-muted-foreground font-medium">
 										<DisplayInfo value={c.date} type="dates" />
 									</td>
-									<td className="px-4 py-3">
-										<DisplayInfo value={c.author} type="author" maxChar={30} />
+									<td className="px-6 py-4">
+										<div className="font-medium text-foreground/80">
+											<DisplayInfo value={c.author} type="author" maxChar={30} />
+										</div>
 									</td>
-									<td className="px-4 py-3 text-muted-foreground truncate max-w-[300px]">
+									<td className="px-6 py-4 text-muted-foreground truncate max-w-[300px]">
 										<DisplayInfo
 											value={c.message}
 											type="message"
@@ -130,19 +132,21 @@ export function StageCommitsTable({
 						) : (
 							tags
 								?.map((t: GitTag) => (
-									<tr key={t.name} className="border-t hover:bg-muted/50 transition-colors">
-										<td className="px-4 py-3">
+									<tr key={t.name} className="hover:bg-muted/30 transition-colors group">
+										<td className="px-6 py-4 font-mono">
 											<TagLink tagName={t.name} org={org} repo={product} showStatus={showStatus} />
 										</td>
-										<td className="px-4 py-3 text-muted-foreground">
+										<td className="px-6 py-4 text-xs text-muted-foreground font-medium">
 											<DisplayInfo value={t.date} type="dates" />
 										</td>
-										<td className="px-4 py-3">
-											<DisplayInfo
-												value={t.author.name}
-												type="author"
-												maxChar={50}
-											/>
+										<td className="px-6 py-4">
+											<div className="font-medium text-foreground/80">
+												<DisplayInfo
+													value={t.author.name}
+													type="author"
+													maxChar={50}
+												/>
+											</div>
 										</td>
 									</tr>
 								))
