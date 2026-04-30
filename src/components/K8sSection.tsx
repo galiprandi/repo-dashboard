@@ -290,6 +290,37 @@ function PodStats({
 	);
 }
 
+function highlightLogLine(line: string): React.ReactNode {
+	if (!line) return line;
+
+	// Patrón para timestamps (ej: 2024-04-30 10:00:00, Apr 30 10:00:00, etc.)
+	const timestampPattern = /^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})|^(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})|^(\d{2}:\d{2}:\d{2})/;
+	
+	// Patrón para niveles de log
+	const logLevelPattern = /\b(INFO|WARN|WARNING|ERROR|ERR|DEBUG|FATAL|TRACE)\b/gi;
+
+	// Reemplazar timestamps
+	let highlighted = line.replace(timestampPattern, '<span class="text-blue-400">$&</span>');
+
+	// Reemplazar niveles de log
+	highlighted = highlighted.replace(logLevelPattern, (match) => {
+		const level = match.toUpperCase();
+		let colorClass = 'text-gray-400';
+		if (level === 'ERROR' || level === 'ERR' || level === 'FATAL') {
+			colorClass = 'text-red-400 font-bold';
+		} else if (level === 'WARN' || level === 'WARNING') {
+			colorClass = 'text-yellow-400 font-bold';
+		} else if (level === 'INFO') {
+			colorClass = 'text-green-400';
+		} else if (level === 'DEBUG' || level === 'TRACE') {
+			colorClass = 'text-purple-400';
+		}
+		return `<span class="${colorClass}">${match}</span>`;
+	});
+
+	return <span dangerouslySetInnerHTML={{ __html: highlighted }} />;
+}
+
 function LogsModal({
 	namespace,
 	type,
@@ -386,7 +417,14 @@ function LogsModal({
 							<span>Cargando logs...</span>
 						</div>
 					) : (
-						<pre className="whitespace-pre-wrap break-words">{filteredLines.length > 0 ? filteredLines.join("\n") : (logs || "No logs disponibles")}</pre>
+						<pre className="whitespace-pre-wrap break-words">
+							{filteredLines.length > 0 
+								? filteredLines.map((line, idx) => (
+									<div key={idx}>{highlightLogLine(line)}</div>
+								))
+								: (logs || "No logs disponibles")
+							}
+						</pre>
 					)}
 				</div>
 			</div>
