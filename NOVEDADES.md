@@ -5,8 +5,10 @@
 ### 🗓️ 29 de Abril de 2026
 
 - 🎉 Proyectos: Nuevo sistema de gestión de proyectos integrado con favoritos para organizar mejor tus repositorios.
-- ⚠️ Gestión de Datos (Breaking Change): Unificación del sistema de colecciones de usuario (proyectos y favoritos) con mejor sincronización y estado. 
+- ⚠️ Gestión de Datos (Breaking Change): Unificación del sistema de colecciones de usuario (proyectos y favoritos) con mejor sincronización y estado.
 - ⚙️ Instalación: Ahora se requiere jq como dependencia adicional para el funcionamiento del sistema.
+- 🎨 Búsqueda: Mejora en el diseño responsivo del buscador de repositorios para mejor adaptación a diferentes tamaños de pantalla.
+- 🎨 Branding: Cambio de color del favicon a amarillo para coincidir con el color de favoritos.
 
 ### 🗓️ 28 de Abril de 2026
 
