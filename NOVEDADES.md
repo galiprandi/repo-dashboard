@@ -9,6 +9,7 @@
 - ⚙️ Instalación: Ahora se requiere jq como dependencia adicional para el funcionamiento del sistema.
 - 🎨 Búsqueda: Mejora en el diseño responsivo del buscador de repositorios para mejor adaptación a diferentes tamaños de pantalla.
 - 🎨 Branding: Cambio de color del favicon a amarillo para coincidir con el color de favoritos.
+- ✨ Detalle de Repositorio: Ahora puedes acceder rápidamente a los Pull Requests y GitHub Actions con contadores de estado en la barra de herramientas.
 
 ### 🗓️ 28 de Abril de 2026
 
