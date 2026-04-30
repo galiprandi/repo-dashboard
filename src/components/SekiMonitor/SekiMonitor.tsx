@@ -80,10 +80,10 @@ function StatusCard({ type, message, onClose, onRetry }: StatusCardProps) {
 	const Icon = style.icon;
 
 	return (
-		<div className={`bg-card border ${style.borderClass} rounded-2xl p-6 shadow-sm flex items-center justify-between animate-in fade-in slide-in-from-top-2 duration-300`}>
-			<div className="flex items-center gap-3 text-sm font-medium">
-				<div className={`p-2 rounded-xl ${style.borderClass} bg-card shadow-inner`}>
-					<Icon className={`w-5 h-5 ${style.iconClass} ${style.textClass}`} />
+		<div className={`bg-card border-none rounded-[2rem] p-10 shadow-[0_12px_40px_rgba(0,0,0,0.03)] flex items-center justify-between animate-in fade-in slide-in-from-top-4 duration-500`}>
+			<div className="flex items-center gap-6 text-base font-black uppercase tracking-tighter italic">
+				<div className={`p-4 rounded-3xl ${style.borderClass} bg-muted/20`}>
+					<Icon className={`w-6 h-6 ${style.iconClass} ${style.textClass}`} />
 				</div>
 				<p className={style.textClass}>{message}</p>
 			</div>

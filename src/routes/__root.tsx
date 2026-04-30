@@ -71,14 +71,14 @@ function RootLayout() {
 	return (
 		<>
 			<div className="min-h-screen bg-background flex flex-col">
-				<header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md px-4 py-3">
-					<div className="flex items-center justify-between max-w-[1600px] mx-auto w-full">
-						<div className="flex items-center gap-4">
-							<Link to="/" className="text-2xl font-extrabold tracking-tight hover:text-primary flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-95">
-								<div className="bg-primary text-primary-foreground p-1.5 rounded-xl shadow-sm">
-									<Github className="w-6 h-6" />
+				<header className="sticky top-0 z-50 w-full bg-background/50 backdrop-blur-xl px-6 py-6 transition-all duration-300">
+					<div className="flex items-center justify-between max-w-[1400px] mx-auto w-full">
+						<div className="flex items-center gap-8">
+							<Link to="/" className="text-xl font-black tracking-tighter hover:text-primary flex items-center gap-3 transition-all">
+								<div className="bg-foreground text-background p-2 rounded-2xl shadow-2xl">
+									<Github className="w-5 h-5" />
 								</div>
-								<span>ReleaseHub</span>
+								<span className="uppercase italic">ReleaseHub</span>
 							</Link>
 							{(product || isHealthPage) && (
 								<>
@@ -102,21 +102,20 @@ function RootLayout() {
 								</>
 							)}
 						</div>
-						<div className="flex items-center gap-3">
-							<div className="hidden md:block">
+						<div className="flex items-center gap-6">
+							<div className="hidden lg:block">
 								<RepoSearch />
 							</div>
-							<div className="h-8 w-px bg-border mx-1" />
-							<div className="flex items-center gap-1.5">
+							<div className="flex items-center gap-2 bg-muted/30 p-1 rounded-2xl border border-border/50">
 								<NovedadesDialog />
 								<Link
 									to="/health"
-									className="p-2 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-all active:scale-95"
+									className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-background rounded-xl transition-all active:scale-90"
 									title="Health Monitor"
 								>
 									<Activity className="w-5 h-5" />
 								</Link>
-								<div className="flex items-center gap-2 pl-2">
+								<div className="flex items-center gap-3 pl-2 pr-1">
 									<UserAvatar />
 									<SettingsDialog />
 								</div>
@@ -124,7 +123,7 @@ function RootLayout() {
 						</div>
 					</div>
 				</header>
-				<main className="p-6 pt-10 flex-1 max-w-[1600px] mx-auto w-full animate-in fade-in duration-500">
+				<main className="px-6 py-12 flex-1 max-w-[1400px] mx-auto w-full animate-in fade-in slide-in-from-bottom-2 duration-1000">
 					<Outlet />
 				</main>
 				<footer className="p-6 pt-0 border-t mt-12">

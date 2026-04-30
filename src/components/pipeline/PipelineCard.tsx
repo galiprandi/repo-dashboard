@@ -25,8 +25,8 @@ export function PipelineCard({
 
 	return (
 		<div
-			className={`bg-card border rounded-2xl p-6 transition-all duration-500 shadow-sm hover:shadow-md ${
-				isRunning ? 'ring-2 ring-blue-400/30 bg-blue-50/10 dark:bg-blue-900/10' : ''
+			className={`bg-card border-none rounded-[2.5rem] p-10 transition-all duration-700 shadow-[0_8px_32px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_48px_rgba(0,0,0,0.08)] ${
+				isRunning ? 'ring-4 ring-blue-400/10 bg-blue-50/5' : ''
 			} ${className}`}
 		>
 			<div className="flex items-start gap-4">
@@ -37,9 +37,9 @@ export function PipelineCard({
 				/>
 				<div className="flex-1 min-w-0 space-y-1.5">
 					<div className="flex items-center justify-between gap-2">
-						<div className="flex items-center gap-2">
-							<span className="font-mono text-lg font-bold text-foreground tracking-tight">{displayRef}</span>
-							<span className={`px-2 py-0.5 text-[10px] rounded-full font-bold uppercase tracking-wider ${style.badge}`}>
+						<div className="flex items-center gap-4">
+							<span className="font-mono text-2xl font-black text-foreground tracking-tighter italic">{displayRef}</span>
+							<span className={`px-3 py-1 text-[10px] rounded-full font-black uppercase tracking-[0.2em] ${style.badge}`}>
 								{refType}
 							</span>
 							{isRunning && (

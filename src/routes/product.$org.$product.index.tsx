@@ -105,46 +105,42 @@ function ProductIndex() {
 			</div>
 
 			{/* Tabs de navegación */}
-			<div className="flex bg-muted/30 p-1 rounded-xl mb-6 w-fit border shadow-sm">
+			<div className="flex gap-10 mb-8 border-none">
 				<button
 					type="button"
 					onClick={() => navigate({ search: { view: "commits" } })}
-					className={`relative px-6 py-2 text-sm font-bold transition-all rounded-lg overflow-hidden ${
-						viewMode === "commits"
-							? "bg-card text-primary shadow-sm ring-1 ring-border/50"
-							: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-					}`}
+					className={`group flex flex-col items-start gap-1 transition-all relative pb-2`}
 				>
-					Commits
+					<span className={`text-sm font-black uppercase tracking-widest ${viewMode === "commits" ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
+						Commits
+					</span>
 					{viewMode === "commits" && (
-						<div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary animate-in slide-in-from-left duration-300" />
+						<div className="w-full h-1 bg-foreground animate-in fade-in zoom-in duration-500" />
 					)}
 				</button>
 				<button
 					type="button"
 					onClick={() => navigate({ search: { view: "tags" } })}
-					className={`relative px-6 py-2 text-sm font-bold transition-all rounded-lg overflow-hidden ${
-						viewMode === "tags"
-							? "bg-card text-primary shadow-sm ring-1 ring-border/50"
-							: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-					}`}
+					className={`group flex flex-col items-start gap-1 transition-all relative pb-2`}
 				>
-					Tags
+					<span className={`text-sm font-black uppercase tracking-widest ${viewMode === "tags" ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
+						Tags
+					</span>
 					{viewMode === "tags" && (
-						<div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary animate-in slide-in-from-left duration-300" />
+						<div className="w-full h-1 bg-foreground animate-in fade-in zoom-in duration-500" />
 					)}
 				</button>
 			</div>
 
 			{/* Toolbar de acciones */}
-			<div className="flex items-center gap-3 mb-6 flex-wrap bg-card p-2 rounded-2xl border shadow-sm">
-				<div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border-dashed border">
+			<div className="flex items-center gap-8 mb-12 flex-wrap border-none p-0 bg-transparent shadow-none">
+				<div className="flex items-center gap-6">
 					{/* Links externos */}
 					<a
 						href={openPRs?.repoUrl}
 						target="_blank"
 						rel="noopener noreferrer"
-						className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-card hover:shadow-sm rounded-lg transition-all"
+						className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all"
 					>
 						<GitPullRequest className="w-4 h-4" />
 						<span>Pull Requests</span>
@@ -159,7 +155,7 @@ function ProductIndex() {
 						href={actionsSummary?.repoUrl}
 						target="_blank"
 						rel="noopener noreferrer"
-						className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-card hover:shadow-sm rounded-lg transition-all"
+						className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-muted-foreground hover:text-foreground transition-all"
 					>
 						<Play className="w-4 h-4" />
 						<span>Actions</span>
@@ -191,9 +187,8 @@ function ProductIndex() {
 					<div className="w-px h-6 bg-border" />
 
 					{/* Operaciones */}
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-4">
 						<FreezeDialog repo={fullProduct} iconOnly={false} />
-						<div className="w-px h-4 bg-border/50" />
 						{isCommits ? (
 							<ForceRedeployDialog repo={fullProduct} />
 						) : (

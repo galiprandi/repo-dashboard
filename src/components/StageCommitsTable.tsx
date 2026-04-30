@@ -78,81 +78,65 @@ export function StageCommitsTable({
 	}, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
 	return (
-		<div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-			<div className="overflow-hidden border rounded-2xl shadow-sm bg-card">
-				<table className="w-full text-sm border-collapse">
-					<thead>
-						<tr className="bg-muted/30 border-b">
-							<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground">
-								{isCommits ? "Hash" : "Tag"}
-							</th>
-							<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Fecha</th>
-							<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Autor</th>
-							{isCommits && (
-								<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground">Mensaje</th>
-							)}
-						</tr>
-					</thead>
-					<tbody className="divide-y divide-border/40">
+		<div className="animate-in fade-in slide-in-from-bottom-8 duration-1000">
+			<div className="space-y-4">
+				<div className="grid grid-cols-[150px_150px_200px_1fr] gap-4 px-10 py-2 text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground/40">
+					<span>{isCommits ? "Hash" : "Tag"}</span>
+					<span>Fecha</span>
+					<span>Autor</span>
+					{isCommits && <span>Mensaje</span>}
+				</div>
+				<div className="space-y-2">
 						{isLoading && (!commits?.length && !tags?.length) ? (
-							<tr>
-								<td
-									colSpan={4}
-									className="px-6 py-12 text-center text-muted-foreground"
-								>
-									<div className="flex flex-col items-center justify-center gap-3">
-										<Loader2 className="w-6 h-6 animate-spin text-primary" />
-										<span className="font-medium">Cargando historial...</span>
-									</div>
-								</td>
-							</tr>
+							<div className="bg-card p-12 rounded-[2rem] text-center text-muted-foreground">
+								<div className="flex flex-col items-center justify-center gap-4">
+									<Loader2 className="w-8 h-8 animate-spin text-foreground" />
+									<span className="text-sm font-black uppercase tracking-widest italic">Cargando historial...</span>
+								</div>
+							</div>
 						) : isCommits ? (
 							commits?.map((c: GitCommit) => (
-								<tr key={c.hash} className="hover:bg-muted/30 transition-colors group">
-									<td className="px-6 py-4 font-mono">
+								<div key={c.hash} className="grid grid-cols-[150px_150px_200px_1fr] gap-4 items-center bg-card p-6 rounded-[2rem] hover:bg-muted/10 transition-all group border border-transparent hover:border-border/50">
+									<div className="font-mono text-sm font-black tracking-tighter italic">
 										<CommitLink hash={c.hash} org={org} repo={product} showStatus={showStatus} />
-									</td>
-									<td className="px-6 py-4 text-xs text-muted-foreground font-medium">
+									</div>
+									<div className="text-[11px] font-black uppercase tracking-tighter opacity-40 group-hover:opacity-100 transition-opacity">
 										<DisplayInfo value={c.date} type="dates" />
-									</td>
-									<td className="px-6 py-4">
-										<div className="font-medium text-foreground/80">
-											<DisplayInfo value={c.author} type="author" maxChar={30} />
-										</div>
-									</td>
-									<td className="px-6 py-4 text-muted-foreground truncate max-w-[300px]">
+									</div>
+									<div className="text-[11px] font-black uppercase tracking-tighter truncate opacity-40 group-hover:opacity-100 transition-opacity">
+										<DisplayInfo value={c.author} type="author" maxChar={30} />
+									</div>
+									<div className="text-sm font-medium text-muted-foreground truncate">
 										<DisplayInfo
 											value={c.message}
 											type="message"
-											maxChar={50}
+											maxChar={100}
 										/>
-									</td>
-								</tr>
+									</div>
+								</div>
 							))
 						) : (
 							tags
 								?.map((t: GitTag) => (
-									<tr key={t.name} className="hover:bg-muted/30 transition-colors group">
-										<td className="px-6 py-4 font-mono">
+									<div key={t.name} className="grid grid-cols-[150px_150px_200px_1fr] gap-4 items-center bg-card p-6 rounded-[2rem] hover:bg-muted/10 transition-all group border border-transparent hover:border-border/50">
+										<div className="font-mono text-sm font-black tracking-tighter italic">
 											<TagLink tagName={t.name} org={org} repo={product} showStatus={showStatus} />
-										</td>
-										<td className="px-6 py-4 text-xs text-muted-foreground font-medium">
+										</div>
+										<div className="text-[11px] font-black uppercase tracking-tighter opacity-40 group-hover:opacity-100 transition-opacity">
 											<DisplayInfo value={t.date} type="dates" />
-										</td>
-										<td className="px-6 py-4">
-											<div className="font-medium text-foreground/80">
-												<DisplayInfo
-													value={t.author.name}
-													type="author"
-													maxChar={50}
-												/>
-											</div>
-										</td>
-									</tr>
+										</div>
+										<div className="text-[11px] font-black uppercase tracking-tighter truncate opacity-40 group-hover:opacity-100 transition-opacity">
+											<DisplayInfo
+												value={t.author.name}
+												type="author"
+												maxChar={50}
+											/>
+										</div>
+										<div />
+									</div>
 								))
 						)}
-					</tbody>
-				</table>
+					</div>
 				
 				{/* Infinite scroll sensor */}
 				<div ref={loadMoreRef} className="flex items-center justify-center py-4 border-t text-xs text-muted-foreground">

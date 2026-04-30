@@ -123,7 +123,7 @@ export function RepoSearch() {
           }}
           onBlur={() => setIsEditable(false)}
           placeholder={`Búsqueda en ${data?.results?.length || 0} repositorios... (Cmd+K)`}
-          className={`${searchWidth} pl-9 pr-4 py-2 bg-muted/50 hover:bg-muted border border-transparent focus:border-primary/20 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all shadow-inner`}
+          className={`${searchWidth} pl-10 pr-4 py-3 bg-muted/20 hover:bg-muted/40 border-none rounded-2xl text-sm focus:outline-none focus:ring-0 focus:bg-background transition-all shadow-none placeholder:text-muted-foreground/50`}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
@@ -138,7 +138,7 @@ export function RepoSearch() {
 
       {/* Dropdown Results */}
       {isOpen && (
-        <div className={`absolute top-full left-0 mt-2 ${searchWidth} bg-card border rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200`}>
+        <div className={`fixed top-24 left-1/2 -translate-x-1/2 w-[500px] bg-background border border-border/50 rounded-[2rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-300`}>
           {isLoading ? (
             <div className="p-8 text-center text-muted-foreground">
               <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-primary" />
@@ -163,8 +163,8 @@ export function RepoSearch() {
                 return (
                   <div
                     key={repo.fullName}
-                    className={`group px-4 py-3 border-b border-border/40 last:border-b-0 transition-all ${
-                      isSelected ? 'bg-primary/5' : 'hover:bg-muted/50'
+                    className={`group px-6 py-4 border-none transition-all ${
+                      isSelected ? 'bg-muted scale-[1.02]' : 'hover:bg-muted/30'
                     }`}
                   >
                     <div className="flex items-start gap-3">

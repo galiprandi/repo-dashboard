@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Loader2, Star, Github, Building2, GitPullRequestCreateArrow, FolderOpen, FolderPlus } from "lucide-react";
+import { Loader2, Star, Building2, FolderOpen, FolderPlus } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { DisplayInfo } from "@/components/DisplayInfo";
 import { CommitLink } from "@/components/CommitLink";
@@ -59,7 +59,7 @@ function Dashboard() {
 	return (
 		<div className="space-y-6">
 			{/* Tabs */}
-			<div className="flex gap-1 bg-muted/50 border p-1 rounded-xl overflow-x-auto w-fit">
+			<div className="flex gap-8 overflow-x-auto pb-4">
 				{tabs.map((tab) => {
 					const Icon = tab.icon;
 					const isActive = activeTab === tab.id;
@@ -68,21 +68,24 @@ function Dashboard() {
 							key={tab.id}
 							type="button"
 							onClick={() => setActiveTab(tab.id)}
-							className={`flex items-center gap-2 px-4 py-2 text-sm rounded-lg transition-all whitespace-nowrap relative ${
-								isActive
-									? "bg-card shadow-sm text-primary font-semibold ring-1 ring-border/50"
-									: "text-muted-foreground hover:text-foreground hover:bg-muted"
-							}`}
+							className={`flex flex-col items-start gap-2 group transition-all relative pb-2`}
 							title={tab.description}
 						>
-							<Icon className={`w-4 h-4 ${isActive ? "animate-in zoom-in duration-300" : ""}`} />
-							{tab.label}
-							{tab.count > 0 && (
-								<span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-									isActive ? "bg-primary text-primary-foreground" : "bg-muted-foreground/20 text-muted-foreground"
-								}`}>
-									{tab.count}
+							<div className="flex items-center gap-3">
+								<Icon className={`w-5 h-5 ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`} />
+								<span className={`text-lg tracking-tight font-black uppercase italic ${isActive ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"}`}>
+									{tab.label}
 								</span>
+								{tab.count > 0 && (
+									<span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${
+										isActive ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+									}`}>
+										{tab.count}
+									</span>
+								)}
+							</div>
+							{isActive && (
+								<div className="absolute bottom-0 left-0 w-full h-1 bg-foreground animate-in slide-in-from-left duration-500" />
 							)}
 						</button>
 					);
@@ -151,35 +154,25 @@ function ReposTable({ repos, favorites, onToggleFavorite }: ReposTableProps) {
 	const sortedRepos = [...repos].sort((a, b) => a.name.localeCompare(b.name));
 
 	return (
-		<div className="border rounded-xl overflow-hidden shadow-sm bg-card">
-			<table className="w-full border-collapse">
-				<thead>
-					<tr className="bg-muted/30 border-b">
-						<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground w-auto">
-							Repositorio
-						</th>
-						<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground w-20">Tag</th>
-						<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground w-20">Commit</th>
-						<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground w-36">
-							Actualización
-						</th>
-						<th className="px-6 py-4 text-left text-[11px] uppercase tracking-wider font-bold text-muted-foreground" style={{ width: '250px' }}>Autor</th>
-						<th className="px-6 py-4 text-center text-[11px] uppercase tracking-wider font-bold text-muted-foreground w-16">
-							Acciones
-						</th>
-					</tr>
-				</thead>
-				<tbody className="divide-y divide-border/40">
-					{sortedRepos.map((repo) => (
-						<RepoRow
-							key={repo.fullName}
-							repo={repo}
-							isFavorite={favorites.includes(repo.fullName)}
-							onToggleFavorite={onToggleFavorite}
-						/>
-					))}
-				</tbody>
-			</table>
+		<div className="space-y-4">
+			<div className="grid grid-cols-[1fr_100px_100px_150px_200px_150px] gap-4 px-8 py-2 text-[10px] uppercase tracking-[0.2em] font-black text-muted-foreground/50">
+				<span>Repositorio</span>
+				<span>Tag</span>
+				<span>Commit</span>
+				<span>Fecha</span>
+				<span>Autor</span>
+				<span className="text-right">Acciones</span>
+			</div>
+			<div className="space-y-3">
+				{sortedRepos.map((repo) => (
+					<RepoRow
+						key={repo.fullName}
+						repo={repo}
+						isFavorite={favorites.includes(repo.fullName)}
+						onToggleFavorite={onToggleFavorite}
+					/>
+				))}
+			</div>
 		</div>
 	);
 }
@@ -274,84 +267,69 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 
 	if (isLoading) {
 		return (
-			<tr className="border-t">
-				<td className="px-4 py-3 w-auto">
+			<div className="grid grid-cols-[1fr_100px_100px_150px_200px_150px] gap-4 items-center bg-card p-6 rounded-3xl opacity-50">
+				<div className="flex items-center gap-4">
 					<Link
 						to="/product/$org/$product"
 						params={{ org, product: name }}
 						search={{ view: "commits" }}
-						className="font-medium hover:text-primary"
+						className="text-lg font-black tracking-tighter text-foreground"
 					>
 						{repo.fullName}
 					</Link>
-				</td>
-				<td colSpan={4} className="px-4 py-3">
+				</div>
+				<div className="col-span-4 px-4 py-3">
 					<div className="flex items-center gap-2 text-muted-foreground text-sm">
 						<Loader2 className="w-4 h-4 animate-spin" />
-						Cargando información...
+						Cargando...
 					</div>
-				</td>
-				<td className="px-4 py-3 text-center w-16">
-					<div className="flex items-center justify-center gap-2">
-						<a
-							href={`https://github.com/${org}/${name}`}
-							target="_blank"
-							rel="noopener noreferrer"
-							className="text-muted-foreground hover:text-primary"
-							title="Abrir en GitHub"
-						>
-							<Github className="w-5 h-5" />
-						</a>
-						<button
-							type="button"
-							onClick={() => onToggleFavorite(repo.fullName)}
-							className={`${isFavorite ? "text-yellow-500" : "text-muted-foreground"} hover:text-yellow-600`}
-							title={isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
-						>
-							<Star className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
-						</button>
-					</div>
-				</td>
-			</tr>
+				</div>
+				<div className="flex items-center justify-end gap-2">
+					<button
+						type="button"
+						onClick={() => onToggleFavorite(repo.fullName)}
+						className={`${isFavorite ? "text-yellow-500" : "text-muted-foreground"}`}
+					>
+						<Star className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
+					</button>
+				</div>
+			</div>
 		);
 	}
 
 	return (
-		<tr className="hover:bg-muted/30 transition-colors group">
-			<td className="px-6 py-4 w-auto">
-				<div className="flex items-center gap-3">
-					<Link
-						to="/product/$org/$product"
-						params={{ org, product: name }}
-						search={{ view: "commits" }}
-						className="font-semibold text-foreground hover:text-primary transition-colors flex items-center gap-2 group-hover:translate-x-0.5 duration-200"
-					>
-						<div className="w-1.5 h-1.5 rounded-full bg-primary/20 group-hover:bg-primary transition-colors" />
-						{name}
-					</Link>
-					{pendingCount > 0 && (
+		<div className="grid grid-cols-[1fr_100px_100px_150px_200px_150px] gap-4 items-center bg-card p-6 rounded-3xl hover:bg-muted/10 transition-all group shadow-[0_4px_12px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.05)] border border-transparent hover:border-border/50">
+			<div className="flex items-center gap-4">
+				<Link
+					to="/product/$org/$product"
+					params={{ org, product: name }}
+					search={{ view: "commits" }}
+					className="text-lg font-black tracking-tighter text-foreground group-hover:text-primary transition-colors flex items-center gap-3"
+				>
+					<div className="w-2 h-2 rounded-full bg-primary/20 group-hover:bg-primary group-hover:scale-150 transition-all duration-500" />
+					{name}
+				</Link>
+				{pendingCount > 0 && (
 					<Tooltip.Provider>
 						<Tooltip.Root>
 							<Tooltip.Trigger asChild>
-								<span className="inline-flex items-center gap-1 text-[10px] bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-900/50 font-bold cursor-help animate-in fade-in zoom-in duration-500">
-									<GitPullRequestCreateArrow className="w-3 h-3" />
+								<span className="inline-flex items-center gap-1 text-[10px] bg-foreground text-background px-2.5 py-1 rounded-full font-black cursor-help">
 									{pendingCount}
 								</span>
 							</Tooltip.Trigger>
 							<Tooltip.Portal>
 								<Tooltip.Content
-									className="bg-popover text-popover-foreground border px-3 py-1.5 rounded-lg shadow-xl text-xs z-50 animate-in fade-in slide-in-from-bottom-1"
-									sideOffset={5}
+									className="bg-foreground text-background border-none px-3 py-2 rounded-xl shadow-2xl text-[10px] font-black uppercase tracking-wider z-50 animate-in fade-in zoom-in-95"
+									sideOffset={8}
 								>
-									{pendingCount} commit{pendingCount !== 1 ? 's' : ''} pendientes de promoción a producción
+									{pendingCount} PENDIENTES
 								</Tooltip.Content>
 							</Tooltip.Portal>
 						</Tooltip.Root>
 					</Tooltip.Provider>
 				)}
-				</div>
-			</td>
-			<td className="px-6 py-4 w-20 font-mono">
+			</div>
+			<div className="font-mono text-xs font-black tracking-widest opacity-40 group-hover:opacity-100 transition-opacity">
 				{latestTag?.name && (
 					<TagLink
 						tagName={latestTag.name}
@@ -361,8 +339,8 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 						isLoading={isProdLoading}
 					/>
 				)}
-			</td>
-			<td className="px-6 py-4 w-20 font-mono">
+			</div>
+			<div className="font-mono text-xs font-black tracking-widest opacity-40 group-hover:opacity-100 transition-opacity">
 				{commitShortHash && (
 					<CommitLink
 						hash={commitShortHash}
@@ -372,43 +350,27 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 						isLoading={isStagingLoading}
 					/>
 				)}
-			</td>
-			<td className="px-6 py-4 text-xs text-muted-foreground w-36">
-				<div className="flex items-center gap-1 font-medium">
-					<DisplayInfo type="dates" value={latestDate} />
-				</div>
-			</td>
-			<td className="px-6 py-4 text-sm" style={{ width: '250px' }}>
-				<div className="truncate font-medium text-foreground/80" title={commitAuthor || undefined}>
-					<DisplayInfo type="author" value={commitAuthor} hideTooltip={true} />
-				</div>
-			</td>
-			<td className="px-6 py-4 text-center w-16">
-				<div className="flex items-center justify-center gap-2 opacity-60 group-hover:opacity-100 transition-opacity">
-					<FreezeDialog repo={repo.fullName} iconOnly={true} />
-					<ForceRedeployDialog repo={repo.fullName} iconOnly={true} />
-					<PromoteDialog repo={repo.fullName} latestTag={latestTag?.name} iconOnly={true} />
-					<div className="w-px h-4 bg-border mx-1" />
-					<a
-						href={`https://github.com/${org}/${name}`}
-						target="_blank"
-						rel="noopener noreferrer"
-						className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-md transition-all"
-						title="Abrir en GitHub"
-					>
-						<Github className="w-4 h-4" />
-					</a>
-					<button
-						type="button"
-						onClick={() => onToggleFavorite(repo.fullName)}
-						className={`p-1.5 rounded-md transition-all ${isFavorite ? "text-yellow-500 bg-yellow-500/10" : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10"}`}
-						title={isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
-					>
-						<Star className={`w-4 h-4 ${isFavorite ? "fill-current" : ""}`} />
-					</button>
-				</div>
-			</td>
-		</tr>
+			</div>
+			<div className="text-[11px] font-black tracking-tighter uppercase opacity-30 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+				<DisplayInfo type="dates" value={latestDate} />
+			</div>
+			<div className="text-[11px] font-black tracking-tighter uppercase truncate opacity-30 group-hover:opacity-100 transition-opacity">
+				<DisplayInfo type="author" value={commitAuthor} hideTooltip={true} />
+			</div>
+			<div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+				<FreezeDialog repo={repo.fullName} iconOnly={true} />
+				<ForceRedeployDialog repo={repo.fullName} iconOnly={true} />
+				<PromoteDialog repo={repo.fullName} latestTag={latestTag?.name} iconOnly={true} />
+				<div className="w-px h-6 bg-border mx-2" />
+				<button
+					type="button"
+					onClick={() => onToggleFavorite(repo.fullName)}
+					className={`p-2.5 rounded-2xl transition-all ${isFavorite ? "text-yellow-500 bg-yellow-500/10" : "text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/5"}`}
+				>
+					<Star className={`w-4 h-4 ${isFavorite ? "fill-current" : ""}`} />
+				</button>
+			</div>
+		</div>
 	);
 }
 
