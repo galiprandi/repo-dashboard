@@ -123,7 +123,7 @@ export function RepoSearch() {
           }}
           onBlur={() => setIsEditable(false)}
           placeholder={`Búsqueda en ${data?.results?.length || 0} repositorios... (Cmd+K)`}
-          className={`${searchWidth} pl-9 pr-4 py-2 bg-muted rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
+          className={`${searchWidth} pl-9 pr-4 py-2 bg-muted/50 hover:bg-muted border border-transparent focus:border-primary/20 rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all shadow-inner`}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
@@ -138,11 +138,11 @@ export function RepoSearch() {
 
       {/* Dropdown Results */}
       {isOpen && (
-        <div className={`absolute top-full left-0 mt-2 ${searchWidth} bg-white border rounded-lg shadow-lg z-50 overflow-hidden`}>
+        <div className={`absolute top-full left-0 mt-2 ${searchWidth} bg-card border rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200`}>
           {isLoading ? (
-            <div className="p-4 text-center text-muted-foreground">
-              <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
-              <p className="text-sm">Cargando información de repositorios...</p>
+            <div className="p-8 text-center text-muted-foreground">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-primary" />
+              <p className="text-sm font-medium">Cargando repositorios...</p>
             </div>
           ) : !hasResults ? (
             <div className="p-4 text-center text-muted-foreground">
@@ -163,8 +163,8 @@ export function RepoSearch() {
                 return (
                   <div
                     key={repo.fullName}
-                    className={`group p-3 border-b last:border-b-0 transition-colors ${
-                      isSelected ? 'bg-muted' : 'hover:bg-muted/50'
+                    className={`group px-4 py-3 border-b border-border/40 last:border-b-0 transition-all ${
+                      isSelected ? 'bg-primary/5' : 'hover:bg-muted/50'
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -174,23 +174,26 @@ export function RepoSearch() {
                           params={{ org, product: name }}
                           search={{ stage: 'staging', event: 'commit' }}
                           onClick={() => handleSelect()}
-                          className="block"
+                          className="block group-active:scale-[0.99] transition-transform"
                         >
                           <div className="flex items-center gap-2">
-                            <GitBranch className="w-4 h-4 text-primary" />
-                            <span className="font-medium text-sm truncate">
+                            <div className={`p-1.5 rounded-md ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'} transition-colors`}>
+                              <GitBranch className="w-3.5 h-3.5" />
+                            </div>
+                            <span className={`font-semibold text-sm truncate ${isSelected ? 'text-primary' : 'text-foreground'}`}>
                               {repo.fullName}
                             </span>
                           </div>
                           {repo.description && (
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1 italic">
                               {repo.description}
                             </p>
                           )}
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Actualización:{' '}
-                            {new Date(repo.updatedAt).toLocaleDateString()}
-                          </p>
+                          <div className="flex items-center gap-3 mt-2">
+                            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground/60">
+                              Actualizado {new Date(repo.updatedAt).toLocaleDateString()}
+                            </p>
+                          </div>
                         </Link>
                       </div>
 

@@ -105,94 +105,102 @@ function ProductIndex() {
 			</div>
 
 			{/* Tabs de navegación */}
-			<div className="flex border-b border-border mb-3">
+			<div className="flex bg-muted/30 p-1 rounded-xl mb-6 w-fit border shadow-sm">
 				<button
 					type="button"
 					onClick={() => navigate({ search: { view: "commits" } })}
-					className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
+					className={`relative px-6 py-2 text-sm font-bold transition-all rounded-lg overflow-hidden ${
 						viewMode === "commits"
-							? "text-foreground"
-							: "text-muted-foreground hover:text-foreground"
+							? "bg-card text-primary shadow-sm ring-1 ring-border/50"
+							: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
 					}`}
 				>
 					Commits
 					{viewMode === "commits" && (
-						<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+						<div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary animate-in slide-in-from-left duration-300" />
 					)}
 				</button>
 				<button
 					type="button"
 					onClick={() => navigate({ search: { view: "tags" } })}
-					className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
+					className={`relative px-6 py-2 text-sm font-bold transition-all rounded-lg overflow-hidden ${
 						viewMode === "tags"
-							? "text-foreground"
-							: "text-muted-foreground hover:text-foreground"
+							? "bg-card text-primary shadow-sm ring-1 ring-border/50"
+							: "text-muted-foreground hover:text-foreground hover:bg-muted/50"
 					}`}
 				>
 					Tags
 					{viewMode === "tags" && (
-						<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+						<div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary animate-in slide-in-from-left duration-300" />
 					)}
 				</button>
 			</div>
 
 			{/* Toolbar de acciones */}
-			<div className="flex items-center gap-2 mb-4 flex-wrap">
-				{/* Links externos */}
-				<a
-					href={openPRs?.repoUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
-				>
-					<GitPullRequest className="w-4 h-4" />
-					<span>Pull Requests</span>
-					{openPRs && openPRs.count > 0 && (
-						<span className="inline-flex items-center justify-center px-1.5 py-0 text-xs font-medium bg-primary/10 text-primary rounded-full min-w-[1.25rem]">
-							{openPRs.count}
-						</span>
-					)}
-				</a>
-				<a
-					href={actionsSummary?.repoUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
-				>
-					<Play className="w-4 h-4" />
-					<span>Actions</span>
-					{actionsSummary && actionsSummary.total > 0 && (
-						<div className="flex items-center gap-1 ml-0.5">
-							{actionsSummary.running > 0 && (
-								<span className="inline-flex items-center gap-0.5 px-1.5 py-0 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
-									<span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-									{actionsSummary.running}
-								</span>
-							)}
-							{actionsSummary.failed > 0 && (
-								<span className="inline-flex items-center justify-center px-1.5 py-0 text-xs font-medium bg-red-100 text-red-700 rounded-full">
-									{actionsSummary.failed}
-								</span>
-							)}
-						</div>
-					)}
-				</a>
+			<div className="flex items-center gap-3 mb-6 flex-wrap bg-card p-2 rounded-2xl border shadow-sm">
+				<div className="flex items-center gap-1.5 p-1 bg-muted/40 rounded-xl border-dashed border">
+					{/* Links externos */}
+					<a
+						href={openPRs?.repoUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-card hover:shadow-sm rounded-lg transition-all"
+					>
+						<GitPullRequest className="w-4 h-4" />
+						<span>Pull Requests</span>
+						{openPRs && openPRs.count > 0 && (
+							<span className="inline-flex items-center justify-center px-2 py-0 text-xs font-bold bg-primary text-primary-foreground rounded-full min-w-[1.5rem]">
+								{openPRs.count}
+							</span>
+						)}
+					</a>
+					<div className="w-px h-4 bg-border/50 mx-1" />
+					<a
+						href={actionsSummary?.repoUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-card hover:shadow-sm rounded-lg transition-all"
+					>
+						<Play className="w-4 h-4" />
+						<span>Actions</span>
+						{actionsSummary && actionsSummary.total > 0 && (
+							<div className="flex items-center gap-1.5 ml-0.5">
+								{actionsSummary.running > 0 && (
+									<span className="inline-flex items-center gap-1.5 px-2 py-0 text-xs font-bold bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 rounded-full">
+										<span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+										{actionsSummary.running}
+									</span>
+								)}
+								{actionsSummary.failed > 0 && (
+									<span className="inline-flex items-center justify-center px-2 py-0 text-xs font-bold bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400 rounded-full">
+										{actionsSummary.failed}
+									</span>
+								)}
+							</div>
+						)}
+					</a>
+				</div>
 
 				{/* Separador flexible que empuja todo a la derecha */}
 				<div className="flex-1 min-w-4" />
 
-				{/* Configuración */}
-				<ProjectSelector repo={fullProduct} />
+				<div className="flex items-center gap-3">
+					{/* Configuración */}
+					<ProjectSelector repo={fullProduct} />
 
-				<div className="w-px h-5 bg-border" />
+					<div className="w-px h-6 bg-border" />
 
-				{/* Operaciones */}
-				<FreezeDialog repo={fullProduct} iconOnly={false} />
-				{isCommits ? (
-					<ForceRedeployDialog repo={fullProduct} />
-				) : (
-					<PromoteDialog repo={fullProduct} latestTag={latestTag?.name} />
-				)}
+					{/* Operaciones */}
+					<div className="flex items-center gap-2">
+						<FreezeDialog repo={fullProduct} iconOnly={false} />
+						<div className="w-px h-4 bg-border/50" />
+						{isCommits ? (
+							<ForceRedeployDialog repo={fullProduct} />
+						) : (
+							<PromoteDialog repo={fullProduct} latestTag={latestTag?.name} />
+						)}
+					</div>
+				</div>
 			</div>
 
 			<StageCommitsTable

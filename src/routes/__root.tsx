@@ -71,60 +71,77 @@ function RootLayout() {
 	return (
 		<>
 			<div className="min-h-screen bg-background flex flex-col">
-				<header className="border-b px-4 py-3">
-					<div className="flex items-center justify-between">
-						<div className="flex items-center gap-2">
-							<Link to="/" className="text-2xl font-bold hover:text-primary flex items-center gap-2">
-								<Github className="w-6 h-6" />
-								ReleaseHub
+				<header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md px-4 py-3">
+					<div className="flex items-center justify-between max-w-[1600px] mx-auto w-full">
+						<div className="flex items-center gap-4">
+							<Link to="/" className="text-2xl font-extrabold tracking-tight hover:text-primary flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-95">
+								<div className="bg-primary text-primary-foreground p-1.5 rounded-xl shadow-sm">
+									<Github className="w-6 h-6" />
+								</div>
+								<span>ReleaseHub</span>
 							</Link>
 							{(product || isHealthPage) && (
 								<>
-									<span className="text-muted-foreground text-lg">/</span>
-									<span className="text-lg font-normal text-muted-foreground flex items-center gap-2">
-										{isHealthPage && <Activity className="w-5 h-5 text-blue-600" />}
+									<div className="h-6 w-px bg-border mx-1" />
+									<div className="flex items-center gap-2 text-muted-foreground animate-in fade-in slide-in-from-left-2 duration-300">
+										{isHealthPage && <Activity className="w-4 h-4 text-blue-600" />}
 										{product && (
 											<button
 												type="button"
 												onClick={() => fullProduct && toggleFavorite(fullProduct)}
-												className={`${favorite ? "text-yellow-500" : "text-muted-foreground"} hover:text-yellow-600`}
+												className={`${favorite ? "text-yellow-500" : "text-muted-foreground"} hover:text-yellow-600 transition-colors p-1 hover:bg-muted rounded-md`}
 												title={favorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
 											>
-												<Star className={`w-5 h-5 ${favorite ? "fill-current" : ""}`} />
+												<Star className={`w-4 h-4 ${favorite ? "fill-current" : ""}`} />
 											</button>
 										)}
-										{isHealthPage ? 'Health Monitor' : product}
-									</span>
+										<span className="text-sm font-medium">
+											{isHealthPage ? 'Health Monitor' : product}
+										</span>
+									</div>
 								</>
 							)}
 						</div>
-						<div className="flex items-center gap-4">
-							<NovedadesDialog />
-							<RepoSearch />
-							<Link
-								to="/health"
-								className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-								title="Health Monitor"
-							>
-								<Activity className="w-5 h-5" />
-							</Link>
-							<UserAvatar />
-							<SettingsDialog />
+						<div className="flex items-center gap-3">
+							<div className="hidden md:block">
+								<RepoSearch />
+							</div>
+							<div className="h-8 w-px bg-border mx-1" />
+							<div className="flex items-center gap-1.5">
+								<NovedadesDialog />
+								<Link
+									to="/health"
+									className="p-2 text-muted-foreground hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-lg transition-all active:scale-95"
+									title="Health Monitor"
+								>
+									<Activity className="w-5 h-5" />
+								</Link>
+								<div className="flex items-center gap-2 pl-2">
+									<UserAvatar />
+									<SettingsDialog />
+								</div>
+							</div>
 						</div>
 					</div>
 				</header>
-				<main className="p-4 pt-8 flex-1">
+				<main className="p-6 pt-10 flex-1 max-w-[1600px] mx-auto w-full animate-in fade-in duration-500">
 					<Outlet />
 				</main>
-				<footer className="p-4 pt-0 text-right">
-					<a
-						href="https://github.com/galiprandi/release-hub"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
-					>
-						ReleaseHub Open Source
-					</a>
+				<footer className="p-6 pt-0 border-t mt-12">
+					<div className="max-w-[1600px] mx-auto flex items-center justify-between">
+						<p className="text-xs text-muted-foreground">
+							&copy; {new Date().getFullYear()} ReleaseHub. Gestión de pipelines simplificada.
+						</p>
+						<a
+							href="https://github.com/galiprandi/release-hub"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="text-[11px] font-medium text-muted-foreground hover:text-primary transition-colors flex items-center gap-1.5"
+						>
+							<Github className="w-3.5 h-3.5" />
+							Open Source
+						</a>
+					</div>
 				</footer>
 			</div>
 			<TanStackRouterDevtools />
