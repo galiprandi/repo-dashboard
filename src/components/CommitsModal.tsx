@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, Sparkles, Loader2, ClipboardCopy, Check, GitCommit, ChevronDown, ChevronUp } from "lucide-react";
-import { useAISummarizer } from "@/hooks/useAISummarizer";
+import { useAISummarizer } from "@/hooks/useAiSummarizer";
 
 interface CommitsModalProps {
 	isOpen: boolean;

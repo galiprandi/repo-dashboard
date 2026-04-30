@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { useKubectlNamespaceAccess } from "@/hooks/useKubectlNamespaceAccess";
-import { useAISummarizer } from "@/hooks/useAISummarizer";
+import { useAISummarizer } from "@/hooks/useAiSummarizer";
 import { getDeployments, getResourceLogs, getPodsForDeployment } from "@/api/kubectl";
 
 interface K8sSectionProps {
@@ -23,8 +23,10 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 	}
 
 	if (!access?.hasAccess || !access.canGetDeployments) {
+		console.log('[K8s] Kubernetes access not available for namespace:', namespace);
 		return null;
 	}
+	console.log('[K8s] Kubernetes access available for namespace:', namespace);
 
 	const handleViewDeploymentLogs = (deploymentName: string) => {
 		setLogsResourceType("deployment");

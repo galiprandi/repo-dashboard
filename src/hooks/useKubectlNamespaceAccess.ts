@@ -25,6 +25,7 @@ export function useKubectlNamespaceAccess(namespace: string | null) {
 			// Verificar que kubectl esté instalado
 			const isInstalled = await checkKubectlInstalled();
 			if (!isInstalled) {
+				console.log('[K8s] kubectl is not installed');
 				return {
 					canGetPods: false,
 					canGetDeployments: false,
@@ -32,6 +33,7 @@ export function useKubectlNamespaceAccess(namespace: string | null) {
 					hasAccess: false,
 				};
 			}
+			console.log('[K8s] kubectl is installed');
 
 			try {
 				const [podsResult, deploymentsResult, logsResult] = await Promise.allSettled([

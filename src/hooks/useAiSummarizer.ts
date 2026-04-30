@@ -59,6 +59,7 @@ export function useAISummarizer() {
 			const hasSummarizer = (window as unknown as Record<string, unknown>).Summarizer;
 
 			if (!hasAISummarizer && !hasSummarizer) {
+				console.log('[AI] Chrome AI Summarizer API not available');
 				setAvailability("unavailable");
 				return;
 			}
@@ -68,11 +69,15 @@ export function useAISummarizer() {
 				try {
 					const status = await window.ai.summarizer.availability();
 					setAvailability(status);
+					if (status === "available") {
+						console.log('[AI] Chrome AI Summarizer API available');
+					}
 				} catch {
 					setAvailability("unavailable");
 				}
 			} else {
 				setAvailability("available");
+				console.log('[AI] Chrome AI Summarizer API available (legacy)');
 			}
 		};
 		check();
