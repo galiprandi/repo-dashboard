@@ -48,8 +48,8 @@ export function ProjectSelector({ repo }: ProjectSelectorProps) {
 					<div className="border-t mt-1 pt-1">
 						{isCreating ? (
 							<form onSubmit={handleCreate} className="px-3 py-2 space-y-2">
-								<input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nombre del proyecto" className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary" autoFocus />
-								<input type="text" value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Descripción (opcional)" className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary" />
+								<input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nombre del proyecto" aria-label="Nombre del proyecto" className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary" autoFocus />
+								<input type="text" value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Descripción (opcional)" aria-label="Descripción (opcional)" className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary" />
 								<div className="flex gap-2">
 									<button type="button" onClick={() => setIsCreating(false)} className="flex-1 px-2 py-1 text-xs text-muted-foreground hover:bg-muted rounded">Cancelar</button>
 									<button type="submit" disabled={!newName.trim()} className="flex-1 px-2 py-1 text-xs bg-primary text-primary-foreground rounded disabled:opacity-50">Crear</button>

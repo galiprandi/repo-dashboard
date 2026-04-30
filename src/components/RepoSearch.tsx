@@ -2,61 +2,22 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { Search, Star, ExternalLink, Loader2, GitBranch } from 'lucide-react'
 import { useUserRepos } from '@/hooks/useUserRepos'
 import { useUserCollections } from '@/hooks/useUserCollections'
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 
 export function RepoSearch() {
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
+  const [selectedIndex, setSelectedIndex] = useState(-1)
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [isEditable, setIsEditable] = useState(false)
   const searchWidth = 'w-[35dvw]'
+  const navigate = useNavigate()
 
   // Load all repos from user (via gh CLI) - no org specified to get all accessible repos
   const { data, isLoading } = useUserRepos()
 
   const { toggleFavorite, isFavorite } = useUserCollections()
-
-  // Close when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false)
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-
-  // Keyboard shortcut: Cmd/Ctrl + K to open
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
-        event.preventDefault()
-        setIsOpen(true)
-        inputRef.current?.focus()
-      }
-      if (event.key === 'Escape') {
-        setIsOpen(false)
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [])
-
-  const handleSelect = () => {
-    setQuery('')
-    setIsOpen(false)
-  }
-
-  const handleOpenInNewTab = (fullName: string) => {
-    window.open(`https://github.com/${fullName}`, '_blank')
-  }
 
   // Filter repos locally based on query
   const results = useMemo(() => {
@@ -73,6 +34,73 @@ export function RepoSearch() {
     )
   }, [data?.results, query])
 
+  const handleSelect = () => {
+    setQuery('')
+    setIsOpen(false)
+    setSelectedIndex(-1)
+  }
+
+  const handleOpenInNewTab = (fullName: string) => {
+    window.open(`https://github.com/${fullName}`, '_blank')
+  }
+
+  // Close when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Keyboard shortcut: Cmd/Ctrl + K to open and keyboard navigation
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault()
+        setIsOpen(true)
+        inputRef.current?.focus()
+      }
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+        setSelectedIndex(-1)
+      }
+
+      if (isOpen && results.length > 0) {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault()
+          setSelectedIndex((prev) => (prev < results.length - 1 ? prev + 1 : prev))
+        }
+        if (event.key === 'ArrowUp') {
+          event.preventDefault()
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev))
+        }
+        if (event.key === 'Enter' && selectedIndex >= 0) {
+          event.preventDefault()
+          const repo = results[selectedIndex]
+          if (repo) {
+            const [org, name] = repo.fullName.split('/')
+            navigate({
+              to: '/product/$org/$product',
+              params: { org, product: name },
+              search: { stage: 'staging', event: 'commit' },
+            })
+            handleSelect()
+          }
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, results, selectedIndex, navigate])
+
   const hasResults = results.length > 0
 
   return (
@@ -87,6 +115,7 @@ export function RepoSearch() {
           onChange={(e) => {
             setQuery(e.target.value)
             setIsOpen(true)
+            setSelectedIndex(-1)
           }}
           onFocus={() => {
             setIsEditable(true);
@@ -126,14 +155,17 @@ export function RepoSearch() {
             </div>
           ) : (
             <div className="max-h-80 overflow-y-auto">
-              {results.map((repo) => {
+              {results.map((repo, index) => {
                 const isFav = isFavorite(repo.fullName)
                 const [org, name] = repo.fullName.split('/')
+                const isSelected = index === selectedIndex
 
                 return (
                   <div
                     key={repo.fullName}
-                    className="group p-3 hover:bg-muted/50 border-b last:border-b-0 transition-colors"
+                    className={`group p-3 border-b last:border-b-0 transition-colors ${
+                      isSelected ? 'bg-muted' : 'hover:bg-muted/50'
+                    }`}
                   >
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0">
@@ -171,6 +203,11 @@ export function RepoSearch() {
                               ? 'text-yellow-500 hover:text-yellow-600'
                               : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-50'
                           }`}
+                          aria-label={
+                            isFav
+                              ? `Eliminar ${repo.fullName} de favoritos`
+                              : `Agregar ${repo.fullName} a favoritos`
+                          }
                           title={
                             isFav
                               ? 'Eliminar de favoritos'
@@ -184,6 +221,7 @@ export function RepoSearch() {
                         <button
                           onClick={() => handleOpenInNewTab(repo.fullName)}
                           className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          aria-label={`Abrir ${repo.fullName} en GitHub`}
                           title="Abrir en GitHub"
                         >
                           <ExternalLink className="w-4 h-4" />
