@@ -17,6 +17,7 @@ import { usePipelineWithHealth } from "@/hooks/usePipelineWithHealth";
 import { useOpenPullRequests } from "@/hooks/useOpenPullRequests";
 import { useGitHubActionsSummary } from "@/hooks/useGitHubActionsSummary";
 import { GitPullRequest, Play } from "lucide-react";
+import { K8sSection } from "@/components/K8sSection";
 
 dayjs.extend(relativeTime);
 dayjs.locale("es");
@@ -102,6 +103,10 @@ function ProductIndex() {
 						tagName: latestTag?.name,
 					}}
 				/>
+			</div>
+
+			<div className="space-y-2 mb-6">
+				<K8sSection namespace={product} />
 			</div>
 
 			{/* Tabs de navegación */}

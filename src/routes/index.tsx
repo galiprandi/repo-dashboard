@@ -7,6 +7,7 @@ import { TagLink } from "@/components/TagLink";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { ForceRedeployDialog } from "@/components/ForceRedeployDialog";
 import { FreezeDialog } from "@/components/FreezeDialog";
+import { DiffSummaryButton } from "@/components/DiffSummaryButton";
 import { useUserCollections } from "@/hooks/useUserCollections";
 import { useUserRepos } from "@/hooks/useUserRepos";
 import { useGitCommits } from "@/hooks/useGitCommits";
@@ -345,7 +346,10 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 							</Tooltip.Portal>
 						</Tooltip.Root>
 					</Tooltip.Provider>
-				)}
+					)}
+					{pendingCount > 0 && (
+						<DiffSummaryButton repo={repo.fullName} tagName={latestTag?.name} />
+					)}
 				</div>
 			</td>
 			<td className="px-4 py-3 w-20">
