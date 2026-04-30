@@ -47,7 +47,25 @@ Antes de cualquier cambio, revisar los docs relevantes para evaluar impacto y ev
 
 3. **No mezclar repos**: Nunca asumir que estamos en un directorio local específico. Cada operación debe ser aislada al repo actual.
 
-### 2. Validación Antes de Implementar
+### 2. Features No Disponibles
+
+⚠️ **POLÍTICA DE VISIBILIDAD**: Para features que pueden no estar disponibles para todos los usuarios (ej: acceso a Kubernetes, resúmenes AI, etc.), seguir estas reglas:
+
+1. **No mostrar placeholders durante verificación**: Mientras se verifica si el usuario tiene acceso a una feature, NO mostrar ningún placeholder o mensaje de carga. Renderizar `null` o nada.
+2. **Solo mostrar si está disponible**: Solo mostrar la UI de la feature si se confirma que el usuario tiene acceso/disponibilidad.
+3. **Ocultar completamente si no disponible**: Si el usuario no tiene acceso a la feature, no mostrar nada relacionado con ella (ni botones, ni opciones, ni mensajes de error).
+4. **Aplicar a todas las features condicionales**: Esta política aplica a cualquier feature que dependa de:
+   - Permisos del usuario (ej: acceso a clusters K8s)
+   - Disponibilidad de servicios externos (ej: API de AI)
+   - Configuración del sistema (ej: tokens de autenticación)
+   - Capacidades del entorno (ej: herramientas CLI instaladas)
+
+**Ejemplos**:
+- K8sSection: No mostrar "Verificando acceso a Kubernetes..." mientras verifica. Solo mostrar la card si `access?.hasAccess` es true.
+- CommitsModal: Solo mostrar botón de resumen AI si `availability === "available"`.
+- LogsModal: Solo mostrar botón de resumen AI si `availability === "available"`.
+
+### 3. Validación Antes de Implementar
 
 ⚠️ **MUY IMPORTANTE**: Antes de implementar o modificar cualquier función que use comandos externos (gh api, curl, git, etc.), SIEMPRE:
 

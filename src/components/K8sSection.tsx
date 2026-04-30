@@ -19,12 +19,7 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 	const [logTailSize, setLogTailSize] = useState<number>(100);
 
 	if (checkingAccess) {
-		return (
-			<div className="border rounded-lg p-4 flex items-center justify-center gap-2 text-muted-foreground">
-				<Loader2 className="w-4 h-4 animate-spin" />
-				<span>Verificando acceso a Kubernetes...</span>
-			</div>
-		);
+		return null;
 	}
 
 	if (!access?.hasAccess || !access.canGetDeployments) {
