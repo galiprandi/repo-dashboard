@@ -2,6 +2,18 @@
 
 ---
 
+### 🗓️ 30 de Abril de 2026
+
+- 🎉 Kubernetes: Nuevo sistema de monitoreo con navegación desde deployment hasta pods individuales para ver logs detallados.
+- 🎉 Logs: Resumen automático de logs con IA para identificar rápidamente errores y anomalías importantes.
+- 🎨 Logs: Resaltado de sintaxis con colores para timestamps y niveles de log (ERROR en rojo, WARN en amarillo, INFO en verde).
+- ✨ Kubernetes: Modal de logs con búsqueda, filtro y botón para copiar al portapapeles.
+- ✨ Resumen IA: Panel colapsable y sticky para mejor visualización de resúmenes de commits y logs.
+- 🔒 Seguridad: Validación y sanitización de comandos kubectl para prevenir inyección de comandos.
+- ⌨️ Búsqueda: Navegación con teclado (flechas y Enter) en el buscador de repositorios.
+- ♻️ Accesibilidad: Mejoras en etiquetas aria para mejor compatibilidad con lectores de pantalla.
+- ♻️ Configuración: Migración del token de Seki al sistema unificado de configuración global.
+
 ### 🗓️ 29 de Abril de 2026
 
 - 🎉 Proyectos: Nuevo sistema de gestión de proyectos integrado con favoritos para organizar mejor tus repositorios.
