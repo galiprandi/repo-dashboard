@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { runCommand } from "@/api/exec";
+import { checkKubectlInstalled } from "@/api/kubectl";
 
 export interface KubectlNamespaceAccess {
 	canGetPods: boolean;
@@ -13,6 +14,17 @@ export function useKubectlNamespaceAccess(namespace: string | null) {
 		queryKey: ["kubectl", "namespace-access", namespace],
 		queryFn: async (): Promise<KubectlNamespaceAccess> => {
 			if (!namespace) {
+				return {
+					canGetPods: false,
+					canGetDeployments: false,
+					canGetPodLogs: false,
+					hasAccess: false,
+				};
+			}
+
+			// Verificar que kubectl esté instalado
+			const isInstalled = await checkKubectlInstalled();
+			if (!isInstalled) {
 				return {
 					canGetPods: false,
 					canGetDeployments: false,

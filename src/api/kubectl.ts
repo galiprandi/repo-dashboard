@@ -20,6 +20,52 @@ export interface PodInfo {
   node?: string;
 }
 
+/**
+ * Sanitiza nombres de recursos de Kubernetes para prevenir command injection.
+ * Kubernetes names deben cumplir con: RFC 1123 subdomain (DNS subdomain)
+ * - Deben consistir de caracteres alfanuméricos minúsculos, '-' o '.'
+ * - Deben empezar y terminar con carácter alfanumérico
+ * - Longitud máxima: 253 caracteres
+ */
+function sanitizeK8sName(name: string): string {
+  if (!name) {
+    throw new Error('Kubernetes name cannot be empty');
+  }
+
+  if (name.length > 253) {
+    throw new Error(`Kubernetes name exceeds maximum length of 253 characters: ${name}`);
+  }
+
+  // Validar formato de nombre de Kubernetes (RFC 1123 subdomain)
+  const k8sNameRegex = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/;
+  
+  if (!k8sNameRegex.test(name)) {
+    throw new Error(`Invalid Kubernetes name format: ${name}. Names must consist of lowercase alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character.`);
+  }
+
+  return name;
+}
+
+/**
+ * Sanitiza nombres de namespace de Kubernetes.
+ * Los namespaces siguen las mismas reglas que los nombres de recursos.
+ */
+function sanitizeNamespace(namespace: string): string {
+  return sanitizeK8sName(namespace);
+}
+
+/**
+ * Verifica que kubectl esté instalado y accesible.
+ */
+export async function checkKubectlInstalled(): Promise<boolean> {
+  try {
+    const result = await runCommand('kubectl version --client --output=json');
+    return result.stdout.includes('clientVersion');
+  } catch {
+    return false;
+  }
+}
+
 function parseDeployments(output: string): DeploymentInfo[] {
   const lines = output.trim().split('\n');
   const deployments: DeploymentInfo[] = [];
@@ -108,7 +154,7 @@ function parsePods(output: string): PodInfo[] {
 
 export async function getDeployments(namespace?: string): Promise<DeploymentInfo[]> {
   try {
-    const nsFlag = namespace ? `-n ${namespace}` : '--all-namespaces';
+    const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '--all-namespaces';
     const result = await runCommand(`kubectl get deployments ${nsFlag}`);
     return parseDeployments(result.stdout);
   } catch {
@@ -118,7 +164,7 @@ export async function getDeployments(namespace?: string): Promise<DeploymentInfo
 
 export async function getPods(namespace?: string): Promise<PodInfo[]> {
   try {
-    const nsFlag = namespace ? `-n ${namespace}` : '--all-namespaces';
+    const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '--all-namespaces';
     const result = await runCommand(`kubectl get pods ${nsFlag}`);
     return parsePods(result.stdout);
   } catch {
@@ -128,8 +174,9 @@ export async function getPods(namespace?: string): Promise<PodInfo[]> {
 
 export async function getPodsForDeployment(deploymentName: string, namespace?: string): Promise<PodInfo[]> {
   try {
-    const nsFlag = namespace ? `-n ${namespace}` : '';
-    const selectorResult = await runCommand(`kubectl get deployment ${deploymentName} ${nsFlag} -o jsonpath='{.spec.selector.matchLabels}'`);
+    const sanitizedDeploymentName = sanitizeK8sName(deploymentName);
+    const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '';
+    const selectorResult = await runCommand(`kubectl get deployment ${sanitizedDeploymentName} ${nsFlag} -o jsonpath='{.spec.selector.matchLabels}'`);
     const selector = selectorResult.stdout.trim();
     if (!selector) {
       return [];
@@ -150,10 +197,11 @@ export async function getPodsForDeployment(deploymentName: string, namespace?: s
 
 export async function getResourceLogs(resourceType: 'deployment' | 'pod', name: string, namespace?: string, tail = 100): Promise<string> {
   try {
-    const nsFlag = namespace ? `-n ${namespace}` : '';
+    const sanitizedName = sanitizeK8sName(name);
+    const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '';
     if (resourceType === 'deployment') {
       // Obtener selector del deployment y usar label selector para logs
-      const selectorResult = await runCommand(`kubectl get deployment ${name} ${nsFlag} -o jsonpath='{.spec.selector.matchLabels}'`);
+      const selectorResult = await runCommand(`kubectl get deployment ${sanitizedName} ${nsFlag} -o jsonpath='{.spec.selector.matchLabels}'`);
       const selector = selectorResult.stdout.trim();
       if (!selector) {
         return 'Error: No se pudo obtener selector del deployment';
@@ -168,7 +216,7 @@ export async function getResourceLogs(resourceType: 'deployment' | 'pod', name: 
         return `Error: Selector inválido: ${selector}`;
       }
     }
-    const result = await runCommand(`kubectl logs ${name} ${nsFlag} --tail=${tail}`);
+    const result = await runCommand(`kubectl logs ${sanitizedName} ${nsFlag} --tail=${tail}`);
     return result.stdout;
   } catch (error) {
     if (error instanceof Error) {

@@ -67,12 +67,22 @@ Antes de cualquier cambio, revisar los docs relevantes para evaluar impacto y ev
 
 ### 3. Validación Antes de Implementar
 
-⚠️ **MUY IMPORTANTE**: Antes de implementar o modificar cualquier función que use comandos externos (gh api, curl, git, etc.), SIEMPRE:
+⚠️ **MUY IMPORTANTE**: Antes de implementar o modificar cualquier función que use comandos externos (gh api, curl, git, kubectl, etc.), SIEMPRE:
 
 1. **Validar el comando en terminal**: Ejecutar el comando exacto en la terminal para verificar que funciona.
 2. **Analizar la respuesta**: Revisar el formato de salida (JSON, texto, errores) para entender exactamente qué devuelve.
 3. **Implementar con conocimiento exacto**: Solo después de validar y analizar la respuesta, implementar la función basándose en el formato real.
 4. **EXCEPCIÓN - Operaciones de escritura**: Si la operación modifica un repo (crear tags, commits, etc.), CONSULTAR AL USUARIO antes de ejecutarla en producción.
+
+**Ejemplo - Comandos kubectl validados (feat/k8s)**:
+- `kubectl version --client` - Verifica instalación
+- `kubectl auth can-i get pods -n <namespace>` - Verifica permisos pods
+- `kubectl auth can-i get deployments -n <namespace>` - Verifica permisos deployments
+- `kubectl auth can-i get pods/logs -n <namespace>` - Verifica permisos logs
+- `kubectl get deployments -n <namespace>` - Lista deployments
+- `kubectl get pods -n <namespace>` - Lista pods
+- `kubectl get deployment <name> -n <namespace> -o jsonpath='{.spec.selector.matchLabels}'` - Obtiene selector
+- `kubectl logs -l <selector> -n <namespace> --tail=<n>` - Obtiene logs por label selector
 
 ### 3. Tokens de Autenticación
 
