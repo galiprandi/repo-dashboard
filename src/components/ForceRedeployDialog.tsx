@@ -121,9 +121,9 @@ export function ForceRedeployDialog({ repo, iconOnly = false }: ForceRedeployDia
 						<Dialog.Trigger asChild>
 							<button
 								type="button"
-								className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+								className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
 							>
-								<RefreshCw className="w-3 h-3" />
+								<RefreshCw className="w-4 h-4" />
 								{!iconOnly && <span>Re Deploy</span>}
 							</button>
 						</Dialog.Trigger>

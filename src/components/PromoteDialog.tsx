@@ -156,9 +156,9 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 						<Dialog.Trigger asChild>
 							<button
 								type="button"
-								className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+								className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
 							>
-								<Rocket className="w-3 h-3" />
+								<Rocket className="w-4 h-4" />
 								{!iconOnly && <span>Promocionar</span>}
 							</button>
 						</Dialog.Trigger>

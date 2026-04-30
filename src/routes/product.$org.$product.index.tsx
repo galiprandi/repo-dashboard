@@ -14,6 +14,9 @@ import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTags } from "@/hooks/useGitTags";
 import { usePipelineDetector } from "@/hooks/usePipelineDetector";
 import { usePipelineWithHealth } from "@/hooks/usePipelineWithHealth";
+import { useOpenPullRequests } from "@/hooks/useOpenPullRequests";
+import { useGitHubActionsSummary } from "@/hooks/useGitHubActionsSummary";
+import { GitPullRequest, Play } from "lucide-react";
 
 dayjs.extend(relativeTime);
 dayjs.locale("es");
@@ -33,6 +36,8 @@ function ProductIndex() {
 
 	const { latestCommit } = useGitCommits({ repo: fullProduct });
 	const { latestTag } = useGitTags({ repo: fullProduct });
+	const { data: openPRs } = useOpenPullRequests(fullProduct);
+	const { data: actionsSummary } = useGitHubActionsSummary(fullProduct);
 
 	// Detect pipeline type
 	const { plugin: detectedPlugin } = usePipelineDetector({
@@ -99,42 +104,95 @@ function ProductIndex() {
 				/>
 			</div>
 
-			{/* Environment Selector - Pill Style */}
-			<div className="flex bg-muted rounded-lg p-1 mb-4 items-center justify-between">
-				<div className="flex gap-2">
-					<button
-						type="button"
-						onClick={() => navigate({ search: { view: "commits" } })}
-						className={`px-4 py-1.5 text-sm rounded-md transition-all ${
-							viewMode === "commits"
-								? "bg-white shadow-sm text-foreground"
-								: "text-muted-foreground hover:text-foreground"
-						}`}
-					>
-						Commits
-					</button>
-					<button
-						type="button"
-						onClick={() => navigate({ search: { view: "tags" } })}
-						className={`px-4 py-1.5 text-sm rounded-md transition-all ${
-							viewMode === "tags"
-								? "bg-white shadow-sm text-foreground"
-								: "text-muted-foreground hover:text-foreground"
-						}`}
-					>
-						Tags
-					</button>
-				</div>
-				<div className="flex items-center gap-2">
-					<ProjectSelector repo={fullProduct} />
-					<div className="w-px h-6 bg-border" />
-					<FreezeDialog repo={fullProduct} iconOnly={false} />
-					{isCommits ? (
-						<ForceRedeployDialog repo={fullProduct} />
-					) : (
-						<PromoteDialog repo={fullProduct} latestTag={latestTag?.name} />
+			{/* Tabs de navegación */}
+			<div className="flex border-b border-border mb-3">
+				<button
+					type="button"
+					onClick={() => navigate({ search: { view: "commits" } })}
+					className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
+						viewMode === "commits"
+							? "text-foreground"
+							: "text-muted-foreground hover:text-foreground"
+					}`}
+				>
+					Commits
+					{viewMode === "commits" && (
+						<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
 					)}
-				</div>
+				</button>
+				<button
+					type="button"
+					onClick={() => navigate({ search: { view: "tags" } })}
+					className={`relative px-4 py-2.5 text-sm font-medium transition-colors ${
+						viewMode === "tags"
+							? "text-foreground"
+							: "text-muted-foreground hover:text-foreground"
+					}`}
+				>
+					Tags
+					{viewMode === "tags" && (
+						<span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+					)}
+				</button>
+			</div>
+
+			{/* Toolbar de acciones */}
+			<div className="flex items-center gap-2 mb-4 flex-wrap">
+				{/* Links externos */}
+				<a
+					href={openPRs?.repoUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+				>
+					<GitPullRequest className="w-4 h-4" />
+					<span>Pull Requests</span>
+					{openPRs && openPRs.count > 0 && (
+						<span className="inline-flex items-center justify-center px-1.5 py-0 text-xs font-medium bg-primary/10 text-primary rounded-full min-w-[1.25rem]">
+							{openPRs.count}
+						</span>
+					)}
+				</a>
+				<a
+					href={actionsSummary?.repoUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+				>
+					<Play className="w-4 h-4" />
+					<span>Actions</span>
+					{actionsSummary && actionsSummary.total > 0 && (
+						<div className="flex items-center gap-1 ml-0.5">
+							{actionsSummary.running > 0 && (
+								<span className="inline-flex items-center gap-0.5 px-1.5 py-0 text-xs font-medium bg-amber-100 text-amber-700 rounded-full">
+									<span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+									{actionsSummary.running}
+								</span>
+							)}
+							{actionsSummary.failed > 0 && (
+								<span className="inline-flex items-center justify-center px-1.5 py-0 text-xs font-medium bg-red-100 text-red-700 rounded-full">
+									{actionsSummary.failed}
+								</span>
+							)}
+						</div>
+					)}
+				</a>
+
+				{/* Separador flexible que empuja todo a la derecha */}
+				<div className="flex-1 min-w-4" />
+
+				{/* Configuración */}
+				<ProjectSelector repo={fullProduct} />
+
+				<div className="w-px h-5 bg-border" />
+
+				{/* Operaciones */}
+				<FreezeDialog repo={fullProduct} iconOnly={false} />
+				{isCommits ? (
+					<ForceRedeployDialog repo={fullProduct} />
+				) : (
+					<PromoteDialog repo={fullProduct} latestTag={latestTag?.name} />
+				)}
 			</div>
 
 			<StageCommitsTable

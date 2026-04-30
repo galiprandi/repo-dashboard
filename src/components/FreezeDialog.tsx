@@ -126,13 +126,13 @@ EOF`
 							<button
 								type="button"
 								disabled={!canManage}
-								className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+								className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
 									isLocked
 										? "bg-orange-600 text-white hover:bg-orange-700"
-										: "bg-slate-400 text-white hover:bg-slate-500"
+										: "bg-slate-500 text-white hover:bg-slate-600"
 								} disabled:opacity-50 disabled:cursor-not-allowed`}
 							>
-								{isLocked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+								{isLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
 								{!iconOnly && <span>{isLocked ? "Desbloquear" : "Bloquear"}</span>}
 							</button>
 						</Dialog.Trigger>
