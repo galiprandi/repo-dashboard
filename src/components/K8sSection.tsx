@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles, ChevronDown, ChevronUp, Filter } from "lucide-react";
 import { useKubectlNamespaceAccess } from "@/hooks/useKubectlNamespaceAccess";
 import { useAISummarizer } from "@/hooks/useAiSummarizer";
 import { getDeployments, getResourceLogs, getPodsForDeployment, getCurrentContext, getContexts } from "@/api/kubectl";
@@ -350,6 +350,9 @@ function PodStats({
 	);
 }
 
+// Patrón para detectar niveles de log (constante reutilizable)
+const logLevelPattern = /\b(INFO|WARN|WARNING|ERROR|ERR|DEBUG|FATAL|TRACE)\b/gi;
+
 function stripAnsiCodes(text: string): string {
 	const esc = String.fromCharCode(0x1b);
 	return text.replace(new RegExp(esc + '\\[[0-9;]*m', 'g'), "");
@@ -416,11 +419,12 @@ function LogsModal({
 	const [currentType, setCurrentType] = useState<"deployment" | "pod">(type);
 	const [currentName, setCurrentName] = useState(name);
 	const [selectedPod, setSelectedPod] = useState<string | null>(type === "pod" ? name : null);
+	const [autoFetch, setAutoFetch] = useState(true);
 
 	const { data: logs, isLoading, refetch } = useQuery({
 		queryKey: ["kubectl", "logs", currentType, namespace, currentName, tailSize, context],
 		queryFn: () => getResourceLogs(currentType, currentName, namespace, tailSize, context),
-		refetchInterval: 10000,
+		refetchInterval: autoFetch ? 10000 : false,
 	});
 
 	// Obtener pods del deployment actual para el selector
@@ -431,12 +435,13 @@ function LogsModal({
 	});
 
 	const [filter, setFilter] = useState("");
+	const [logLevelFilter, setLogLevelFilter] = useState<"all" | "ERROR" | "WARN" | "INFO" | "DEBUG">("all");
 	const [copied, setCopied] = useState(false);
 	const [aiSummaryCopied, setAiSummaryCopied] = useState(false);
 	const [isAiSummaryCollapsed, setIsAiSummaryCollapsed] = useState(false);
 
 	// Usar hook de AI Summarizer
-	const { availability, isGenerating, summary, error: aiError, generate: generateAISummary } = useAISummarizer();
+	const { availability, isGenerating, summary, error: aiError, generate } = useAISummarizer();
 
 	// Agrupar líneas en logs completos (multi-línea)
 	const groupLogs = (logText: string): string[] => {
@@ -483,26 +488,43 @@ function LogsModal({
 		return logGroups.map(group => group.join("\n"));
 	};
 
-	const filteredLines = (() => {
+	const filteredLines = useMemo(() => {
 		if (!logs) return [];
 
 		const trimmedLogs = logs.trimEnd();
 		const logGroups = groupLogs(trimmedLogs).reverse();
 
+		// Filtrar por nivel de log si está seleccionado
+		let groupsToProcess = logGroups;
+		if (logLevelFilter !== "all") {
+			groupsToProcess = logGroups.filter(group => {
+				const match = group.match(logLevelPattern);
+				if (!match) return false;
+				const level = match[0].toUpperCase();
+				if (logLevelFilter === "ERROR") {
+					return level === "ERROR" || level === "ERR" || level === "FATAL";
+				}
+				if (logLevelFilter === "WARN") {
+					return level === "WARN" || level === "WARNING";
+				}
+				return level === logLevelFilter;
+			});
+		}
+
 		if (filter === "") {
-			return logGroups.flatMap(group => group.split("\n"));
+			return groupsToProcess.flatMap(group => group.split("\n"));
 		}
 
 		const filterLower = filter.toLowerCase();
 
 		// Filtrar grupos que coinciden con el filtro
-		const matchingGroups = logGroups.filter(group =>
+		const matchingGroups = groupsToProcess.filter(group =>
 			group.toLowerCase().includes(filterLower)
 		);
 
 		// Convertir grupos filtrados de vuelta a líneas individuales
 		return matchingGroups.flatMap(group => group.split("\n"));
-	})();
+	}, [logs, filter, logLevelFilter]);
 
 	const handleCopy = async () => {
 		const logsToCopy = filteredLines.join('\n');
@@ -545,7 +567,7 @@ function LogsModal({
 		const logsToSummarize = filteredLines.join('\n');
 
 		// Generar resumen con el hook
-		await generateAISummary(logsToSummarize, {
+		await generate(logsToSummarize, {
 			type: 'key-points',
 			context: 'Analiza los logs SOLO para identificar problemas. Si los logs están en formato JSON, extrae el mensaje de error y el nivel (level). REGLAS ESTRICTAS: 1) NO repitas los logs completos o en JSON, 2) NO menciones configuración, rutas, startup, Swagger, mapeo de controladores, debug info, 3) Solo reporta ERRORES, WARNINGS, EXCEPCIONES, TIMEOUTS, FALLOS DE CONEXIÓN en lenguaje natural, 4) Compliance: secretos expuestos, credenciales en texto plano. ESTRUCTURA EXACTA (máximo 4 líneas, texto plano): * Errores críticos: [descripción en lenguaje natural o "ninguno"] * Warnings: [descripción en lenguaje natural o "ninguno"] * Compliance: [problemas o "ninguno"] * Estado general: HEALTHY/DEGRADED/CRITICAL. NO agregues secciones adicionales. Usa minúsculas en las etiquetas.',
 			maxLines: 200,
@@ -605,6 +627,20 @@ function LogsModal({
 								className="pl-7 pr-2 py-1 text-sm bg-background border rounded-md w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
 							/>
 						</div>
+						<div className="flex items-center gap-1">
+							<Filter className="w-3.5 h-3.5 text-muted-foreground" />
+							<select
+								value={logLevelFilter}
+								onChange={(e) => setLogLevelFilter(e.target.value as "all" | "ERROR" | "WARN" | "INFO" | "DEBUG")}
+								className="bg-background border rounded px-2 py-1 text-sm"
+							>
+								<option value="all">Todos</option>
+								<option value="ERROR">ERROR</option>
+								<option value="WARN">WARN</option>
+								<option value="INFO">INFO</option>
+								<option value="DEBUG">DEBUG</option>
+							</select>
+						</div>
 						<select
 							value={tailSize}
 							onChange={(e) => onTailSizeChange(Number(e.target.value))}
@@ -622,6 +658,14 @@ function LogsModal({
 							title="Recargar"
 						>
 							<RefreshCw className="w-4 h-4" />
+						</button>
+						<button
+							type="button"
+							onClick={() => setAutoFetch(!autoFetch)}
+							className={`p-1.5 rounded transition-colors ${autoFetch ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+							title={autoFetch ? "Desactivar auto-fetch" : "Activar auto-fetch"}
+						>
+							<Clock className={`w-4 h-4 ${autoFetch ? 'animate-pulse' : ''}`} />
 						</button>
 						<button
 							type="button"
@@ -684,13 +728,15 @@ function LogsModal({
 							<span>Cargando logs...</span>
 						</div>
 					) : (
-						<pre className="whitespace-pre-wrap break-words">
+						<pre
+							className="whitespace-pre-wrap break-words"
+						>
 							{filteredLines.length > 0
 								? filteredLines.map((line, idx) => (
 									<div key={idx}>{highlightLogLine(line, filter)}</div>
 								))
-								: filter
-									? <span className="text-gray-500">No se encontraron logs que coincidan con el filtro.</span>
+								: (filter || logLevelFilter !== "all")
+									? <span className="text-gray-500">No se encontraron logs que coincidan con los filtros.</span>
 									: (logs || "No logs disponibles")
 							}
 						</pre>
