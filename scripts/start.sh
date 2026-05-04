@@ -29,7 +29,7 @@ else
             REMOTE=$(git rev-parse @{u} 2>/dev/null || git rev-parse origin/main)
             if [ "$LOCAL" != "$REMOTE" ]; then
                 echo "✨ New version detected. Updating $APP_NAME..."
-                git pull origin main
+                git reset --hard origin/main
                 npm install
                 npm run build
                 echo "✅ Update complete!"
