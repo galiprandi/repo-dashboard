@@ -2,6 +2,12 @@
 
 ---
 
+### 🗓️ 4 de Mayo de 2026
+
+- 🎨 Kubernetes: Rediseño de la barra de herramientas de logs con estilo minimalista tipo IDE.
+- ✨ Logs: Ahora puedes filtrar por nivel de log (ERROR, WARN, INFO) y alternar la actualización automática.
+- ✨ Kubernetes: Nuevo selector de contexto para cambiar rápidamente entre pods y mejoras en el visor de logs.
+
 ### 🗓️ 30 de Abril de 2026
 
 - 🎉 Kubernetes: Nuevo sistema de monitoreo con navegación desde deployment hasta pods individuales para ver logs detallados.
