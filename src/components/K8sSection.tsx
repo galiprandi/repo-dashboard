@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles, ChevronDown, ChevronUp, Filter } from "lucide-react";
+import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { useKubectlNamespaceAccess } from "@/hooks/useKubectlNamespaceAccess";
 import { useAISummarizer } from "@/hooks/useAiSummarizer";
 import { getDeployments, getResourceLogs, getPodsForDeployment, getCurrentContext, getContexts } from "@/api/kubectl";
@@ -623,34 +623,44 @@ function LogsModal({
 								type="text"
 								value={filter}
 								onChange={(e) => setFilter(e.target.value)}
-								placeholder="Filtrar logs..."
-								className="pl-7 pr-2 py-1 text-sm bg-background border rounded-md w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+								placeholder=""
+								className="pl-7 pr-2 py-1 text-sm bg-background border rounded w-36 focus:outline-none focus:ring-2 focus:ring-blue-500"
 							/>
 						</div>
-						<div className="flex items-center gap-1">
-							<Filter className="w-3.5 h-3.5 text-muted-foreground" />
-							<select
-								value={logLevelFilter}
-								onChange={(e) => setLogLevelFilter(e.target.value as "all" | "ERROR" | "WARN" | "INFO" | "DEBUG")}
-								className="bg-background border rounded px-2 py-1 text-sm"
-							>
-								<option value="all">Todos</option>
-								<option value="ERROR">ERROR</option>
-								<option value="WARN">WARN</option>
-								<option value="INFO">INFO</option>
-								<option value="DEBUG">DEBUG</option>
-							</select>
-						</div>
+						<select
+							value={logLevelFilter}
+							onChange={(e) => setLogLevelFilter(e.target.value as "all" | "ERROR" | "WARN" | "INFO" | "DEBUG")}
+							className="bg-background border rounded px-2 py-1 text-sm"
+						>
+							<option value="all">Todos</option>
+							<option value="ERROR">ERROR</option>
+							<option value="WARN">WARN</option>
+							<option value="INFO">INFO</option>
+							<option value="DEBUG">DEBUG</option>
+						</select>
 						<select
 							value={tailSize}
 							onChange={(e) => onTailSizeChange(Number(e.target.value))}
 							className="bg-background border rounded px-2 py-1 text-sm"
 						>
-							<option value={50}>50 líneas</option>
-							<option value={100}>100 líneas</option>
-							<option value={500}>500 líneas</option>
-							<option value={1000}>1000 líneas</option>
+							<option value={50}>50</option>
+							<option value={100}>100</option>
+							<option value={500}>500</option>
+							<option value={1000}>1000</option>
 						</select>
+						<button
+							type="button"
+							onClick={() => setAutoFetch(!autoFetch)}
+							className={`p-1.5 rounded transition-colors ${autoFetch ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+							title={autoFetch ? "Desactivar auto-fetch" : "Activar auto-fetch"}
+						>
+							<Clock className={`w-4 h-4 ${autoFetch ? 'animate-pulse' : ''}`} />
+						</button>
+						<div className="w-px h-6 bg-border mx-2" />
+						<span className="text-xs text-muted-foreground">
+							{filteredLines.length} logs
+						</span>
+						<div className="flex-1" />
 						<button
 							type="button"
 							onClick={() => refetch()}
