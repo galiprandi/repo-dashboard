@@ -1,16 +1,18 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { useKubectlNamespaceAccess } from "@/hooks/useKubectlNamespaceAccess";
 import { useAISummarizer } from "@/hooks/useAiSummarizer";
-import { getDeployments, getResourceLogs, getPodsForDeployment } from "@/api/kubectl";
+import { getDeployments, getResourceLogs, getPodsForDeployment, getCurrentContext, getContexts } from "@/api/kubectl";
 
 interface K8sSectionProps {
 	namespace: string;
 }
 
 export function K8sSection({ namespace }: K8sSectionProps) {
-	const { data: access, isLoading: checkingAccess } = useKubectlNamespaceAccess(namespace);
+	const queryClient = useQueryClient();
+	const [selectedContext, setSelectedContext] = useState<string | undefined>(undefined);
+	const { data: access, isLoading: checkingAccess } = useKubectlNamespaceAccess(namespace, selectedContext);
 	const [selectedDeployment, setSelectedDeployment] = useState<string | null>(null);
 	const [selectedPod, setSelectedPod] = useState<string | null>(null);
 	const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
@@ -40,13 +42,27 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 		setIsLogsModalOpen(true);
 	};
 
+	const handleContextChange = (newContext: string | undefined) => {
+		setSelectedContext(newContext);
+		setSelectedDeployment(null);
+		setSelectedPod(null);
+		// Invalidate all kubectl queries to refetch with new context
+		queryClient.invalidateQueries({ queryKey: ["kubectl"] });
+	};
+
 	return (
 		<>
 			<div className="border rounded-lg p-3 flex items-center gap-3 bg-muted/30">
 				<Boxes className="w-5 h-5 text-blue-600 flex-shrink-0" />
+
+				<ContextDropdown
+					selectedContext={selectedContext}
+					onSelect={handleContextChange}
+				/>
 				
 				<DeploymentDropdown
 					namespace={namespace}
+					context={selectedContext}
 					selectedDeployment={selectedDeployment}
 					onSelect={(deployment) => {
 						setSelectedDeployment(deployment);
@@ -54,11 +70,12 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 					}}
 				/>
 
-				{selectedDeployment && <DeploymentStats namespace={namespace} name={selectedDeployment} />}
+				{selectedDeployment && <DeploymentStats namespace={namespace} context={selectedContext} name={selectedDeployment} />}
 
 				{selectedDeployment && (
 					<PodDropdown
 						namespace={namespace}
+						context={selectedContext}
 						deploymentName={selectedDeployment}
 						selectedPod={selectedPod}
 						onSelect={setSelectedPod}
@@ -68,6 +85,7 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 				{selectedDeployment && (
 					<PodStats
 						namespace={namespace}
+						context={selectedContext}
 						deploymentName={selectedDeployment}
 						selectedPod={selectedPod}
 					/>
@@ -101,6 +119,7 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 			{isLogsModalOpen && (
 				<LogsModal
 					namespace={namespace}
+					context={selectedContext}
 					type={logsResourceType}
 					name={logsName}
 					tailSize={logTailSize}
@@ -112,18 +131,57 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 	);
 }
 
+function ContextDropdown({
+	selectedContext,
+	onSelect,
+}: {
+	selectedContext: string | undefined;
+	onSelect: (context: string | undefined) => void;
+}) {
+	const { data: contexts, isLoading } = useQuery({
+		queryKey: ["kubectl", "contexts"],
+		queryFn: async () => {
+			const contexts = await getContexts();
+			const current = await getCurrentContext();
+			return { contexts, current };
+		},
+		refetchInterval: false,
+		staleTime: Infinity,
+	});
+
+	const displayValue = selectedContext || contexts?.current || "";
+
+	return (
+		<select
+			value={displayValue}
+			onChange={(e) => onSelect(e.target.value || undefined)}
+			disabled={isLoading || !contexts || contexts.contexts.length === 0}
+			className="min-w-[180px] px-2 py-1 text-sm bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+		>
+			<option value="">Seleccionar contexto</option>
+			{contexts?.contexts.map((ctx) => (
+				<option key={ctx} value={ctx}>
+					{ctx}
+				</option>
+			))}
+		</select>
+	);
+}
+
 function DeploymentDropdown({
 	namespace,
+	context,
 	selectedDeployment,
 	onSelect,
 }: {
 	namespace: string;
+	context?: string;
 	selectedDeployment: string | null;
 	onSelect: (deployment: string | null) => void;
 }) {
 	const { data: deployments, isLoading } = useQuery({
-		queryKey: ["kubectl", "deployments", namespace],
-		queryFn: () => getDeployments(namespace),
+		queryKey: ["kubectl", "deployments", namespace, context],
+		queryFn: () => getDeployments(namespace, context),
 		refetchInterval: 30000,
 	});
 
@@ -144,11 +202,11 @@ function DeploymentDropdown({
 	);
 }
 
-function DeploymentStats({ namespace, name }: { namespace: string; name: string }) {
+function DeploymentStats({ namespace, context, name }: { namespace: string; context?: string; name: string }) {
 	const { data: deployment, isLoading } = useQuery({
-		queryKey: ["kubectl", "deployment", namespace, name],
+		queryKey: ["kubectl", "deployment", namespace, name, context],
 		queryFn: async () => {
-			const deployments = await getDeployments(namespace);
+			const deployments = await getDeployments(namespace, context);
 			return deployments?.find((d) => d.name === name);
 		},
 		enabled: !!name,
@@ -183,18 +241,20 @@ function DeploymentStats({ namespace, name }: { namespace: string; name: string 
 
 function PodDropdown({
 	namespace,
+	context,
 	deploymentName,
 	selectedPod,
 	onSelect,
 }: {
 	namespace: string;
+	context?: string;
 	deploymentName: string;
 	selectedPod: string | null;
 	onSelect: (pod: string | null) => void;
 }) {
 	const { data: pods, isLoading } = useQuery({
-		queryKey: ["kubectl", "deployment-pods", namespace, deploymentName],
-		queryFn: () => getPodsForDeployment(deploymentName, namespace),
+		queryKey: ["kubectl", "deployment-pods", namespace, deploymentName, context],
+		queryFn: () => getPodsForDeployment(deploymentName, namespace, context),
 		enabled: !!deploymentName,
 		refetchInterval: 30000,
 	});
@@ -218,16 +278,18 @@ function PodDropdown({
 
 function PodStats({
 	namespace,
+	context,
 	deploymentName,
 	selectedPod,
 }: {
 	namespace: string;
+	context?: string;
 	deploymentName: string;
 	selectedPod: string | null;
 }) {
 	const { data: pods } = useQuery({
-		queryKey: ["kubectl", "deployment-pods", namespace, deploymentName],
-		queryFn: () => getPodsForDeployment(deploymentName, namespace),
+		queryKey: ["kubectl", "deployment-pods", namespace, deploymentName, context],
+		queryFn: () => getPodsForDeployment(deploymentName, namespace, context),
 		enabled: !!deploymentName,
 		refetchInterval: 30000,
 	});
@@ -288,17 +350,25 @@ function PodStats({
 	);
 }
 
-function highlightLogLine(line: string): React.ReactNode {
+function stripAnsiCodes(text: string): string {
+	const esc = String.fromCharCode(0x1b);
+	return text.replace(new RegExp(esc + '\\[[0-9;]*m', 'g'), "");
+}
+
+function highlightLogLine(line: string, filter?: string): React.ReactNode {
 	if (!line) return line;
+
+	// Limpiar ANSI color codes antes de resaltar
+	let highlighted = stripAnsiCodes(line);
 
 	// Patrón para timestamps (ej: 2024-04-30 10:00:00, Apr 30 10:00:00, etc.)
 	const timestampPattern = /^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})|^(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})|^(\d{2}:\d{2}:\d{2})/;
-	
+
 	// Patrón para niveles de log
 	const logLevelPattern = /\b(INFO|WARN|WARNING|ERROR|ERR|DEBUG|FATAL|TRACE)\b/gi;
 
 	// Reemplazar timestamps
-	let highlighted = line.replace(timestampPattern, '<span class="text-blue-400">$&</span>');
+	highlighted = highlighted.replace(timestampPattern, '<span class="text-blue-400">$&</span>');
 
 	// Reemplazar niveles de log
 	highlighted = highlighted.replace(logLevelPattern, (match) => {
@@ -316,11 +386,19 @@ function highlightLogLine(line: string): React.ReactNode {
 		return `<span class="${colorClass}">${match}</span>`;
 	});
 
+	// Resaltar término de búsqueda
+	if (filter && filter.trim()) {
+		const escapedFilter = filter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+		const filterPattern = new RegExp(`(${escapedFilter})`, 'gi');
+		highlighted = highlighted.replace(filterPattern, '<mark class="bg-yellow-500/30 text-yellow-200 rounded px-0.5">$1</mark>');
+	}
+
 	return <span dangerouslySetInnerHTML={{ __html: highlighted }} />;
 }
 
 function LogsModal({
 	namespace,
+	context,
 	type,
 	name,
 	tailSize,
@@ -328,6 +406,7 @@ function LogsModal({
 	onClose,
 }: {
 	namespace: string;
+	context?: string;
 	type: "deployment" | "pod";
 	name: string;
 	tailSize: number;
@@ -339,15 +418,15 @@ function LogsModal({
 	const [selectedPod, setSelectedPod] = useState<string | null>(type === "pod" ? name : null);
 
 	const { data: logs, isLoading, refetch } = useQuery({
-		queryKey: ["kubectl", "logs", currentType, namespace, currentName, tailSize],
-		queryFn: () => getResourceLogs(currentType, currentName, namespace, tailSize),
+		queryKey: ["kubectl", "logs", currentType, namespace, currentName, tailSize, context],
+		queryFn: () => getResourceLogs(currentType, currentName, namespace, tailSize, context),
 		refetchInterval: 10000,
 	});
 
 	// Obtener pods del deployment actual para el selector
 	const { data: pods } = useQuery({
-		queryKey: ["kubectl", "pods", namespace, currentType === "deployment" ? currentName : ""],
-		queryFn: () => getPodsForDeployment(currentName, namespace),
+		queryKey: ["kubectl", "pods", namespace, currentType === "deployment" ? currentName : "", context],
+		queryFn: () => getPodsForDeployment(currentName, namespace, context),
 		enabled: currentType === "deployment",
 	});
 
@@ -365,15 +444,10 @@ function LogsModal({
 		const logGroups: string[][] = [];
 		let currentGroup: string[] = [];
 
-		// Función para remover ANSI color codes
-		const stripAnsi = (text: string): string => {
-			return text.replace(/\u001b\[[0-9;]*m/g, "");
-		};
-
 		// Patrón para detectar inicio de nuevo log (timestamp o nivel de log)
 		// Detecta: timestamps (2026-04-30), [Nest], [RedisBaseModel], JSON ({, "level":), o líneas que comienzan con texto después de ANSI codes
 		const logStartPattern = (line: string): boolean => {
-			const cleanLine = stripAnsi(line);
+			const cleanLine = stripAnsiCodes(line);
 			
 			// Timestamp ISO (2026-04-30)
 			if (/^\d{4}-\d{2}-\d{2}/.test(cleanLine)) return true;
@@ -410,12 +484,15 @@ function LogsModal({
 	};
 
 	const filteredLines = (() => {
-		if (!logs || filter === "") {
-			return logs ? logs.split("\n") : [];
+		if (!logs) return [];
+
+		const trimmedLogs = logs.trimEnd();
+		const logGroups = groupLogs(trimmedLogs).reverse();
+
+		if (filter === "") {
+			return logGroups.flatMap(group => group.split("\n"));
 		}
 
-		// Agrupar logs y filtrar por log completo
-		const logGroups = groupLogs(logs);
 		const filterLower = filter.toLowerCase();
 
 		// Filtrar grupos que coinciden con el filtro
@@ -428,7 +505,7 @@ function LogsModal({
 	})();
 
 	const handleCopy = async () => {
-		const logsToCopy = filter.length > 0 ? filteredLines.join('\n') : logs;
+		const logsToCopy = filteredLines.join('\n');
 		if (!logsToCopy) return;
 		await navigator.clipboard.writeText(logsToCopy);
 		setCopied(true);
@@ -465,8 +542,7 @@ function LogsModal({
 	const handleSummarizeWithAI = async () => {
 		if (!logs) return;
 		
-		// Usar logs filtrados si hay filtro activo, si no usar todos los logs
-		const logsToSummarize = filter.length > 0 ? filteredLines.join('\n') : logs;
+		const logsToSummarize = filteredLines.join('\n');
 
 		// Generar resumen con el hook
 		await generateAISummary(logsToSummarize, {
@@ -609,11 +685,13 @@ function LogsModal({
 						</div>
 					) : (
 						<pre className="whitespace-pre-wrap break-words">
-							{filteredLines.length > 0 
+							{filteredLines.length > 0
 								? filteredLines.map((line, idx) => (
-									<div key={idx}>{highlightLogLine(line)}</div>
+									<div key={idx}>{highlightLogLine(line, filter)}</div>
 								))
-								: (logs || "No logs disponibles")
+								: filter
+									? <span className="text-gray-500">No se encontraron logs que coincidan con el filtro.</span>
+									: (logs || "No logs disponibles")
 							}
 						</pre>
 					)}

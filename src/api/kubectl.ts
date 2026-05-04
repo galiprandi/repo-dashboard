@@ -1,5 +1,18 @@
 import { runCommand } from '@/api/exec';
 
+function sanitizeContext(context: string): string {
+  if (!context) {
+    throw new Error('Context name cannot be empty');
+  }
+  // Kubernetes context names can contain alphanumeric, -, _, ., /
+  // Reject shell metacharacters to prevent command injection
+  const safeContextRegex = /^[a-zA-Z0-9_./-]+$/;
+  if (!safeContextRegex.test(context)) {
+    throw new Error(`Invalid context name format: ${context}`);
+  }
+  return context;
+}
+
 export interface DeploymentInfo {
   namespace: string;
   name: string;
@@ -21,11 +34,11 @@ export interface PodInfo {
 }
 
 /**
- * Sanitiza nombres de recursos de Kubernetes para prevenir command injection.
- * Kubernetes names deben cumplir con: RFC 1123 subdomain (DNS subdomain)
- * - Deben consistir de caracteres alfanuméricos minúsculos, '-' o '.'
- * - Deben empezar y terminar con carácter alfanumérico
- * - Longitud máxima: 253 caracteres
+ * Sanitizes Kubernetes resource names to prevent command injection.
+ * Kubernetes names must comply with: RFC 1123 subdomain (DNS subdomain)
+ * - Must consist of lowercase alphanumeric characters, '-' or '.'
+ * - Must start and end with an alphanumeric character
+ * - Maximum length: 253 characters
  */
 function sanitizeK8sName(name: string): string {
   if (!name) {
@@ -36,7 +49,7 @@ function sanitizeK8sName(name: string): string {
     throw new Error(`Kubernetes name exceeds maximum length of 253 characters: ${name}`);
   }
 
-  // Validar formato de nombre de Kubernetes (RFC 1123 subdomain)
+  // Validate Kubernetes name format (RFC 1123 subdomain)
   const k8sNameRegex = /^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$/;
   
   if (!k8sNameRegex.test(name)) {
@@ -47,15 +60,15 @@ function sanitizeK8sName(name: string): string {
 }
 
 /**
- * Sanitiza nombres de namespace de Kubernetes.
- * Los namespaces siguen las mismas reglas que los nombres de recursos.
+ * Sanitizes Kubernetes namespace names.
+ * Namespaces follow the same rules as resource names.
  */
 function sanitizeNamespace(namespace: string): string {
   return sanitizeK8sName(namespace);
 }
 
 /**
- * Verifica que kubectl esté instalado y accesible.
+ * Verifies that kubectl is installed and accessible.
  */
 export async function checkKubectlInstalled(): Promise<boolean> {
   try {
@@ -66,11 +79,40 @@ export async function checkKubectlInstalled(): Promise<boolean> {
   }
 }
 
+export async function getCurrentContext(): Promise<string | null> {
+  try {
+    const result = await runCommand('kubectl config current-context');
+    const ctx = result.stdout.trim();
+    return ctx || null;
+  } catch {
+    return null;
+  }
+}
+
+export async function getContexts(): Promise<string[]> {
+  try {
+    const result = await runCommand('kubectl config get-contexts -o name');
+    return result.stdout.trim().split('\n').filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+export async function setContext(context: string): Promise<boolean> {
+  try {
+    const safeContext = sanitizeContext(context);
+    await runCommand(`kubectl config use-context ${safeContext}`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function parseDeployments(output: string): DeploymentInfo[] {
   const lines = output.trim().split('\n');
   const deployments: DeploymentInfo[] = [];
   
-  // Detectar si tiene columna NAMESPACE (all-namespaces) o solo NAME
+  // Detect if it has NAMESPACE column (all-namespaces) or only NAME
   const hasNamespace = lines[0]?.includes('NAMESPACE');
   
   for (const line of lines) {
@@ -79,7 +121,7 @@ function parseDeployments(output: string): DeploymentInfo[] {
     const parts = trimmed.split(/\s+/);
     
     if (hasNamespace) {
-      // Formato: NAMESPACE NAME READY UP-TO-DATE AVAILABLE AGE
+      // Format: NAMESPACE NAME READY UP-TO-DATE AVAILABLE AGE
       if (parts.length >= 6) {
         deployments.push({
           namespace: parts[0],
@@ -92,7 +134,7 @@ function parseDeployments(output: string): DeploymentInfo[] {
         });
       }
     } else {
-      // Formato: NAME READY UP-TO-DATE AVAILABLE AGE
+      // Format: NAME READY UP-TO-DATE AVAILABLE AGE
       if (parts.length >= 5) {
         deployments.push({
           namespace: '',
@@ -113,7 +155,7 @@ function parsePods(output: string): PodInfo[] {
   const lines = output.trim().split('\n');
   const pods: PodInfo[] = [];
   
-  // Detectar si tiene columna NAMESPACE (all-namespaces) o solo NAME
+  // Detect if it has NAMESPACE column (all-namespaces) or only NAME
   const hasNamespace = lines[0]?.includes('NAMESPACE');
   
   for (const line of lines) {
@@ -152,31 +194,34 @@ function parsePods(output: string): PodInfo[] {
   return pods;
 }
 
-export async function getDeployments(namespace?: string): Promise<DeploymentInfo[]> {
+export async function getDeployments(namespace?: string, context?: string): Promise<DeploymentInfo[]> {
   try {
     const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '--all-namespaces';
-    const result = await runCommand(`kubectl get deployments ${nsFlag}`);
+    const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
+    const result = await runCommand(`kubectl get deployments ${nsFlag} ${ctxFlag}`.trim());
     return parseDeployments(result.stdout);
   } catch {
     return [];
   }
 }
 
-export async function getPods(namespace?: string): Promise<PodInfo[]> {
+export async function getPods(namespace?: string, context?: string): Promise<PodInfo[]> {
   try {
     const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '--all-namespaces';
-    const result = await runCommand(`kubectl get pods ${nsFlag}`);
+    const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
+    const result = await runCommand(`kubectl get pods ${nsFlag} ${ctxFlag}`.trim());
     return parsePods(result.stdout);
   } catch {
     return [];
   }
 }
 
-export async function getPodsForDeployment(deploymentName: string, namespace?: string): Promise<PodInfo[]> {
+export async function getPodsForDeployment(deploymentName: string, namespace?: string, context?: string): Promise<PodInfo[]> {
   try {
     const sanitizedDeploymentName = sanitizeK8sName(deploymentName);
     const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '';
-    const selectorResult = await runCommand(`kubectl get deployment ${sanitizedDeploymentName} ${nsFlag} -o jsonpath='{.spec.selector.matchLabels}'`);
+    const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
+    const selectorResult = await runCommand(`kubectl get deployment ${sanitizedDeploymentName} ${nsFlag} ${ctxFlag} -o jsonpath='{.spec.selector.matchLabels}'`.trim());
     const selector = selectorResult.stdout.trim();
     if (!selector) {
       return [];
@@ -185,7 +230,7 @@ export async function getPodsForDeployment(deploymentName: string, namespace?: s
     try {
       const labels = JSON.parse(selector);
       const labelSelector = Object.entries(labels).map(([k, v]) => `${k}=${v}`).join(',');
-      const result = await runCommand(`kubectl get pods ${nsFlag} -l ${labelSelector}`);
+      const result = await runCommand(`kubectl get pods ${nsFlag} ${ctxFlag} -l ${labelSelector}`.trim());
       return parsePods(result.stdout);
     } catch {
       return [];
@@ -195,28 +240,29 @@ export async function getPodsForDeployment(deploymentName: string, namespace?: s
   }
 }
 
-export async function getResourceLogs(resourceType: 'deployment' | 'pod', name: string, namespace?: string, tail = 100): Promise<string> {
+export async function getResourceLogs(resourceType: 'deployment' | 'pod', name: string, namespace?: string, tail = 100, context?: string): Promise<string> {
   try {
     const sanitizedName = sanitizeK8sName(name);
     const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '';
+    const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
     if (resourceType === 'deployment') {
-      // Obtener selector del deployment y usar label selector para logs
-      const selectorResult = await runCommand(`kubectl get deployment ${sanitizedName} ${nsFlag} -o jsonpath='{.spec.selector.matchLabels}'`);
+      // Get deployment selector and use label selector for logs
+      const selectorResult = await runCommand(`kubectl get deployment ${sanitizedName} ${nsFlag} ${ctxFlag} -o jsonpath='{.spec.selector.matchLabels}'`.trim());
       const selector = selectorResult.stdout.trim();
       if (!selector) {
         return 'Error: No se pudo obtener selector del deployment';
       }
-      // Convertir selector JSON a formato -l key=value,key2=value2
+      // Convert selector JSON to format -l key=value,key2=value2
       try {
         const labels = JSON.parse(selector);
         const labelSelector = Object.entries(labels).map(([k, v]) => `${k}=${v}`).join(',');
-        const result = await runCommand(`kubectl logs ${nsFlag} -l ${labelSelector} --tail=${tail}`);
+        const result = await runCommand(`kubectl logs ${nsFlag} ${ctxFlag} -l ${labelSelector} --tail=${tail}`.trim());
         return result.stdout;
       } catch {
         return `Error: Selector inválido: ${selector}`;
       }
     }
-    const result = await runCommand(`kubectl logs ${sanitizedName} ${nsFlag} --tail=${tail}`);
+    const result = await runCommand(`kubectl logs ${sanitizedName} ${nsFlag} ${ctxFlag} --tail=${tail}`.trim());
     return result.stdout;
   } catch (error) {
     if (error instanceof Error) {

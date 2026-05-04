@@ -9,9 +9,9 @@ export interface KubectlNamespaceAccess {
 	hasAccess: boolean;
 }
 
-export function useKubectlNamespaceAccess(namespace: string | null) {
+export function useKubectlNamespaceAccess(namespace: string | null, context?: string) {
 	return useQuery({
-		queryKey: ["kubectl", "namespace-access", namespace],
+		queryKey: ["kubectl", "namespace-access", namespace, context],
 		queryFn: async (): Promise<KubectlNamespaceAccess> => {
 			if (!namespace) {
 				return {
@@ -35,11 +35,13 @@ export function useKubectlNamespaceAccess(namespace: string | null) {
 			}
 			console.log('[K8s] kubectl is installed');
 
+			const ctxFlag = context ? `--context=${context}` : '';
+
 			try {
 				const [podsResult, deploymentsResult, logsResult] = await Promise.allSettled([
-					runCommand(`kubectl auth can-i get pods -n ${namespace}`),
-					runCommand(`kubectl auth can-i get deployments -n ${namespace}`),
-					runCommand(`kubectl auth can-i get pods/logs -n ${namespace}`),
+					runCommand(`kubectl auth can-i get pods -n ${namespace} ${ctxFlag}`.trim()),
+					runCommand(`kubectl auth can-i get deployments -n ${namespace} ${ctxFlag}`.trim()),
+					runCommand(`kubectl auth can-i get pods/logs -n ${namespace} ${ctxFlag}`.trim()),
 				]);
 
 				const canGetPods = podsResult.status === "fulfilled" && podsResult.value.stdout.trim() === "yes";
