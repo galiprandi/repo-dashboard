@@ -42,7 +42,8 @@ fi
 if [ -d "$INSTALL_DIR" ]; then
     echo "🔄 Repository exists at $INSTALL_DIR. Updating..."
     cd "$INSTALL_DIR"
-    git pull origin main || echo "⚠️  Could not pull latest changes. Continuing with local version."
+    git fetch origin main
+    git reset --hard origin/main || echo "⚠️  Could not update to latest changes. Continuing with local version."
 else
     echo "📥 Cloning ReleaseHub to $INSTALL_DIR..."
     git clone "$REPO_URL" "$INSTALL_DIR"
