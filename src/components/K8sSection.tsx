@@ -21,7 +21,18 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 	const [logTailSize, setLogTailSize] = useState<number>(100);
 
 	if (checkingAccess) {
-		return null;
+		return (
+			<div className="border rounded-lg p-3 flex items-center gap-3 bg-muted/30">
+				<Boxes className="w-5 h-5 text-blue-600 flex-shrink-0" />
+				<Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+				<span className="text-sm text-muted-foreground">
+					{selectedContext 
+						? `Obteniendo recursos de Kubernetes: ${selectedContext}`
+						: "Obteniendo recursos de Kubernetes..."
+					}
+				</span>
+			</div>
+		);
 	}
 
 	if (!access?.hasAccess || !access.canGetDeployments) {
@@ -46,8 +57,39 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 		setSelectedContext(newContext);
 		setSelectedDeployment(null);
 		setSelectedPod(null);
-		// Invalidate all kubectl queries to refetch with new context
-		queryClient.invalidateQueries({ queryKey: ["kubectl"] });
+		// Invalidate all context-dependent queries for this namespace
+		// Note: namespace-access is NOT invalidated here - TanStack Query handles it automatically
+		// by creating a new query with the different context in the key
+		queryClient.invalidateQueries({ 
+			queryKey: ["kubectl", "deployments", namespace], 
+			type: "active",
+			exact: false 
+		});
+		queryClient.invalidateQueries({ 
+			queryKey: ["kubectl", "deployment", namespace], 
+			type: "active",
+			exact: false 
+		});
+		queryClient.invalidateQueries({ 
+			queryKey: ["kubectl", "deployment-pods-dropdown", namespace], 
+			type: "active",
+			exact: false 
+		});
+		queryClient.invalidateQueries({ 
+			queryKey: ["kubectl", "deployment-pods-stats", namespace], 
+			type: "active",
+			exact: false 
+		});
+		queryClient.invalidateQueries({ 
+			queryKey: ["kubectl", "logs-pods", namespace], 
+			type: "active",
+			exact: false 
+		});
+		queryClient.invalidateQueries({ 
+			queryKey: ["kubectl", "logs", namespace], 
+			type: "active",
+			exact: false 
+		});
 	};
 
 	return (
@@ -253,7 +295,7 @@ function PodDropdown({
 	onSelect: (pod: string | null) => void;
 }) {
 	const { data: pods, isLoading } = useQuery({
-		queryKey: ["kubectl", "deployment-pods", namespace, deploymentName, context],
+		queryKey: ["kubectl", "deployment-pods-dropdown", namespace, deploymentName, context],
 		queryFn: () => getPodsForDeployment(deploymentName, namespace, context),
 		enabled: !!deploymentName,
 		refetchInterval: 30000,
@@ -288,7 +330,7 @@ function PodStats({
 	selectedPod: string | null;
 }) {
 	const { data: pods } = useQuery({
-		queryKey: ["kubectl", "deployment-pods", namespace, deploymentName, context],
+		queryKey: ["kubectl", "deployment-pods-stats", namespace, deploymentName, context],
 		queryFn: () => getPodsForDeployment(deploymentName, namespace, context),
 		enabled: !!deploymentName,
 		refetchInterval: 30000,
@@ -429,9 +471,9 @@ function LogsModal({
 
 	// Obtener pods del deployment actual para el selector
 	const { data: pods } = useQuery({
-		queryKey: ["kubectl", "pods", namespace, currentType === "deployment" ? currentName : "", context],
+		queryKey: ["kubectl", "logs-pods", namespace, currentName, context],
 		queryFn: () => getPodsForDeployment(currentName, namespace, context),
-		enabled: currentType === "deployment",
+		enabled: currentType === "deployment" && !!currentName,
 	});
 
 	const [filter, setFilter] = useState("");
