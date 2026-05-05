@@ -2,6 +2,10 @@
 
 ---
 
+### 🗓️ 5 de Mayo de 2026
+
+- 🎉 Kubernetes: Detección automática del contexto con permisos para evitar fallos cuando el contexto actual no tiene acceso RBAC.
+
 ### 🗓️ 4 de Mayo de 2026
 
 - 🎨 Kubernetes: Rediseño de la barra de herramientas de logs con estilo minimalista tipo IDE.
