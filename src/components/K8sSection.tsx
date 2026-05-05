@@ -12,13 +12,16 @@ interface K8sSectionProps {
 export function K8sSection({ namespace }: K8sSectionProps) {
 	const queryClient = useQueryClient();
 	const [selectedContext, setSelectedContext] = useState<string | undefined>(undefined);
-	const { data: access, isLoading: checkingAccess } = useKubectlNamespaceAccess(namespace, selectedContext);
+	const { data: access, isLoading: checkingAccess } = useKubectlNamespaceAccess(namespace, selectedContext || undefined);
 	const [selectedDeployment, setSelectedDeployment] = useState<string | null>(null);
 	const [selectedPod, setSelectedPod] = useState<string | null>(null);
 	const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
 	const [logsResourceType, setLogsResourceType] = useState<"deployment" | "pod">("deployment");
 	const [logsName, setLogsName] = useState<string>("");
 	const [logTailSize, setLogTailSize] = useState<number>(100);
+
+	// Use the auto-detected context if user hasn't manually selected one
+	const activeContext = selectedContext || access?.validContext || undefined;
 
 	if (checkingAccess) {
 		return (
@@ -104,7 +107,7 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 				
 				<DeploymentDropdown
 					namespace={namespace}
-					context={selectedContext}
+					context={activeContext}
 					selectedDeployment={selectedDeployment}
 					onSelect={(deployment) => {
 						setSelectedDeployment(deployment);
@@ -112,12 +115,12 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 					}}
 				/>
 
-				{selectedDeployment && <DeploymentStats namespace={namespace} context={selectedContext} name={selectedDeployment} />}
+				{selectedDeployment && <DeploymentStats namespace={namespace} context={activeContext} name={selectedDeployment} />}
 
 				{selectedDeployment && (
 					<PodDropdown
 						namespace={namespace}
-						context={selectedContext}
+						context={activeContext}
 						deploymentName={selectedDeployment}
 						selectedPod={selectedPod}
 						onSelect={setSelectedPod}
@@ -127,7 +130,7 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 				{selectedDeployment && (
 					<PodStats
 						namespace={namespace}
-						context={selectedContext}
+						context={activeContext}
 						deploymentName={selectedDeployment}
 						selectedPod={selectedPod}
 					/>
@@ -161,7 +164,7 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 			{isLogsModalOpen && (
 				<LogsModal
 					namespace={namespace}
-					context={selectedContext}
+					context={activeContext}
 					type={logsResourceType}
 					name={logsName}
 					tailSize={logTailSize}

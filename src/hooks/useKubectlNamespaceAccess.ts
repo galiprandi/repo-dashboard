@@ -1,12 +1,46 @@
 import { useQuery } from "@tanstack/react-query";
 import { runCommand } from "@/api/exec";
-import { checkKubectlInstalled } from "@/api/kubectl";
+import { checkKubectlInstalled, getContexts, getCurrentContext } from "@/api/kubectl";
 
 export interface KubectlNamespaceAccess {
 	canGetPods: boolean;
 	canGetDeployments: boolean;
 	canGetPodLogs: boolean;
 	hasAccess: boolean;
+	validContext: string | null;
+}
+
+async function checkContextAccess(namespace: string, context: string): Promise<KubectlNamespaceAccess> {
+	const ctxFlag = `--context=${context}`;
+
+	try {
+		const [podsResult, deploymentsResult, logsResult] = await Promise.allSettled([
+			runCommand(`kubectl auth can-i get pods -n ${namespace} ${ctxFlag}`.trim()),
+			runCommand(`kubectl auth can-i get deployments -n ${namespace} ${ctxFlag}`.trim()),
+			runCommand(`kubectl auth can-i get pods/logs -n ${namespace} ${ctxFlag}`.trim()),
+		]);
+
+		const canGetPods = podsResult.status === "fulfilled" && podsResult.value.stdout.trim() === "yes";
+		const canGetDeployments = deploymentsResult.status === "fulfilled" && deploymentsResult.value.stdout.trim() === "yes";
+		const canGetPodLogs = logsResult.status === "fulfilled" && logsResult.value.stdout.trim() === "yes";
+		const hasAccess = canGetPods || canGetDeployments || canGetPodLogs;
+
+		return {
+			canGetPods,
+			canGetDeployments,
+			canGetPodLogs,
+			hasAccess,
+			validContext: hasAccess ? context : null,
+		};
+	} catch {
+		return {
+			canGetPods: false,
+			canGetDeployments: false,
+			canGetPodLogs: false,
+			hasAccess: false,
+			validContext: null,
+		};
+	}
 }
 
 export function useKubectlNamespaceAccess(namespace: string | null, context?: string) {
@@ -19,6 +53,7 @@ export function useKubectlNamespaceAccess(namespace: string | null, context?: st
 					canGetDeployments: false,
 					canGetPodLogs: false,
 					hasAccess: false,
+					validContext: null,
 				};
 			}
 
@@ -31,38 +66,50 @@ export function useKubectlNamespaceAccess(namespace: string | null, context?: st
 					canGetDeployments: false,
 					canGetPodLogs: false,
 					hasAccess: false,
+					validContext: null,
 				};
 			}
 			console.log('[K8s] kubectl is installed');
 
-			const ctxFlag = context ? `--context=${context}` : '';
-
-			try {
-				const [podsResult, deploymentsResult, logsResult] = await Promise.allSettled([
-					runCommand(`kubectl auth can-i get pods -n ${namespace} ${ctxFlag}`.trim()),
-					runCommand(`kubectl auth can-i get deployments -n ${namespace} ${ctxFlag}`.trim()),
-					runCommand(`kubectl auth can-i get pods/logs -n ${namespace} ${ctxFlag}`.trim()),
-				]);
-
-				const canGetPods = podsResult.status === "fulfilled" && podsResult.value.stdout.trim() === "yes";
-				const canGetDeployments = deploymentsResult.status === "fulfilled" && deploymentsResult.value.stdout.trim() === "yes";
-				const canGetPodLogs = logsResult.status === "fulfilled" && logsResult.value.stdout.trim() === "yes";
-				const hasAccess = canGetPods || canGetDeployments || canGetPodLogs;
-
-				return {
-					canGetPods,
-					canGetDeployments,
-					canGetPodLogs,
-					hasAccess,
-				};
-			} catch {
-				return {
-					canGetPods: false,
-					canGetDeployments: false,
-					canGetPodLogs: false,
-					hasAccess: false,
-				};
+			// Si se proporciona un contexto específico, usarlo
+			if (context) {
+				const access = await checkContextAccess(namespace, context);
+				console.log('[K8s] Checked specific context:', context, 'hasAccess:', access.hasAccess);
+				return access;
 			}
+
+			// Si no se proporciona contexto, detectar automáticamente el primero con permisos
+			const contexts = await getContexts();
+			const currentContext = await getCurrentContext();
+
+			// Probar primero el contexto actual
+			if (currentContext) {
+				const currentAccess = await checkContextAccess(namespace, currentContext);
+				if (currentAccess.hasAccess) {
+					console.log('[K8s] Using current context with access:', currentContext);
+					return currentAccess;
+				}
+			}
+
+			// Si el contexto actual no tiene permisos, probar todos los contextos
+			for (const ctx of contexts) {
+				if (ctx === currentContext) continue; // Ya probado
+				const access = await checkContextAccess(namespace, ctx);
+				if (access.hasAccess) {
+					console.log('[K8s] Found valid context:', ctx);
+					return access;
+				}
+			}
+
+			// Ningún contexto tiene permisos
+			console.log('[K8s] No context has access to namespace:', namespace);
+			return {
+				canGetPods: false,
+				canGetDeployments: false,
+				canGetPodLogs: false,
+				hasAccess: false,
+				validContext: null,
+			};
 		},
 		enabled: !!namespace,
 		retry: false,
