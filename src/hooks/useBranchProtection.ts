@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { runCommand } from '@/api/exec'
+import { queryKeys, applyCachePolicy } from '@/lib/queryKeys'
 
 interface UseBranchProtectionOptions {
 	repo: string
@@ -52,7 +53,7 @@ export interface BranchProtectionStatus {
  */
 export function useBranchProtection({ repo, enabled = true }: UseBranchProtectionOptions) {
 	return useQuery<BranchProtectionStatus>({
-		queryKey: ['branch', 'protection', repo],
+		queryKey: queryKeys.repo.branchProtection(repo),
 		queryFn: async () => {
 			try {
 				// Get user permissions via gh API
@@ -94,9 +95,7 @@ export function useBranchProtection({ repo, enabled = true }: UseBranchProtectio
 			}
 		},
 		enabled: enabled && !!repo,
-		staleTime: 10 * 60 * 1000, // Cache for 10 minutes
-		gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
-		retry: false, // Don't retry on failure
+		...applyCachePolicy("repo"),
 	})
 }
 

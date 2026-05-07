@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { runCommand } from '@/api/exec'
+import { queryKeys, applyCachePolicy } from '@/lib/queryKeys'
 
 interface UseRepoPermissionOptions {
   repo: string
@@ -23,7 +24,7 @@ export interface RepoPermission {
  */
 export function useRepoPermission({ repo, enabled = true }: UseRepoPermissionOptions) {
   return useQuery<RepoPermission>({
-    queryKey: ['repo', 'permission', repo],
+    queryKey: queryKeys.repo.permission(repo),
     queryFn: async () => {
       const result = await runCommand(`gh api repos/${repo} --jq '{permissions, viewerPermission, viewerCanAdminister}'`)
       try {
@@ -33,6 +34,6 @@ export function useRepoPermission({ repo, enabled = true }: UseRepoPermissionOpt
       }
     },
     enabled: enabled && !!repo,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    ...applyCachePolicy("repo"),
   })
 }
