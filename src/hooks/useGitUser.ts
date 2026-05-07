@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { runCommand } from '@/api/exec'
+import { queryKeys, applyCachePolicy } from '@/lib/queryKeys'
 
 interface GitUser {
   name: string | null
@@ -9,7 +10,7 @@ interface GitUser {
 
 export function useGitUser() {
   return useQuery<GitUser>({
-    queryKey: ['git', 'user'],
+    queryKey: queryKeys.git.user(),
     queryFn: async () => {
       // Use gh cli to get user info (remote operation)
       try {
@@ -25,5 +26,6 @@ export function useGitUser() {
         return { name: null, email: null, avatar_url: null }
       }
     },
+    ...applyCachePolicy("git"),
   })
 }

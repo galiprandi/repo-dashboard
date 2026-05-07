@@ -1,5 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { runCommand } from "@/api/exec";
+import { queryKeys, applyCachePolicy } from "@/lib/queryKeys";
 
 export interface GitTag {
 	name: string;
@@ -32,7 +33,7 @@ export function useGitTags({
 	enabled = true,
 }: UseGitTagsOptions) {
 	const { data, ...rest } = useInfiniteQuery<GitTag[]>({
-		queryKey: ["git", "tags", repo],
+		queryKey: queryKeys.git.tags(repo),
 		queryFn: async ({ pageParam = 0 }) => {
 			const page = pageParam as number;
 			const perPage = 10;
@@ -123,8 +124,7 @@ export function useGitTags({
 			return allPages.length;
 		},
 		enabled: enabled && !!repo,
-		staleTime: 30000, // 30 segundos - permitir ver cambios recientes
-		gcTime: 60 * 60 * 1000, // 1 hora - mantener en cache por más tiempo
+		...applyCachePolicy("git"),
 	});
 
 	const tags = data?.pages.flat();

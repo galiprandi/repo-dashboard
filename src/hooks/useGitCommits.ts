@@ -1,5 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { runCommand } from "@/api/exec";
+import { queryKeys, applyCachePolicy } from "@/lib/queryKeys";
 
 export interface GitCommit {
 	hash: string;
@@ -21,7 +22,7 @@ export function useGitCommits({
 	enabled = true,
 }: UseGitCommitsOptions) {
 	const { data, ...rest } = useInfiniteQuery<GitCommit[]>({
-		queryKey: ["git", "commits", repo],
+		queryKey: queryKeys.git.commits(repo),
 		queryFn: async ({ pageParam = 0 }) => {
 			const page = pageParam as number;
 			const perPage = 10;
@@ -62,8 +63,7 @@ export function useGitCommits({
 			return allPages.length;
 		},
 		enabled: enabled && !!repo,
-		staleTime: 30000, // 30 segundos - permitir ver cambios recientes
-		gcTime: 60 * 60 * 1000, // 1 hora - mantener en cache por más tiempo
+		...applyCachePolicy("git"),
 	});
 
 	const commits = data?.pages.flat();

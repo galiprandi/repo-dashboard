@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { runCommand } from "@/api/exec";
+import { queryKeys, applyCachePolicy } from "@/lib/queryKeys";
 
 export interface GitTagSimple {
 	name: string;
@@ -20,7 +21,7 @@ export function useGitTagsSimple({
 	enabled = true,
 }: UseGitTagsSimpleOptions) {
 	const { data: tags, ...rest } = useQuery<GitTagSimple[]>({
-		queryKey: ["git", "tags-simple", repo, limit],
+		queryKey: queryKeys.git.tags(repo, limit),
 		queryFn: async () => {
 			const command = `gh api repos/${repo}/tags --paginate --jq '.[] | {name: .name, commit: .commit.sha, zipball_url: .zipball_url, tarball_url: .tarball_url}'`;
 			const response = await runCommand(command);
@@ -43,8 +44,7 @@ export function useGitTagsSimple({
 			return tags.slice(0, limit);
 		},
 		enabled: enabled && !!repo,
-		staleTime: 30 * 60 * 1000, // 30 minutos - tags históricos no cambian frecuentemente
-		gcTime: 60 * 60 * 1000, // 1 hora - mantener en cache por más tiempo
+		...applyCachePolicy("git"),
 	});
 
 	const latestTag = tags?.[0];
