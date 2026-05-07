@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { runCommand } from '@/api/exec'
 import type { Event } from '@/api/seki.type'
+import { queryKeys, applyCachePolicy } from '@/lib/queryKeys'
 
 interface WorkflowRun {
   id: number
@@ -209,7 +210,7 @@ export function useGitHubActions({
   enabled = true,
 }: UseGitHubActionsOptions): GitHubActionsResult {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['github-actions', org, repo, workflowName],
+    queryKey: queryKeys.githubActions.workflow(org, repo, workflowName),
     queryFn: async () => {
       const response = await getWorkflowRuns(org, repo, workflowName, 5)
       const runs = response.workflow_runs
@@ -232,8 +233,7 @@ export function useGitHubActions({
       return runs
     },
     enabled: enabled && !!org && !!repo && !!workflowName,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: false,
+    ...applyCachePolicy("github-actions"),
   })
 
   return {
