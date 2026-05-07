@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { runCommand } from "@/api/exec";
 import { checkKubectlInstalled, getContexts, getCurrentContext } from "@/api/kubectl";
+import { queryKeys, applyCachePolicy } from "@/lib/queryKeys";
 
 export interface KubectlNamespaceAccess {
 	canGetPods: boolean;
@@ -45,7 +46,7 @@ async function checkContextAccess(namespace: string, context: string): Promise<K
 
 export function useKubectlNamespaceAccess(namespace: string | null, context?: string) {
 	return useQuery({
-		queryKey: ["kubectl", "namespace-access", namespace, context],
+		queryKey: queryKeys.kubectl.namespaceAccess(namespace, context),
 		queryFn: async (): Promise<KubectlNamespaceAccess> => {
 			if (!namespace) {
 				return {
@@ -112,7 +113,6 @@ export function useKubectlNamespaceAccess(namespace: string | null, context?: st
 			};
 		},
 		enabled: !!namespace,
-		retry: false,
-		staleTime: 5 * 60 * 1000, // 5 minutes
+		...applyCachePolicy("kubectl"),
 	});
 }
