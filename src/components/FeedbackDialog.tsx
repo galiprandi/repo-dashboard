@@ -1,7 +1,7 @@
 import { useState } from "react"
 import React from "react"
 import * as Dialog from "@radix-ui/react-dialog"
-import { MessageSquare, X, Loader2, CheckCircle2, Send, AlertCircle, Sparkles } from "lucide-react"
+import { MessageSquare, X, Loader2, CheckCircle2, Send, AlertCircle, Sparkles, Terminal } from "lucide-react"
 import { useAI } from "@/hooks/useAI"
 import { useAIErrorProcessor } from "@/hooks/useAIErrorProcessor"
 import { runCommand } from "@/api/exec"
@@ -30,6 +30,8 @@ export function FeedbackDialog() {
 	const [aiBody, setAiBody] = useState("")
 	const [issueUrl, setIssueUrl] = useState("")
 	const [error, setError] = useState("")
+	const [originalError, setOriginalError] = useState("")
+	const [showOriginalError, setShowOriginalError] = useState(false)
 	
 	const { availability, isGenerating, error: aiError, generate, reset } = useAI()
 	const { processError, isProcessing: isProcessingError } = useAIErrorProcessor()
@@ -43,6 +45,8 @@ export function FeedbackDialog() {
 			setAiBody("")
 			setIssueUrl("")
 			setError("")
+			setOriginalError("")
+			setShowOriginalError(false)
 			reset()
 		}
 	}
@@ -132,10 +136,13 @@ export function FeedbackDialog() {
 			const errorObj = err instanceof Error ? err : new Error(String(err))
 			
 			setError("Procesando error...")
+			setOriginalError(errorObj.message)
+			setShowOriginalError(true) // Mostrar original mientras AI analiza
 			setStep("error")
 			
 			processError(errorObj).then(aiMessage => {
 				setError(aiMessage)
+				setShowOriginalError(false) // Cambiar a versión AI cuando responde
 			}).catch(() => {
 				// Fallback: mostrar mensaje genérico si falla AI
 				const errorMessage = errorObj.message
@@ -382,8 +389,32 @@ export function FeedbackDialog() {
 										<span>Analizando error con IA...</span>
 									</div>
 								) : (
-									<div className="text-sm text-destructive prose prose-sm max-w-none">
-										{error}
+									<div className="space-y-3">
+										<div className="flex items-center justify-end gap-2">
+											<button
+												onClick={() => setShowOriginalError(!showOriginalError)}
+												className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+													showOriginalError 
+														? 'bg-destructive/10 text-destructive' 
+														: 'bg-purple-500/10 text-purple-500'
+												}`}
+											>
+												{showOriginalError ? (
+													<>
+														<Terminal className="w-3 h-3" />
+														Error original
+													</>
+												) : (
+													<>
+														<Sparkles className="w-3 h-3" />
+														Análisis IA
+													</>
+												)}
+											</button>
+										</div>
+										<div className="text-sm text-destructive prose prose-sm max-w-none">
+											{showOriginalError ? originalError : error}
+										</div>
 									</div>
 								)}
 							</div>

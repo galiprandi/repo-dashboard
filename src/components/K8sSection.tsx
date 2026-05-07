@@ -1,10 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles, AlertCircle } from "lucide-react";
 import { useKubectlNamespaceAccess } from "@/hooks/useKubectlNamespaceAccess";
 import { useAI } from "@/hooks/useAI";
+import { useAIErrorProcessor } from "@/hooks/useAIErrorProcessor";
 import { getDeployments, getResourceLogs, getPodsForDeployment, getCurrentContext, getContexts } from "@/api/kubectl";
 import { queryKeys, applyCachePolicy, invalidateByDomain } from "@/lib/queryKeys";
+import { AISummaryCard } from "@/components/AISummaryCard";
 
 interface K8sSectionProps {
 	namespace: string;
@@ -443,7 +445,7 @@ function LogsModal({
 	const [selectedPod, setSelectedPod] = useState<string | null>(type === "pod" ? name : null);
 	const [autoFetch, setAutoFetch] = useState(true);
 
-	const { data: logs, isLoading, refetch } = useQuery({
+	const { data: logs, isLoading, refetch, error: logsError } = useQuery({
 		queryKey: queryKeys.kubectl.logs(namespace, currentType, currentName, tailSize, context),
 		queryFn: () => getResourceLogs(currentType, currentName, namespace, tailSize, context),
 		refetchInterval: autoFetch ? 10000 : false,
@@ -451,7 +453,7 @@ function LogsModal({
 	});
 
 	// Obtener pods del deployment actual para el selector
-	const { data: pods } = useQuery({
+	const { data: pods, error: podsError } = useQuery({
 		queryKey: queryKeys.kubectl.pods(namespace, currentName, context),
 		queryFn: () => getPodsForDeployment(currentName, namespace, context),
 		enabled: currentType === "deployment" && !!currentName,
@@ -465,7 +467,24 @@ function LogsModal({
 	const [isAiSummaryCollapsed, setIsAiSummaryCollapsed] = useState(false);
 
 	// Usar hook de AI
-	const { availability, isGenerating, summary, error: aiError, generate } = useAI();
+	const { availability, isGenerating, summary, error: aiError, generate, reset: resetAI } = useAI();
+	const { processError } = useAIErrorProcessor();
+
+	// Estado para errores kubectl procesados por AI
+	const [kubectlError, setKubectlError] = useState<string | null>(null);
+
+	// Manejar errores de queries con AI
+	useEffect(() => {
+		const handleQueryError = async (err: unknown) => {
+			if (!err) return;
+			const errorObj = err instanceof Error ? err : new Error(String(err));
+			const friendlyError = await processError(errorObj);
+			setKubectlError(friendlyError);
+		};
+
+		if (logsError) handleQueryError(logsError);
+		if (podsError) handleQueryError(podsError);
+	}, [logsError, podsError, processError]);
 
 	// Agrupar líneas en logs completos (multi-línea)
 	const groupLogs = (logText: string): string[] => {
@@ -587,7 +606,7 @@ function LogsModal({
 
 	const handleSummarizeWithAI = async () => {
 		if (!logs) return;
-		
+
 		const logsToSummarize = filteredLines.join('\n');
 
 		// Generar resumen con el hook
@@ -597,6 +616,12 @@ function LogsModal({
 			maxLines: 200,
 			maxChars: 10000,
 		});
+		setKubectlError(null); // Limpiar error al intentar resumir
+	};
+
+	const handleRegenerateSummary = async () => {
+		resetAI();
+		await handleSummarizeWithAI();
 	};
 
 	return (
@@ -720,42 +745,34 @@ function LogsModal({
 					</div>
 				</div>
 				<div className="flex-1 overflow-auto bg-black text-green-400 p-4 font-mono text-xs">
-					{summary && (
-						<div className="mb-4 p-3 bg-purple-900 border border-purple-500/30 rounded-lg sticky top-0 z-10">
+					{kubectlError && (
+						<div className="mb-4 p-3 bg-red-900 border border-red-500/30 rounded-lg sticky top-0 z-10">
 							<div className="flex items-center justify-between gap-2 mb-2">
 								<div className="flex items-center gap-2">
-									<Sparkles className="w-4 h-4 text-purple-400" />
-									<span className="text-purple-300 font-semibold text-sm">Resumen con IA</span>
+									<AlertCircle className="w-4 h-4 text-red-400" />
+									<span className="text-red-300 font-semibold text-sm">Error</span>
 								</div>
-								<div className="flex items-center gap-1">
-									<button
-										type="button"
-										onClick={() => setIsAiSummaryCollapsed(!isAiSummaryCollapsed)}
-										className="inline-flex items-center gap-1 px-2 py-1 text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-800/30 rounded transition-colors"
-										title={isAiSummaryCollapsed ? "Expandir" : "Colapsar"}
-									>
-										{isAiSummaryCollapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
-									</button>
-									<button
-										type="button"
-										onClick={handleCopyAiSummary}
-										className="inline-flex items-center gap-1 px-2 py-1 text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-800/30 rounded transition-colors"
-										title="Copiar resumen"
-									>
-										{aiSummaryCopied ? <Check className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
-									</button>
-								</div>
+								<button
+									onClick={() => setKubectlError(null)}
+									className="text-xs text-red-300 hover:text-red-200 hover:bg-red-800/30 rounded px-2 py-1 transition-colors"
+								>
+									<X className="w-3 h-3" />
+								</button>
 							</div>
-							{!isAiSummaryCollapsed && (
-								<>
-									<p className="text-purple-100 text-xs whitespace-pre-wrap">{summary}</p>
-									{aiError && (
-										<p className="text-red-400 text-xs mt-2">{aiError}</p>
-									)}
-								</>
-							)}
+							<p className="text-red-100 text-xs whitespace-pre-wrap">{kubectlError}</p>
 						</div>
 					)}
+					<AISummaryCard
+						summary={summary}
+						isGenerating={isGenerating}
+						error={aiError}
+						onRegenerate={handleRegenerateSummary}
+						onCopy={handleCopyAiSummary}
+						isCollapsed={isAiSummaryCollapsed}
+						onToggleCollapse={() => setIsAiSummaryCollapsed(!isAiSummaryCollapsed)}
+						isCopied={aiSummaryCopied}
+						variant="compact"
+					/>
 					{isLoading ? (
 						<div className="flex items-center justify-center gap-2 h-full text-gray-400">
 							<Loader2 className="w-4 h-4 animate-spin" />

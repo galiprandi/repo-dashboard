@@ -136,6 +136,9 @@ async function generateAISummary(
 
 export function useAI() {
 	const [availability, setAvailability] = useState<Availability>("checking");
+	const [isGenerating, setIsGenerating] = useState(false);
+	const [summary, setSummary] = useState("");
+	const [error, setError] = useState<string | null>(null);
 	const queryClient = useQueryClient();
 
 	useEffect(() => {
@@ -176,38 +179,53 @@ export function useAI() {
 				throw new Error("Chrome AI Summarizer API no está disponible");
 			}
 
+			setIsGenerating(true);
+			setError(null);
+
 			// Generar query key única basada en el input
 			const queryKey = ['ai-summary', text, JSON.stringify(options)];
 
-			// Verificar si ya está en caché
-			const cachedData = queryClient.getQueryData<string>(queryKey);
-			if (cachedData) {
-				console.log('[AI] Using cached response');
-				return cachedData;
+			try {
+				// Verificar si ya está en caché
+				const cachedData = queryClient.getQueryData<string>(queryKey);
+				if (cachedData) {
+					console.log('[AI] Using cached response');
+					setSummary(cachedData);
+					return cachedData;
+				}
+
+				// Si no está en caché, ejecutar y cachear
+				const result = await queryClient.fetchQuery({
+					queryKey,
+					queryFn: () => generateAISummary(text, options),
+					staleTime: 5 * 60 * 1000, // 5 minutos de caché
+					gcTime: 10 * 60 * 1000, // 10 minutos en memoria
+				});
+
+				setSummary(result);
+				return result;
+			} catch (err) {
+				const errorMessage = err instanceof Error ? err.message : String(err);
+				setError(errorMessage);
+				throw err;
+			} finally {
+				setIsGenerating(false);
 			}
-
-			// Si no está en caché, ejecutar y cachear
-			const result = await queryClient.fetchQuery({
-				queryKey,
-				queryFn: () => generateAISummary(text, options),
-				staleTime: 5 * 60 * 1000, // 5 minutos de caché
-				gcTime: 10 * 60 * 1000, // 10 minutos en memoria
-			});
-
-			return result;
 		},
 		[availability, queryClient],
 	);
 
 	const reset = useCallback(() => {
 		queryClient.removeQueries({ queryKey: ['ai-summary'] });
+		setSummary("");
+		setError(null);
 	}, [queryClient]);
 
 	return { 
 		availability, 
-		isGenerating: false, 
-		summary: "", 
-		error: null, 
+		isGenerating, 
+		summary, 
+		error, 
 		generate, 
 		reset 
 	};

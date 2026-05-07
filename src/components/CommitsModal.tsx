@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { X, Sparkles, Loader2, ClipboardCopy, Check, GitCommit, ChevronDown, ChevronUp } from "lucide-react";
+import { createPortal } from "react-dom";
+import { X, GitCommit, Sparkles, Loader2 } from "lucide-react";
 import { useAI } from "@/hooks/useAI";
+import { AISummaryCard } from "@/components/AISummaryCard";
 
 interface CommitsModalProps {
 	isOpen: boolean;
@@ -17,7 +19,7 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 	const [isAiSummaryCollapsed, setIsAiSummaryCollapsed] = useState(false);
 
 	// Usar hook de AI
-	const { availability, isGenerating, summary, error: aiError, generate: generateAISummary } = useAI();
+	const { availability, isGenerating, summary, error: aiError, generate: generateAISummary, reset: resetAI } = useAI();
 
 	// Filtrar commits pendientes (después del commit de producción)
 	const prodCommitIndex = commits.findIndex(c => c.hash === prodCommitHash);
@@ -48,7 +50,7 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 
 	const handleSummarizeWithAI = async () => {
 		if (pendingCommits.length === 0) return;
-		
+
 		// Crear texto con todos los commits, incluyendo body si está expandido
 		const commitsText = pendingCommits.map(
 			c => {
@@ -66,9 +68,14 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 		});
 	};
 
+	const handleRegenerateSummary = async () => {
+		resetAI();
+		await handleSummarizeWithAI();
+	};
+
 	if (!isOpen) return null;
 
-	return (
+	return createPortal(
 		<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
 			<div className="bg-background rounded-lg shadow-lg w-[50vw] h-[70vh] max-w-[900px] flex flex-col overflow-hidden">
 				<div className="flex items-center justify-between p-4 border-b gap-2 flex-wrap">
@@ -109,42 +116,16 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 					</div>
 				</div>
 				<div className="flex-1 overflow-auto p-4">
-					{summary && (
-						<div className="mb-4 p-4 bg-purple-950 border border-purple-500/50 rounded-lg sticky top-0 z-10">
-							<div className="flex items-center justify-between gap-2 mb-2">
-								<div className="flex items-center gap-2">
-									<Sparkles className="w-4 h-4 text-purple-400" />
-									<span className="text-purple-100 font-semibold text-sm">Resumen con IA</span>
-								</div>
-								<div className="flex items-center gap-1">
-									<button
-										type="button"
-										onClick={() => setIsAiSummaryCollapsed(!isAiSummaryCollapsed)}
-										className="inline-flex items-center gap-1 px-2 py-1 text-xs text-purple-200 hover:text-purple-100 hover:bg-purple-800/50 rounded transition-colors"
-										title={isAiSummaryCollapsed ? "Expandir" : "Colapsar"}
-									>
-										{isAiSummaryCollapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
-									</button>
-									<button
-										type="button"
-										onClick={handleCopyAiSummary}
-										className="inline-flex items-center gap-1 px-2 py-1 text-xs text-purple-200 hover:text-purple-100 hover:bg-purple-800/50 rounded transition-colors"
-										title="Copiar resumen"
-									>
-										{aiSummaryCopied ? <Check className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
-									</button>
-								</div>
-							</div>
-							{!isAiSummaryCollapsed && (
-								<>
-									<p className="text-purple-50 text-sm whitespace-pre-wrap leading-relaxed">{summary}</p>
-									{aiError && (
-										<p className="text-red-400 text-sm mt-2">{aiError}</p>
-									)}
-								</>
-							)}
-						</div>
-					)}
+					<AISummaryCard
+						summary={summary}
+						isGenerating={isGenerating}
+						error={aiError}
+						onRegenerate={handleRegenerateSummary}
+						onCopy={handleCopyAiSummary}
+						isCollapsed={isAiSummaryCollapsed}
+						onToggleCollapse={() => setIsAiSummaryCollapsed(!isAiSummaryCollapsed)}
+						isCopied={aiSummaryCopied}
+					/>
 					{pendingCommits.length === 0 ? (
 						<div className="flex items-center justify-center h-full text-muted-foreground">
 							<p>No hay commits pendientes</p>
@@ -183,6 +164,7 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 					)}
 				</div>
 			</div>
-		</div>
+		</div>,
+		document.body
 	);
 }

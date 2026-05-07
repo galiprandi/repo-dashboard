@@ -195,83 +195,56 @@ function parsePods(output: string): PodInfo[] {
 }
 
 export async function getDeployments(namespace?: string, context?: string): Promise<DeploymentInfo[]> {
-  try {
-    const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '--all-namespaces';
-    const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
-    const result = await runCommand(`kubectl get deployments ${nsFlag} ${ctxFlag}`.trim());
-    // kubectl outputs to stderr when no resources found, so check both
-    const output = result.stdout || result.stderr;
-    return parseDeployments(output);
-  } catch {
-    return [];
-  }
+  const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '--all-namespaces';
+  const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
+  const result = await runCommand(`kubectl get deployments ${nsFlag} ${ctxFlag}`.trim());
+  // kubectl outputs to stderr when no resources found, so check both
+  const output = result.stdout || result.stderr;
+  return parseDeployments(output);
 }
 
 export async function getPods(namespace?: string, context?: string): Promise<PodInfo[]> {
-  try {
-    const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '--all-namespaces';
-    const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
-    const result = await runCommand(`kubectl get pods ${nsFlag} ${ctxFlag}`.trim());
-    // kubectl outputs to stderr when no resources found, so check both
-    const output = result.stdout || result.stderr;
-    return parsePods(output);
-  } catch {
-    return [];
-  }
+  const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '--all-namespaces';
+  const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
+  const result = await runCommand(`kubectl get pods ${nsFlag} ${ctxFlag}`.trim());
+  // kubectl outputs to stderr when no resources found, so check both
+  const output = result.stdout || result.stderr;
+  return parsePods(output);
 }
 
 export async function getPodsForDeployment(deploymentName: string, namespace?: string, context?: string): Promise<PodInfo[]> {
-  try {
-    const sanitizedDeploymentName = sanitizeK8sName(deploymentName);
-    const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '';
-    const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
-    const selectorResult = await runCommand(`kubectl get deployment ${sanitizedDeploymentName} ${nsFlag} ${ctxFlag} -o jsonpath='{.spec.selector.matchLabels}'`.trim());
-    const selector = selectorResult.stdout.trim();
-    if (!selector) {
-      return [];
-    }
-    // Convertir selector JSON a formato -l key=value,key2=value2
-    try {
-      const labels = JSON.parse(selector);
-      const labelSelector = Object.entries(labels).map(([k, v]) => `${k}=${v}`).join(',');
-      const result = await runCommand(`kubectl get pods ${nsFlag} ${ctxFlag} -l ${labelSelector}`.trim());
-      return parsePods(result.stdout);
-    } catch {
-      return [];
-    }
-  } catch {
+  const sanitizedDeploymentName = sanitizeK8sName(deploymentName);
+  const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '';
+  const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
+  const selectorResult = await runCommand(`kubectl get deployment ${sanitizedDeploymentName} ${nsFlag} ${ctxFlag} -o jsonpath='{.spec.selector.matchLabels}'`.trim());
+  const selector = selectorResult.stdout.trim();
+  if (!selector) {
     return [];
   }
+  // Convertir selector JSON a formato -l key=value,key2=value2
+  const labels = JSON.parse(selector);
+  const labelSelector = Object.entries(labels).map(([k, v]) => `${k}=${v}`).join(',');
+  const result = await runCommand(`kubectl get pods ${nsFlag} ${ctxFlag} -l ${labelSelector}`.trim());
+  return parsePods(result.stdout);
 }
 
 export async function getResourceLogs(resourceType: 'deployment' | 'pod', name: string, namespace?: string, tail = 100, context?: string): Promise<string> {
-  try {
-    const sanitizedName = sanitizeK8sName(name);
-    const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '';
-    const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
-    if (resourceType === 'deployment') {
-      // Get deployment selector and use label selector for logs
-      const selectorResult = await runCommand(`kubectl get deployment ${sanitizedName} ${nsFlag} ${ctxFlag} -o jsonpath='{.spec.selector.matchLabels}'`.trim());
-      const selector = selectorResult.stdout.trim();
-      if (!selector) {
-        return 'Error: No se pudo obtener selector del deployment';
-      }
-      // Convert selector JSON to format -l key=value,key2=value2
-      try {
-        const labels = JSON.parse(selector);
-        const labelSelector = Object.entries(labels).map(([k, v]) => `${k}=${v}`).join(',');
-        const result = await runCommand(`kubectl logs ${nsFlag} ${ctxFlag} -l ${labelSelector} --tail=${tail}`.trim());
-        return result.stdout;
-      } catch {
-        return `Error: Selector inválido: ${selector}`;
-      }
+  const sanitizedName = sanitizeK8sName(name);
+  const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '';
+  const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
+  if (resourceType === 'deployment') {
+    // Get deployment selector and use label selector for logs
+    const selectorResult = await runCommand(`kubectl get deployment ${sanitizedName} ${nsFlag} ${ctxFlag} -o jsonpath='{.spec.selector.matchLabels}'`.trim());
+    const selector = selectorResult.stdout.trim();
+    if (!selector) {
+      throw new Error('No se pudo obtener selector del deployment');
     }
-    const result = await runCommand(`kubectl logs ${sanitizedName} ${nsFlag} ${ctxFlag} --tail=${tail}`.trim());
+    // Convert selector JSON to format -l key=value,key2=value2
+    const labels = JSON.parse(selector);
+    const labelSelector = Object.entries(labels).map(([k, v]) => `${k}=${v}`).join(',');
+    const result = await runCommand(`kubectl logs ${nsFlag} ${ctxFlag} -l ${labelSelector} --tail=${tail}`.trim());
     return result.stdout;
-  } catch (error) {
-    if (error instanceof Error) {
-      return `Error: ${error.message}`;
-    }
-    return 'Error fetching logs';
   }
+  const result = await runCommand(`kubectl logs ${sanitizedName} ${nsFlag} ${ctxFlag} --tail=${tail}`.trim());
+  return result.stdout;
 }
