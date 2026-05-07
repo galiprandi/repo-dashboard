@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Search, Star, ExternalLink, Loader2, GitBranch } from 'lucide-react'
+import { Search, Star, ExternalLink, Loader2, GitBranch, X } from 'lucide-react'
 import { useUserRepos } from '@/hooks/useUserRepos'
 import { useUserCollections } from '@/hooks/useUserCollections'
 import { Link, useNavigate } from '@tanstack/react-router'
@@ -38,6 +38,12 @@ export function RepoSearch() {
     setQuery('')
     setIsOpen(false)
     setSelectedIndex(-1)
+  }
+
+  const handleClear = () => {
+    setQuery('')
+    setSelectedIndex(-1)
+    inputRef.current?.focus()
   }
 
   const handleOpenInNewTab = (fullName: string) => {
@@ -101,12 +107,24 @@ export function RepoSearch() {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isOpen, results, selectedIndex, navigate])
 
+  // Scroll selected item into view
+  useEffect(() => {
+    if (selectedIndex >= 0 && isOpen) {
+      const selectedElement = document.getElementById(`repo-option-${selectedIndex}`)
+      if (selectedElement) {
+        selectedElement.scrollIntoView({
+          block: 'nearest',
+        })
+      }
+    }
+  }, [selectedIndex, isOpen])
+
   const hasResults = results.length > 0
 
   return (
     <div ref={containerRef} className="relative">
       {/* Search Input */}
-      <div className="relative">
+      <div className="relative" role="combobox" aria-expanded={isOpen} aria-haspopup="listbox" aria-controls="repo-search-results">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
           ref={inputRef}
@@ -123,7 +141,8 @@ export function RepoSearch() {
           }}
           onBlur={() => setIsEditable(false)}
           placeholder={`Búsqueda en ${data?.results?.length || 0} repositorios... (Cmd+K)`}
-          className={`${searchWidth} pl-9 pr-4 py-2 bg-muted rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
+          aria-label="Búsqueda de repositorios"
+          className={`${searchWidth} pl-9 pr-14 py-2 bg-muted rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
@@ -131,6 +150,16 @@ export function RepoSearch() {
           name="search-repos-not-credentials"
           readOnly={!isEditable}
         />
+        {query && (
+          <button
+            type="button"
+            onClick={handleClear}
+            className={`absolute ${isLoading ? 'right-9' : 'right-3'} top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted-foreground/10 rounded-full text-muted-foreground transition-all`}
+            aria-label="Limpiar búsqueda"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
         {isLoading && (
           <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
         )}
@@ -154,7 +183,7 @@ export function RepoSearch() {
               </p>
             </div>
           ) : (
-            <div className="max-h-80 overflow-y-auto">
+            <div id="repo-search-results" role="listbox" className="max-h-80 overflow-y-auto">
               {results.map((repo, index) => {
                 const isFav = isFavorite(repo.fullName)
                 const [org, name] = repo.fullName.split('/')
@@ -163,6 +192,9 @@ export function RepoSearch() {
                 return (
                   <div
                     key={repo.fullName}
+                    role="option"
+                    aria-selected={isSelected}
+                    id={`repo-option-${index}`}
                     className={`group p-3 border-b last:border-b-0 transition-colors ${
                       isSelected ? 'bg-muted' : 'hover:bg-muted/50'
                     }`}
@@ -235,9 +267,19 @@ export function RepoSearch() {
           )}
 
           {/* Footer hint */}
-          <div className="px-3 py-2 bg-muted/30 border-t text-xs text-muted-foreground flex items-center justify-between">
-            <span>{results.length} resultados encontrados</span>
-            <span>Esc para cerrar</span>
+          <div className="px-3 py-2 bg-muted/30 border-t text-[10px] text-muted-foreground flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 rounded bg-white border shadow-sm font-sans">↑↓</kbd> Navegar
+              </span>
+              <span className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 rounded bg-white border shadow-sm font-sans">↵</kbd> Seleccionar
+              </span>
+              <span className="flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 rounded bg-white border shadow-sm font-sans">Esc</kbd> Cerrar
+              </span>
+            </div>
+            <span>{results.length} resultados</span>
           </div>
         </div>
       )}
