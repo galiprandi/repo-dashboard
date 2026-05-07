@@ -2,6 +2,13 @@
 
 ---
 
+### 🗓️ 7 de Mayo de 2026
+
+- 🎨 Búsqueda: Botón de limpieza en el input de búsqueda para borrar rápidamente el texto.
+- 🎨 Búsqueda: Navegación por teclado con flechas y Enter en los resultados de búsqueda.
+- 🎨 Búsqueda: Pistas visuales de atajos de teclado para facilitar el uso.
+- ♻️ Accesibilidad: Mejoras en atributos ARIA para mejor compatibilidad con lectores de pantalla.
+
 ### 🗓️ 5 de Mayo de 2026
 
 - 🎉 Kubernetes: Detección automática del contexto con permisos para evitar fallos cuando el contexto actual no tiene acceso RBAC.
