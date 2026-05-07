@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { runCommand } from '@/api/exec'
+import { queryKeys, applyCachePolicy } from '@/lib/queryKeys'
 
 // Type definitions at EOF
 interface ParamsDTO {
@@ -46,7 +47,7 @@ export function useUserRepos({
   const ADDITIONAL_USERS = ['galiprandi']
 
   return useQuery<RepoSearchResponse>({
-    queryKey: ['user', 'repos', org || 'all'],
+    queryKey: queryKeys.user.repos(org || 'all'),
     queryFn: async () => {
       const commands: string[] = []
 
@@ -96,7 +97,7 @@ export function useUserRepos({
       }
     },
     enabled,
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    ...applyCachePolicy("user"),
   })
 }
 

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { queryKeys, applyCachePolicy } from "@/lib/queryKeys";
 
 export interface Project {
 	id: string;
@@ -14,8 +15,6 @@ export interface UserCollections {
 	activeTab: string;
 }
 
-const COLLECTIONS_KEY = ["user", "collections"];
-
 function getInitialCollections(): UserCollections {
 	return { favorites: [], projects: [], activeTab: "favorites" };
 }
@@ -24,26 +23,25 @@ export function useUserCollections() {
 	const queryClient = useQueryClient();
 
 	const { data = getInitialCollections() } = useQuery<UserCollections>({
-		queryKey: COLLECTIONS_KEY,
+		queryKey: queryKeys.user.collections(),
 		queryFn: () => {
-			const cached = queryClient.getQueryData<UserCollections>(COLLECTIONS_KEY);
+			const cached = queryClient.getQueryData<UserCollections>(queryKeys.user.collections());
 			return cached || getInitialCollections();
 		},
-		staleTime: Infinity,
-		gcTime: Infinity,
+		...applyCachePolicy("user"),
 	});
 
 	const mutate = useMutation({
 		mutationFn: (next: UserCollections) => Promise.resolve(next),
 		onMutate: async (next) => {
-			await queryClient.cancelQueries({ queryKey: COLLECTIONS_KEY });
-			const previous = queryClient.getQueryData<UserCollections>(COLLECTIONS_KEY);
-			queryClient.setQueryData(COLLECTIONS_KEY, next);
+			await queryClient.cancelQueries({ queryKey: queryKeys.user.collections() });
+			const previous = queryClient.getQueryData<UserCollections>(queryKeys.user.collections());
+			queryClient.setQueryData(queryKeys.user.collections(), next);
 			return { previous };
 		},
 		onError: (_err, _vars, context) => {
 			if (context?.previous) {
-				queryClient.setQueryData(COLLECTIONS_KEY, context.previous);
+				queryClient.setQueryData(queryKeys.user.collections(), context.previous);
 			}
 		},
 	});
