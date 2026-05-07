@@ -199,7 +199,9 @@ export async function getDeployments(namespace?: string, context?: string): Prom
     const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '--all-namespaces';
     const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
     const result = await runCommand(`kubectl get deployments ${nsFlag} ${ctxFlag}`.trim());
-    return parseDeployments(result.stdout);
+    // kubectl outputs to stderr when no resources found, so check both
+    const output = result.stdout || result.stderr;
+    return parseDeployments(output);
   } catch {
     return [];
   }
@@ -210,7 +212,9 @@ export async function getPods(namespace?: string, context?: string): Promise<Pod
     const nsFlag = namespace ? `-n ${sanitizeNamespace(namespace)}` : '--all-namespaces';
     const ctxFlag = context ? `--context=${sanitizeContext(context)}` : '';
     const result = await runCommand(`kubectl get pods ${nsFlag} ${ctxFlag}`.trim());
-    return parsePods(result.stdout);
+    // kubectl outputs to stderr when no resources found, so check both
+    const output = result.stdout || result.stderr;
+    return parsePods(output);
   } catch {
     return [];
   }
