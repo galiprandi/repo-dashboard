@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { useKubectlNamespaceAccess } from "@/hooks/useKubectlNamespaceAccess";
-import { useAISummarizer } from "@/hooks/useAiSummarizer";
+import { useAI } from "@/hooks/useAI";
 import { getDeployments, getResourceLogs, getPodsForDeployment, getCurrentContext, getContexts } from "@/api/kubectl";
 import { queryKeys, applyCachePolicy, invalidateByDomain } from "@/lib/queryKeys";
 
@@ -464,8 +464,8 @@ function LogsModal({
 	const [aiSummaryCopied, setAiSummaryCopied] = useState(false);
 	const [isAiSummaryCollapsed, setIsAiSummaryCollapsed] = useState(false);
 
-	// Usar hook de AI Summarizer
-	const { availability, isGenerating, summary, error: aiError, generate } = useAISummarizer();
+	// Usar hook de AI
+	const { availability, isGenerating, summary, error: aiError, generate } = useAI();
 
 	// Agrupar líneas en logs completos (multi-línea)
 	const groupLogs = (logText: string): string[] => {

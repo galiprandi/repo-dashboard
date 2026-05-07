@@ -2,7 +2,7 @@ import { useState } from "react"
 import React from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import { MessageSquare, X, Loader2, CheckCircle2, Send, AlertCircle, Sparkles } from "lucide-react"
-import { useAISummarizer } from "@/hooks/useAiSummarizer"
+import { useAI } from "@/hooks/useAI"
 import { useAIErrorProcessor } from "@/hooks/useAIErrorProcessor"
 import { runCommand } from "@/api/exec"
 
@@ -31,7 +31,7 @@ export function FeedbackDialog() {
 	const [issueUrl, setIssueUrl] = useState("")
 	const [error, setError] = useState("")
 	
-	const { availability, isGenerating, error: aiError, generate, reset } = useAISummarizer()
+	const { availability, isGenerating, error: aiError, generate, reset } = useAI()
 	const { processError, isProcessing: isProcessingError } = useAIErrorProcessor()
 
 	const handleOpenChange = (newOpen: boolean) => {

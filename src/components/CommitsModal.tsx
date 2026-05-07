@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, Sparkles, Loader2, ClipboardCopy, Check, GitCommit, ChevronDown, ChevronUp } from "lucide-react";
-import { useAISummarizer } from "@/hooks/useAiSummarizer";
+import { useAI } from "@/hooks/useAI";
 
 interface CommitsModalProps {
 	isOpen: boolean;
@@ -16,8 +16,8 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 	const [expandedCommits, setExpandedCommits] = useState<Set<string>>(new Set());
 	const [isAiSummaryCollapsed, setIsAiSummaryCollapsed] = useState(false);
 
-	// Usar hook de AI Summarizer
-	const { availability, isGenerating, summary, error: aiError, generate: generateAISummary } = useAISummarizer();
+	// Usar hook de AI
+	const { availability, isGenerating, summary, error: aiError, generate: generateAISummary } = useAI();
 
 	// Filtrar commits pendientes (después del commit de producción)
 	const prodCommitIndex = commits.findIndex(c => c.hash === prodCommitHash);

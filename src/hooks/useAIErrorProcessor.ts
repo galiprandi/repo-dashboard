@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { useAISummarizer } from "./useAiSummarizer"
+import { useAI } from "./useAI"
 
 interface UseAIErrorProcessorOptions {
 	enabled?: boolean
@@ -7,7 +7,7 @@ interface UseAIErrorProcessorOptions {
 
 export function useAIErrorProcessor(options: UseAIErrorProcessorOptions = {}) {
 	const { enabled = true } = options
-	const { availability, generate } = useAISummarizer()
+	const { availability, generate } = useAI()
 	const [isProcessing, setIsProcessing] = useState(false)
 	const [processedError, setProcessedError] = useState<string | null>(null)
 
