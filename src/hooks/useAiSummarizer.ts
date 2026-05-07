@@ -101,7 +101,7 @@ export function useAISummarizer() {
 	}, []);
 
 	const generate = useCallback(
-		async (text: string, options: SummarizerOptions = {}) => {
+		async (text: string, options: SummarizerOptions = {}): Promise<string> => {
 			const {
 				type = "key-points",
 				format = "plain-text",
@@ -119,7 +119,7 @@ export function useAISummarizer() {
 
 			if (!hasAISummarizer && !hasSummarizer) {
 				setError("Chrome AI Summarizer API no está disponible en este navegador. Requiere Chrome 113+ con la característica 'AI Summarizer' habilitada.");
-				return;
+				return "";
 			}
 
 			setIsGenerating(true);
@@ -153,7 +153,7 @@ export function useAISummarizer() {
 					};
 					if (typeof SummarizerClass.create !== 'function') {
 						setError("La API Summarizer está disponible pero no tiene método create().");
-						return;
+						return "";
 					}
 					summarizer = await SummarizerClass.create({
 						type,
@@ -171,10 +171,13 @@ export function useAISummarizer() {
 				if (summarizer.destroy) {
 					summarizer.destroy();
 				}
+
+				return result;
 			} catch (err) {
 				setError(
 					err instanceof Error ? err.message : "Error al generar el resumen",
 				);
+				return "";
 			} finally {
 				setIsGenerating(false);
 			}

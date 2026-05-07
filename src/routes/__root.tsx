@@ -4,6 +4,7 @@ import { Github, Star, Activity } from "lucide-react";
 import { useEffect } from "react";
 import { RepoSearch } from "@/components/RepoSearch";
 import { NovedadesDialog } from "@/components/NovedadesDialog";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { SettingsDialog } from "@/components/SettingsDialog";
 import { useGitUser } from "@/hooks/useGitUser";
 import { useGhCliSetup } from "@/hooks/useGhCliSetup";
@@ -99,6 +100,7 @@ function RootLayout() {
 							)}
 						</div>
 						<div className="flex items-center gap-4">
+							<FeedbackDialog />
 							<NovedadesDialog />
 							<RepoSearch />
 							<Link

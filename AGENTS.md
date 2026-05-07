@@ -171,3 +171,37 @@ gh api <endpoint>    # Hacer llamada a API de GitHub
 - Test endpoints with authentication: `curl -H "Authorization: bearer <token>" <url>`
 - Useful for verifying API responses independently of the frontend
 - Note: Tokens from localStorage may expire, use fresh tokens for testing
+
+## Hooks Personalizados
+
+### useAIErrorProcessor
+
+Hook para procesar errores técnicos con Chrome AI Summarizer API y convertirlos en mensajes amigables para usuarios no técnicos.
+
+**Uso básico:**
+```typescript
+import { useAIErrorProcessor } from "@/hooks/useAIErrorProcessor"
+
+const { processError, isAvailable } = useAIErrorProcessor()
+
+// En un catch block
+try {
+  await someOperation()
+} catch (err) {
+  const errorObj = err instanceof Error ? err : new Error(String(err))
+  const friendlyMessage = await processError(errorObj)
+  setError(friendlyMessage)
+}
+```
+
+**Opciones:**
+- `enabled?: boolean` - Habilitar/deshabilitar el procesamiento (default: true)
+- Solo procesa si AI está disponible
+- Fallback al mensaje original si AI falla
+
+**Estado devuelto:**
+- `processError: (error: Error | string) => Promise<string>` - Función para procesar errores
+- `isProcessing: boolean` - Si está procesando un error actualmente
+- `processedError: string | null` - Último error procesado
+- `isAvailable: boolean` - Si AI está disponible y el hook está habilitado
+
