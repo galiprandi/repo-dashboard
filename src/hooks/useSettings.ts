@@ -4,6 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { queryKeys, applyCachePolicy } from '@/lib/queryKeys'
 
 const SETTINGS_KEY = 'releasehub_settings'
 
@@ -79,10 +80,9 @@ export function useSettings() {
 
 	// Query to load settings
 	const query = useQuery({
-		queryKey: ['settings'],
+		queryKey: queryKeys.settings.general(),
 		queryFn: () => loadSettings(),
-		staleTime: Infinity, // Settings don't go stale
-		gcTime: Infinity, // Keep in cache forever
+		...applyCachePolicy("settings"),
 		initialData: DEFAULT_SETTINGS,
 	})
 
@@ -95,7 +95,7 @@ export function useSettings() {
 			return Promise.resolve(updated)
 		},
 		onSuccess: (updated) => {
-			queryClient.setQueryData(['settings'], updated)
+			queryClient.setQueryData(queryKeys.settings.general(), updated)
 		},
 	})
 
