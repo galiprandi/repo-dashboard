@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { runCommand } from '@/api/exec'
 import { hasSekiToken } from '@/utils/sekiToken'
+import { queryKeys, applyCachePolicy } from '@/lib/queryKeys'
 
 export type PipelinePlugin = 'pulsar' | 'seki' | null
 
@@ -87,15 +88,11 @@ export function usePipelineDetector({
   repo,
   enabled = true,
 }: UsePipelineDetectorOptions): DetectionResult {
-  const queryKey = ['pipeline-detection', org, repo]
-
   const query = useQuery({
-    queryKey,
+    queryKey: queryKeys.pipeline.detection(org, repo),
     queryFn: () => detectPipeline(org, repo),
     enabled: enabled && !!org && !!repo,
-    staleTime: 60 * 60 * 1000, // 1 hour - cached for fast switching
-    gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep in cache longer
-    retry: 1,
+    ...applyCachePolicy("pipeline"),
   })
 
   const { data, isLoading, error } = query

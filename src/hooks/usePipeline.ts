@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { fetchPipeline, fetchPipelineWithTag } from '@/api/seki'
 import type { PipelineStatusResponse } from '@/api/seki.type'
+import { queryKeys, applyCachePolicy } from '@/lib/queryKeys'
 
 interface UsePipelineOptions {
   /** Full product name in format "org/repo" */
@@ -42,7 +43,7 @@ export function usePipeline({
   enabled = true,
 }: UsePipelineOptions) {
   return useQuery<PipelineStatusResponse>({
-    queryKey: ['pipeline', product, commit],
+    queryKey: queryKeys.pipeline.staging(product, commit),
     queryFn: async () => {
       const { data } = await fetchPipeline(product, commit)
       return data
@@ -65,7 +66,7 @@ export function usePipeline({
 
       return false // Sin polling si está quieto
     },
-    staleTime: 5000, // Mantener datos frescos por 5s para evitar flick
+    ...applyCachePolicy("pipeline"),
   })
 }
 
@@ -81,7 +82,7 @@ export function usePipelineWithTag({
   enabled = true,
 }: UsePipelineWithTagOptions) {
   return useQuery<PipelineStatusResponse>({
-    queryKey: ['pipeline', product, commit, tag],
+    queryKey: queryKeys.pipeline.production(product, tag),
     queryFn: async () => {
       const { data } = await fetchPipelineWithTag(product, commit, tag)
       return data
@@ -104,6 +105,6 @@ export function usePipelineWithTag({
 
       return false // Sin polling si está quieto
     },
-    staleTime: 5000, // Mantener datos frescos por 5s para evitar flick
+    ...applyCachePolicy("pipeline"),
   })
 }
