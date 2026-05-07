@@ -5,9 +5,22 @@ import { MessageSquare, X, Loader2, CheckCircle2, Send, AlertCircle, Sparkles } 
 import { useAISummarizer } from "@/hooks/useAiSummarizer"
 import { useAIErrorProcessor } from "@/hooks/useAIErrorProcessor"
 import { runCommand } from "@/api/exec"
-import { Streamdown } from "streamdown"
 
 type Step = "describe" | "review" | "sending" | "success" | "error"
+
+const MAX_TITLE_LENGTH = 60
+const MAX_TITLE_WORDS = 8
+const REPO = "galiprandi/release-hub"
+
+// Helper: generate fallback title from description
+const generateFallbackTitle = (description: string): string => {
+	const words = description.split(' ')
+	let title = words.slice(0, MAX_TITLE_WORDS).join(' ')
+	if (title.length > MAX_TITLE_LENGTH) {
+		title = title.slice(0, MAX_TITLE_LENGTH - 3) + '...'
+	}
+	return title
+}
 
 export function FeedbackDialog() {
 	const [open, setOpen] = useState(false)
@@ -37,81 +50,66 @@ export function FeedbackDialog() {
 	const [isEnhancing, setIsEnhancing] = useState(false)
 	
 	const handleNext = async () => {
-		if (step === "describe") {
-			// Si AI no está disponible, ir directo a review con fallback
-			if (availability !== "available") {
-				const words = description.split(' ')
-				let aiTitle = words.slice(0, 8).join(' ')
-				if (aiTitle.length > 60) {
-					aiTitle = aiTitle.slice(0, 57) + '...'
-				}
-				setAiTitle(aiTitle)
-				setAiBody(description)
-				setStep("review")
-				return
+		if (step !== "describe") return
+
+		// Si AI no está disponible, ir directo a review con fallback
+		if (availability !== "available") {
+			setAiTitle(generateFallbackTitle(description))
+			setAiBody(description)
+			setStep("review")
+			return
+		}
+
+		setIsEnhancing(true)
+		try {
+			// Hacer 3 llamadas paralelas a AI
+			const [titleResult, , descriptionResult] = await Promise.all([
+				generate(description, {
+					type: "headline",
+					format: "plain-text",
+					length: "short",
+					outputLanguage: "es",
+					context: `Generá un título conciso (máximo ${MAX_TITLE_LENGTH} caracteres) para un issue de GitHub basado en la siguiente descripción de feedback.`
+				}),
+				generate(description, {
+					type: "key-points",
+					format: "plain-text",
+					length: "short",
+					outputLanguage: "es",
+					context: "Evalúa si la siguiente descripción de feedback es lo suficientemente clara y detallada para crear un issue de GitHub útil. Si es vaga o ambigua, genera 2-3 preguntas específicas y directas (cada una terminando con signo de interrogación, una por línea) para obtener más detalles. Si es clara y detallada, responde únicamente 'CLARA'."
+				}),
+				generate(description, {
+					type: "teaser",
+					format: "plain-text",
+					length: "medium",
+					outputLanguage: "es",
+					context: "Reescribí la siguiente descripción de feedback para un issue de GitHub como una solicitud de feature o mejora. El tono debe ser sugerente y propositivo, no descriptivo de algo ya implementado. Debe incluir: el problema o necesidad, la propuesta de solución, y el valor esperado. Sin bullet points, en formato de párrafo natural."
+				})
+			])
+
+			// Procesar título con fallback
+			let processedTitle = titleResult.trim().slice(0, MAX_TITLE_LENGTH)
+			if (!processedTitle || processedTitle === "CLARA") {
+				processedTitle = generateFallbackTitle(description)
 			}
 
-			setIsEnhancing(true)
-			try {
-				// Hacer 3 llamadas paralelas a AI
-				const [titleResult, , descriptionResult] = await Promise.all([
-					generate(description, {
-						type: "headline",
-						format: "plain-text",
-						length: "short",
-						outputLanguage: "es",
-						context: "Generá un título conciso (máximo 60 caracteres) para un issue de GitHub basado en la siguiente descripción de feedback."
-					}),
-					generate(description, {
-						type: "key-points",
-						format: "plain-text",
-						length: "short",
-						outputLanguage: "es",
-						context: "Evalúa si la siguiente descripción de feedback es lo suficientemente clara y detallada para crear un issue de GitHub útil. Si es vaga o ambigua, genera 2-3 preguntas específicas y directas (cada una terminando con signo de interrogación, una por línea) para obtener más detalles. Si es clara y detallada, responde únicamente 'CLARA'."
-					}),
-					generate(description, {
-						type: "teaser",
-						format: "plain-text",
-						length: "medium",
-						outputLanguage: "es",
-						context: "Reescribí la siguiente descripción de feedback para un issue de GitHub como una solicitud de feature o mejora. El tono debe ser sugerente y propositivo, no descriptivo de algo ya implementado. Debe incluir: el problema o necesidad, la propuesta de solución, y el valor esperado. Sin bullet points, en formato de párrafo natural."
-					})
-				])
-
-				// Procesar título
-				let processedTitle = titleResult.trim().slice(0, 60)
-				if (!processedTitle || processedTitle === "CLARA") {
-					const words = description.split(' ')
-					processedTitle = words.slice(0, 8).join(' ')
-					if (processedTitle.length > 60) {
-						processedTitle = processedTitle.slice(0, 57) + '...'
-					}
-				}
-
-				// Procesar descripción
-				let processedDescription = descriptionResult.trim()
-				if (!processedDescription || processedDescription === "CLARA" || processedDescription.includes("CLARA")) {
-					processedDescription = description
-				}
-
-				// Ir directo a review (sin paso de clarificación)
-				setAiTitle(processedTitle)
-				setAiBody(processedDescription)
-				setStep("review")
-			} catch (err) {
-				setError(err instanceof Error ? err.message : "Error al evaluar la descripción")
-				// En caso de error, ir a review con texto simple
-				const words = description.split(' ')
-				let aiTitle = words.slice(0, 8).join(' ')
-				if (aiTitle.length > 60) {
-					aiTitle = aiTitle.slice(0, 57) + '...'
-				}
-				setAiTitle(aiTitle)
-				setAiBody(description)
-				setStep("review")
-			} finally {
-				setIsEnhancing(false)
+			// Procesar descripción con fallback
+			let processedDescription = descriptionResult.trim()
+			if (!processedDescription || processedDescription === "CLARA" || processedDescription.includes("CLARA")) {
+				processedDescription = description
 			}
+
+			setAiTitle(processedTitle)
+			setAiBody(processedDescription)
+			setStep("review")
+		} catch (err) {
+			setError(err instanceof Error ? err.message : "Error al evaluar la descripción")
+			// Fallback: ir a review con texto simple
+			setAiTitle(generateFallbackTitle(description))
+			setAiBody(description)
+			setStep("review")
+		} finally {
+			setIsEnhancing(false)
 		}
 	}
 
@@ -121,7 +119,7 @@ export function FeedbackDialog() {
 		setError("")
 		
 		try {
-			const command = `gh issue create --repo "galiprandi/release-hub" --title "${aiTitle}" --body "${aiBody}"`
+			const command = `gh issue create --repo "${REPO}" --title "${aiTitle}" --body "${aiBody}"`
 			
 			const result = await runCommand(command)
 			
@@ -385,7 +383,7 @@ export function FeedbackDialog() {
 									</div>
 								) : (
 									<div className="text-sm text-destructive prose prose-sm max-w-none">
-										<Streamdown>{error}</Streamdown>
+										{error}
 									</div>
 								)}
 							</div>

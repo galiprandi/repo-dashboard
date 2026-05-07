@@ -12,16 +12,18 @@ export function useAIErrorProcessor(options: UseAIErrorProcessorOptions = {}) {
 	const [processedError, setProcessedError] = useState<string | null>(null)
 
 	const processError = async (error: Error | string): Promise<string> => {
+		// Extract error message once
+		const errorMessage = error instanceof Error ? error.message : error
+		
+		// Early return if AI not available
 		if (!enabled || availability !== "available") {
-			return error instanceof Error ? error.message : error
+			return errorMessage
 		}
 
 		setIsProcessing(true)
 		setProcessedError(null)
 
 		try {
-			const errorMessage = error instanceof Error ? error.message : error
-			
 			const result = await generate(errorMessage, {
 				type: "teaser",
 				format: "plain-text",
@@ -30,11 +32,11 @@ export function useAIErrorProcessor(options: UseAIErrorProcessorOptions = {}) {
 				context: "Explicá este error técnico de forma simple y breve para un usuario no técnico. Máximo 2 oraciones. Sin detalles técnicos innecesarios. Directo al punto."
 			})
 
-			setProcessedError(result || errorMessage)
-			return result || errorMessage
+			const finalResult = result || errorMessage
+			setProcessedError(finalResult)
+			return finalResult
 		} catch {
-			// Si falla el procesamiento con AI, devolver el error original
-			const errorMessage = error instanceof Error ? error.message : error
+			// Fallback to original error message
 			return errorMessage
 		} finally {
 			setIsProcessing(false)
