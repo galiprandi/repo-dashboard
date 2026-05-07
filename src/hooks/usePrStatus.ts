@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { runCommand } from "../api/exec";
+import { queryKeys, applyCachePolicy } from "@/lib/queryKeys";
 
 interface PrStatus {
 	status: "open" | "closed" | "merged";
@@ -20,7 +21,7 @@ export function usePrStatus(
 	pollInterval?: number,
 ) {
 	return useQuery({
-		queryKey: ["pr", "status", repo, prNumber],
+		queryKey: queryKeys.pr.status(repo, Number(prNumber)),
 		queryFn: async () => {
 			const command = `gh api repos/${repo}/pulls/${prNumber}`;
 			const { stdout } = await runCommand(command);
@@ -36,5 +37,6 @@ export function usePrStatus(
 		},
 		enabled: !!prNumber,
 		refetchInterval: pollInterval,
+		...applyCachePolicy("pr"),
 	});
 }

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { runCommand } from "../api/exec";
+import { queryKeys, applyCachePolicy } from "@/lib/queryKeys";
 
 interface OpenPullRequestsResult {
 	count: number;
@@ -8,7 +9,7 @@ interface OpenPullRequestsResult {
 
 export function useOpenPullRequests(repo: string) {
 	return useQuery<OpenPullRequestsResult>({
-		queryKey: ["github", "open-prs", repo],
+		queryKey: queryKeys.pr.list(repo),
 		queryFn: async () => {
 			const command = `gh pr list --repo ${repo} --state open --json number`;
 			const { stdout } = await runCommand(command);
@@ -21,7 +22,6 @@ export function useOpenPullRequests(repo: string) {
 			};
 		},
 		enabled: !!repo,
-		staleTime: 60 * 1000, // 1 minuto
-		gcTime: 5 * 60 * 1000, // 5 minutos
+		...applyCachePolicy("pr"),
 	});
 }
