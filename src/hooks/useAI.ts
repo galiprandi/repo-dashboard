@@ -45,6 +45,7 @@ export interface AIOptions {
 	sharedContext?: string;
 	maxLines?: number;
 	maxChars?: number;
+	queryKey?: unknown[]; // Custom query key to override default
 }
 
 // Función pura para generar resumen sin estado
@@ -182,8 +183,9 @@ export function useAI() {
 			setIsGenerating(true);
 			setError(null);
 
-			// Generar query key única basada en el input
-			const queryKey = ['ai-summary', text, JSON.stringify(options)];
+			// Usar query key personalizada si se proporciona, de lo contrario usar texto completo
+			const { queryKey: customQueryKey, ...aiOptions } = options;
+			const queryKey = customQueryKey || ['ai-summary', text, JSON.stringify(aiOptions)];
 
 			try {
 				// Verificar si ya está en caché
@@ -197,7 +199,7 @@ export function useAI() {
 				// Si no está en caché, ejecutar y cachear
 				const result = await queryClient.fetchQuery({
 					queryKey,
-					queryFn: () => generateAISummary(text, options),
+					queryFn: () => generateAISummary(text, aiOptions),
 					staleTime: 5 * 60 * 1000, // 5 minutos de caché
 					gcTime: 10 * 60 * 1000, // 10 minutos en memoria
 				});

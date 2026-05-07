@@ -1,4 +1,5 @@
 import { Sparkles, Loader2, ClipboardCopy, Check, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { Streamdown } from "streamdown";
 
 interface AISummaryCardProps {
 	summary: string | null;
@@ -64,7 +65,9 @@ export function AISummaryCard({
 			</div>
 			{!isCollapsed && (
 				<>
-					<p className={`${isCompact ? 'text-purple-100 text-xs' : 'text-purple-50 text-sm leading-relaxed'} whitespace-pre-wrap`}>{summary}</p>
+					<div className={`${isCompact ? 'text-purple-100 text-xs' : 'text-purple-50 text-sm leading-relaxed'} prose prose-sm max-w-none dark:prose-invert`}>
+						<Streamdown>{summary}</Streamdown>
+					</div>
 					{error && (
 						<p className="text-red-400 text-sm mt-2">{error}</p>
 					)}
