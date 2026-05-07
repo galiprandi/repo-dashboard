@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import * as Dialog from "@radix-ui/react-dialog"
 import * as Tooltip from "@radix-ui/react-tooltip"
-import { Rocket, X, Loader2, CheckCircle2, ChevronRight, ChevronLeft, GitCommit } from "lucide-react"
+import { Rocket, X, Loader2, CheckCircle2, ChevronRight, ChevronLeft, GitCommit, Sparkles } from "lucide-react"
 import axios from "axios"
 import { runCommand } from "@/api/exec"
 import { useRepoPermission } from "../hooks/useRepoPermission"
@@ -10,6 +10,7 @@ import { useDiscordChannel } from "@/hooks/useDiscordChannel"
 import { useGitUser } from "@/hooks/useGitUser"
 import { useGitCommits } from "@/hooks/useGitCommits"
 import { useGitTags } from "@/hooks/useGitTags"
+import { useCommitSummary } from "@/hooks/useCommitSummary"
 import { DiscordNotification } from "@/components/ui/DiscordNotification"
 import { CommitLink } from "@/components/CommitLink"
 
@@ -50,6 +51,24 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 		return commits.slice(0, prodCommitIndex) // Commits before the prod commit in the list (more recent)
 	}, [commits, latestTagData])
 
+	const hasPendingCommits = pendingCommits.length > 0
+
+	// Hook para generar resumen de commits con IA
+	const { generateCommitSummary, isGenerating: isGeneratingSummary, isAvailable: summaryAvailable } = useCommitSummary()
+
+	// Generar automáticamente el resumen cuando se abre el diálogo y hay commits pendientes
+	useEffect(() => {
+		const autoGenerateSummary = async () => {
+			if (open && hasPendingCommits && summaryAvailable && !tagMessage) {
+				const summary = await generateCommitSummary(pendingCommits)
+				if (summary) {
+					setTagMessage(summary)
+				}
+			}
+		}
+		autoGenerateSummary()
+	}, [open, hasPendingCommits, summaryAvailable, pendingCommits, tagMessage, generateCommitSummary])
+
 	const handleOpenChange = (newOpen: boolean) => {
 		setOpen(newOpen)
 		if (newOpen) {
@@ -57,9 +76,15 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 			// Recalculate suggested tag when opening dialog to get latest version
 			const newSuggestedTag = latestTag ? incrementVersion(latestTag) : "v1.0.0"
 			setTagName(newSuggestedTag)
-			setTagMessage(`Release ${newSuggestedTag}`)
+			// No sobrescribir tagMessage si IA ya generó uno
+			if (!tagMessage) {
+				setTagMessage(`Release ${newSuggestedTag}`)
+			}
 			setNotificationsEnabled(!!webhookUrl)
 			setError("")
+		} else {
+			// Limpiar tagMessage al cerrar para regenerar en la próxima apertura
+			setTagMessage("")
 		}
 	}
 
@@ -145,8 +170,7 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 		}
 	}
 
-	const hasPendingCommits = pendingCommits.length > 0
-	const dialogWidth = step === 'success' ? 'max-w-sm' : (hasPendingCommits && showCommits ? 'max-w-4xl' : 'max-w-lg')
+	const dialogWidth = step === 'success' ? 'max-w-md' : (hasPendingCommits && showCommits ? 'max-w-5xl' : 'max-w-xl')
 
 	return (
 		<Dialog.Root open={open} onOpenChange={handleOpenChange}>
@@ -232,17 +256,35 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 									</div>
 
 									<div>
-										<label htmlFor="promote-tag-message" className="block text-sm font-medium mb-2">
-											Descripción (opcional)
-										</label>
+										<div className="flex items-center justify-between mb-2">
+											<label htmlFor="promote-tag-message" className="block text-sm font-medium">
+												Descripción (opcional)
+											</label>
+											{summaryAvailable && hasPendingCommits && (
+												<button
+													type="button"
+													onClick={() => generateCommitSummary(pendingCommits).then(setTagMessage)}
+													disabled={isGeneratingSummary}
+													className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+													title="Regenerar descripción con IA"
+												>
+													{isGeneratingSummary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+													{isGeneratingSummary ? "Generando..." : "Regenerar"}
+												</button>
+											)}
+										</div>
 										<textarea
 											id="promote-tag-message"
 											value={tagMessage}
 											onChange={(e) => setTagMessage(e.target.value)}
 											placeholder="Descripción del release..."
-											rows={3}
-											className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+											rows={8}
+											disabled={isGeneratingSummary}
+											className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-y disabled:opacity-50"
 										/>
+										{isGeneratingSummary && (
+											<p className="text-xs text-muted-foreground mt-1">Generando release notes con IA...</p>
+										)}
 									</div>
 
 									<DiscordNotification
