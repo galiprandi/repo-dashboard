@@ -1,0 +1,27 @@
+name: CI
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install
+      - name: Run tests and comment coverage
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx vitest run --coverage --coverage.reporter=text-summary > coverage_output.txt || true
+          cat coverage_output.txt
+          echo "### Vitest Coverage Report" > comment.md
+          echo '```' >> comment.md
+          sed -n '/Coverage summary/,/====/p' coverage_output.txt >> comment.md
+          echo '```' >> comment.md
+          gh pr comment ${{ github.event.pull_request.number }} --body-file comment.md
