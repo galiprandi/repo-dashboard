@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles, AlertCircle } from "lucide-react";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import { useKubectlNamespaceAccess } from "@/hooks/useKubectlNamespaceAccess";
 import { useAI } from "@/hooks/useAI";
 import { useAIErrorProcessor } from "@/hooks/useAIErrorProcessor";
@@ -304,19 +305,23 @@ function PodStats({
 	context,
 	deploymentName,
 	selectedPod,
+	pods: podsProp,
 }: {
 	namespace: string;
 	context?: string;
 	deploymentName: string;
 	selectedPod: string | null;
+	pods?: Array<{ name: string; ready: string; status: string; restarts: string; age: string }>;
 }) {
-	const { data: pods } = useQuery({
+	const { data: podsQuery } = useQuery({
 		queryKey: queryKeys.kubectl.pods(namespace, deploymentName, context),
 		queryFn: () => getPodsForDeployment(deploymentName, namespace, context),
-		enabled: !!deploymentName,
+		enabled: !podsProp && !!deploymentName,
 		refetchInterval: 30000,
 		...applyCachePolicy("kubectl"),
 	});
+
+	const pods = podsProp || podsQuery;
 
 	if (!pods || pods.length === 0) {
 		return null;
@@ -327,50 +332,125 @@ function PodStats({
 	if (targetPod) {
 		// Stats de un pod específico
 		return (
-			<div className="flex items-center gap-2 text-xs">
-				<div className="flex items-center gap-1 text-muted-foreground" title={`Contenedores listos / totales: ${targetPod.ready}`}>
-					<CheckCircle2 className="w-3.5 h-3.5" />
-					<span>{targetPod.ready}</span>
+			<Tooltip.Provider>
+				<div className="flex items-center gap-2 text-xs">
+					<Tooltip.Root>
+						<Tooltip.Trigger asChild>
+							<div className="flex items-center gap-1 text-muted-foreground cursor-help">
+								<CheckCircle2 className="w-3.5 h-3.5" />
+								<span>{targetPod.ready}</span>
+							</div>
+						</Tooltip.Trigger>
+						<Tooltip.Portal>
+							<Tooltip.Content
+								className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+								sideOffset={5}
+							>
+								Contenedores listos / totales: {targetPod.ready}
+							</Tooltip.Content>
+						</Tooltip.Portal>
+					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger asChild>
+							<span
+								className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium cursor-help ${
+									targetPod.status === "Running"
+										? "bg-green-100 text-green-700"
+										: targetPod.status === "Completed"
+											? "bg-blue-100 text-blue-700"
+											: targetPod.status === "Error"
+												? "bg-red-100 text-red-700"
+												: "bg-gray-100 text-gray-700"
+								}`}
+							>
+								{targetPod.status}
+							</span>
+						</Tooltip.Trigger>
+						<Tooltip.Portal>
+							<Tooltip.Content
+								className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+								sideOffset={5}
+							>
+								Estado del pod: {targetPod.status}
+							</Tooltip.Content>
+						</Tooltip.Portal>
+					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger asChild>
+							<div className="flex items-center gap-1 text-muted-foreground cursor-help">
+								<RotateCcw className="w-3.5 h-3.5" />
+								<span>{targetPod.restarts}</span>
+							</div>
+						</Tooltip.Trigger>
+						<Tooltip.Portal>
+							<Tooltip.Content
+								className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+								sideOffset={5}
+							>
+								Reinicios del pod: {targetPod.restarts}
+							</Tooltip.Content>
+						</Tooltip.Portal>
+					</Tooltip.Root>
+					<Tooltip.Root>
+						<Tooltip.Trigger asChild>
+							<div className="flex items-center gap-1 text-muted-foreground cursor-help">
+								<Clock className="w-3.5 h-3.5" />
+								<span>{targetPod.age}</span>
+							</div>
+						</Tooltip.Trigger>
+						<Tooltip.Portal>
+							<Tooltip.Content
+								className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+								sideOffset={5}
+							>
+								Tiempo desde creación: {targetPod.age}
+							</Tooltip.Content>
+						</Tooltip.Portal>
+					</Tooltip.Root>
 				</div>
-				<span
-					className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-						targetPod.status === "Running"
-							? "bg-green-100 text-green-700"
-							: targetPod.status === "Completed"
-								? "bg-blue-100 text-blue-700"
-								: targetPod.status === "Error"
-									? "bg-red-100 text-red-700"
-									: "bg-gray-100 text-gray-700"
-					}`}
-					title={`Estado del pod: ${targetPod.status}`}
-				>
-					{targetPod.status}
-				</span>
-				<div className="flex items-center gap-1 text-muted-foreground" title={`Reinicios del pod: ${targetPod.restarts}`}>
-					<RotateCcw className="w-3.5 h-3.5" />
-					<span>{targetPod.restarts}</span>
-				</div>
-				<div className="flex items-center gap-1 text-muted-foreground" title={`Tiempo desde creación: ${targetPod.age}`}>
-					<Clock className="w-3.5 h-3.5" />
-					<span>{targetPod.age}</span>
-				</div>
-			</div>
+			</Tooltip.Provider>
 		);
 	}
 
 	// Stats de todos los pods
 	const runningPods = pods.filter((p) => p.status === "Running").length;
 	return (
-		<div className="flex items-center gap-2 text-xs">
-			<div className="flex items-center gap-1 text-muted-foreground" title={`Total de pods: ${pods.length}`}>
-				<Activity className="w-3.5 h-3.5" />
-				<span>{pods.length}</span>
+		<Tooltip.Provider>
+			<div className="flex items-center gap-2 text-xs">
+				<Tooltip.Root>
+					<Tooltip.Trigger asChild>
+						<div className="flex items-center gap-1 text-muted-foreground cursor-help">
+							<Activity className="w-3.5 h-3.5" />
+							<span>{pods.length}</span>
+						</div>
+					</Tooltip.Trigger>
+					<Tooltip.Portal>
+						<Tooltip.Content
+							className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+							sideOffset={5}
+						>
+							Total de pods: {pods.length}
+						</Tooltip.Content>
+					</Tooltip.Portal>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger asChild>
+						<div className="flex items-center gap-1 text-muted-foreground cursor-help">
+							<CheckCircle2 className="w-3.5 h-3.5" />
+							<span>{runningPods}</span>
+						</div>
+					</Tooltip.Trigger>
+					<Tooltip.Portal>
+						<Tooltip.Content
+							className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+							sideOffset={5}
+						>
+							Pods en ejecución: {runningPods}
+						</Tooltip.Content>
+					</Tooltip.Portal>
+				</Tooltip.Root>
 			</div>
-			<div className="flex items-center gap-1 text-muted-foreground" title={`Pods en ejecución: ${runningPods}`}>
-				<CheckCircle2 className="w-3.5 h-3.5" />
-				<span>{runningPods}</span>
-			</div>
-		</div>
+		</Tooltip.Provider>
 	);
 }
 
@@ -440,10 +520,11 @@ function LogsModal({
 	onTailSizeChange: (size: number) => void;
 	onClose: () => void;
 }) {
-	const [currentType, setCurrentType] = useState<"deployment" | "pod">(type);
 	const [currentName, setCurrentName] = useState(name);
 	const [selectedPod, setSelectedPod] = useState<string | null>(type === "pod" ? name : null);
 	const [autoFetch, setAutoFetch] = useState(true);
+
+	const currentType = selectedPod ? "pod" : "deployment";
 
 	const { data: logs, isLoading, refetch, error: logsError } = useQuery({
 		queryKey: queryKeys.kubectl.logs(namespace, currentType, currentName, tailSize, context),
@@ -454,9 +535,9 @@ function LogsModal({
 
 	// Obtener pods del deployment actual para el selector
 	const { data: pods, error: podsError } = useQuery({
-		queryKey: queryKeys.kubectl.pods(namespace, currentName, context),
-		queryFn: () => getPodsForDeployment(currentName, namespace, context),
-		enabled: currentType === "deployment" && !!currentName,
+		queryKey: queryKeys.kubectl.pods(namespace, name, context),
+		queryFn: () => getPodsForDeployment(name, namespace, context),
+		enabled: !!name,
 		...applyCachePolicy("kubectl"),
 	});
 
@@ -584,24 +665,15 @@ function LogsModal({
 		setTimeout(() => setAiSummaryCopied(false), 2000);
 	};
 
-	const handleTypeChange = (newType: "deployment" | "pod") => {
-		setCurrentType(newType);
-		if (newType === "deployment") {
-			setCurrentName(name); // Volver al deployment original
+	const handlePodChange = (podName: string) => {
+		if (podName === "") {
+			// Si se selecciona "Todos los pods", volver al deployment
+			setCurrentName(name);
 			setSelectedPod(null);
 		} else {
-			// Si cambiamos a pod, seleccionar el primer pod disponible
-			if (pods && pods.length > 0) {
-				const firstPod = pods[0].name;
-				setCurrentName(firstPod);
-				setSelectedPod(firstPod);
-			}
+			setCurrentName(podName);
+			setSelectedPod(podName);
 		}
-	};
-
-	const handlePodChange = (podName: string) => {
-		setCurrentName(podName);
-		setSelectedPod(podName);
 	};
 
 	const handleSummarizeWithAI = async () => {
@@ -627,123 +699,221 @@ function LogsModal({
 	return (
 		<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
 			<div className="bg-background rounded-lg shadow-lg w-[90vw] h-[90vh] max-w-[1800px] flex flex-col overflow-hidden">
-				<div className="flex items-center justify-between p-4 border-b gap-2 flex-wrap">
-					<div className="flex items-center gap-2">
-						<h3 className="font-semibold">Logs: {currentName}</h3>
-						<select
-							value={currentType}
-							onChange={(e) => handleTypeChange(e.target.value as "deployment" | "pod")}
-							className="bg-background border rounded px-2 py-1 text-sm"
-						>
-							<option value="deployment">Todos los pods</option>
-							<option value="pod">Pod específico</option>
-						</select>
-						{currentType === "pod" && pods && (
-							<select
-								value={selectedPod || ""}
-								onChange={(e) => handlePodChange(e.target.value)}
-								className="bg-background border rounded px-2 py-1 text-sm"
-							>
-								{pods.map((pod) => (
-									<option key={pod.name} value={pod.name}>
-										{pod.name}
-									</option>
-								))}
-							</select>
-						)}
-						<span className="text-xs text-muted-foreground">({currentType})</span>
-					</div>
-					<div className="flex items-center gap-2">
-						{availability === "available" && (
-							<button
-								type="button"
-								onClick={handleSummarizeWithAI}
-								disabled={isGenerating || !logs}
-								className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-								title="Resumir con IA"
-							>
-								{isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-								{isGenerating ? "Resumiendo..." : "Resumir"}
-							</button>
-						)}
-						<div className="relative">
-							<Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
-							<input
-								type="text"
-								value={filter}
-								onChange={(e) => setFilter(e.target.value)}
-								placeholder=""
-								className="pl-7 pr-2 py-1 text-sm bg-background border rounded w-36 focus:outline-none focus:ring-2 focus:ring-blue-500"
-							/>
+				<Tooltip.Provider>
+					<div className="flex items-center justify-between p-4 border-b gap-2 flex-wrap">
+						<div className="flex items-center gap-2">
+							<h3 className="font-semibold">Logs: {currentName}</h3>
+							{pods && (
+								<select
+									value={selectedPod || ""}
+									onChange={(e) => handlePodChange(e.target.value)}
+									className="bg-background border rounded px-2 py-1 text-sm"
+								>
+									<option value="">Todos los pods</option>
+									{pods.map((pod) => (
+										<option key={pod.name} value={pod.name}>
+											{pod.name}
+										</option>
+									))}
+								</select>
+							)}
+							{pods && (
+								<PodStats
+									namespace={namespace}
+									context={context}
+									deploymentName={name}
+									selectedPod={selectedPod}
+									pods={pods}
+								/>
+							)}
 						</div>
-						<select
-							value={logLevelFilter}
-							onChange={(e) => setLogLevelFilter(e.target.value as "all" | "ERROR" | "WARN" | "INFO" | "DEBUG")}
-							className="bg-background border rounded px-2 py-1 text-sm"
-						>
-							<option value="all">Todos</option>
-							<option value="ERROR">ERROR</option>
-							<option value="WARN">WARN</option>
-							<option value="INFO">INFO</option>
-							<option value="DEBUG">DEBUG</option>
-						</select>
-						<select
-							value={tailSize}
-							onChange={(e) => onTailSizeChange(Number(e.target.value))}
-							className="bg-background border rounded px-2 py-1 text-sm"
-						>
-							<option value={50}>50</option>
-							<option value={100}>100</option>
-							<option value={500}>500</option>
-							<option value={1000}>1000</option>
-						</select>
-						<button
-							type="button"
-							onClick={() => setAutoFetch(!autoFetch)}
-							className={`p-1.5 rounded transition-colors ${autoFetch ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-							title={autoFetch ? "Desactivar auto-fetch" : "Activar auto-fetch"}
-						>
-							<Clock className={`w-4 h-4 ${autoFetch ? 'animate-pulse' : ''}`} />
-						</button>
+						<div className="flex items-center gap-2">
+						{availability === "available" && (
+							<Tooltip.Root>
+								<Tooltip.Trigger asChild>
+									<button
+										type="button"
+										onClick={handleSummarizeWithAI}
+										disabled={isGenerating || !logs}
+										className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+									>
+										{isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+										{isGenerating ? "Resumiendo..." : "Resumir"}
+									</button>
+								</Tooltip.Trigger>
+								<Tooltip.Portal>
+									<Tooltip.Content
+										className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+										sideOffset={5}
+									>
+										Resumir logs con IA
+									</Tooltip.Content>
+								</Tooltip.Portal>
+							</Tooltip.Root>
+						)}
+						<Tooltip.Root>
+							<Tooltip.Trigger asChild>
+								<div className="relative">
+									<Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
+									<input
+										type="text"
+										value={filter}
+										onChange={(e) => setFilter(e.target.value)}
+										placeholder=""
+										className="pl-7 pr-2 py-1 text-sm bg-background border rounded w-36 focus:outline-none focus:ring-2 focus:ring-blue-500"
+									/>
+								</div>
+							</Tooltip.Trigger>
+							<Tooltip.Portal>
+								<Tooltip.Content
+									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+									sideOffset={5}
+								>
+									Filtrar logs por texto
+								</Tooltip.Content>
+							</Tooltip.Portal>
+						</Tooltip.Root>
+						<Tooltip.Root>
+							<Tooltip.Trigger asChild>
+								<select
+									value={logLevelFilter}
+									onChange={(e) => setLogLevelFilter(e.target.value as "all" | "ERROR" | "WARN" | "INFO" | "DEBUG")}
+									className="bg-background border rounded px-2 py-1 text-sm"
+								>
+									<option value="all">Todos</option>
+									<option value="ERROR">ERROR</option>
+									<option value="WARN">WARN</option>
+									<option value="INFO">INFO</option>
+									<option value="DEBUG">DEBUG</option>
+								</select>
+							</Tooltip.Trigger>
+							<Tooltip.Portal>
+								<Tooltip.Content
+									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+									sideOffset={5}
+								>
+									Filtrar por nivel de log
+								</Tooltip.Content>
+							</Tooltip.Portal>
+						</Tooltip.Root>
+						<Tooltip.Root>
+							<Tooltip.Trigger asChild>
+								<select
+									value={tailSize}
+									onChange={(e) => onTailSizeChange(Number(e.target.value))}
+									className="bg-background border rounded px-2 py-1 text-sm"
+								>
+									<option value={50}>50</option>
+									<option value={100}>100</option>
+									<option value={500}>500</option>
+									<option value={1000}>1000</option>
+								</select>
+							</Tooltip.Trigger>
+							<Tooltip.Portal>
+								<Tooltip.Content
+									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+									sideOffset={5}
+								>
+									Número de líneas a mostrar
+								</Tooltip.Content>
+							</Tooltip.Portal>
+						</Tooltip.Root>
+						<Tooltip.Root>
+							<Tooltip.Trigger asChild>
+								<button
+									type="button"
+									onClick={() => setAutoFetch(!autoFetch)}
+									className={`p-1.5 rounded transition-colors ${autoFetch ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+								>
+									<Clock className={`w-4 h-4 ${autoFetch ? 'animate-pulse' : ''}`} />
+								</button>
+							</Tooltip.Trigger>
+							<Tooltip.Portal>
+								<Tooltip.Content
+									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+									sideOffset={5}
+								>
+									{autoFetch ? "Desactivar auto-recarga (10s)" : "Activar auto-recarga (10s)"}
+								</Tooltip.Content>
+							</Tooltip.Portal>
+						</Tooltip.Root>
 						<div className="w-px h-6 bg-border mx-2" />
-						<span className="text-xs text-muted-foreground">
-							{filteredLines.length} logs
-						</span>
+						<Tooltip.Root>
+							<Tooltip.Trigger asChild>
+								<span className="text-xs text-muted-foreground cursor-help">
+									{filteredLines.length} logs
+								</span>
+							</Tooltip.Trigger>
+							<Tooltip.Portal>
+								<Tooltip.Content
+									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+									sideOffset={5}
+								>
+									Logs mostrados (con filtros aplicados)
+								</Tooltip.Content>
+							</Tooltip.Portal>
+						</Tooltip.Root>
 						<div className="flex-1" />
-						<button
-							type="button"
-							onClick={() => refetch()}
-							className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
-							title="Recargar"
-						>
-							<RefreshCw className="w-4 h-4" />
-						</button>
-						<button
-							type="button"
-							onClick={() => setAutoFetch(!autoFetch)}
-							className={`p-1.5 rounded transition-colors ${autoFetch ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-							title={autoFetch ? "Desactivar auto-fetch" : "Activar auto-fetch"}
-						>
-							<Clock className={`w-4 h-4 ${autoFetch ? 'animate-pulse' : ''}`} />
-						</button>
-						<button
-							type="button"
-							onClick={handleCopy}
-							className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
-							title={copied ? "Copiado!" : "Copiar logs"}
-						>
-							{copied ? <Check className="w-4 h-4 text-green-500" /> : <ClipboardCopy className="w-4 h-4" />}
-						</button>
-						<button
-							type="button"
-							onClick={onClose}
-							className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
-							title="Cerrar"
-						>
-							<X className="w-4 h-4" />
-						</button>
+						<Tooltip.Root>
+							<Tooltip.Trigger asChild>
+								<button
+									type="button"
+									onClick={() => refetch()}
+									className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+								>
+									<RefreshCw className="w-4 h-4" />
+								</button>
+							</Tooltip.Trigger>
+							<Tooltip.Portal>
+								<Tooltip.Content
+									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+									sideOffset={5}
+								>
+									Recargar logs manualmente
+								</Tooltip.Content>
+							</Tooltip.Portal>
+						</Tooltip.Root>
+						<Tooltip.Root>
+							<Tooltip.Trigger asChild>
+								<button
+									type="button"
+									onClick={handleCopy}
+									className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+								>
+									{copied ? <Check className="w-4 h-4 text-green-500" /> : <ClipboardCopy className="w-4 h-4" />}
+								</button>
+							</Tooltip.Trigger>
+							<Tooltip.Portal>
+								<Tooltip.Content
+									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+									sideOffset={5}
+								>
+									{copied ? "¡Copiado!" : "Copiar logs al portapapeles"}
+								</Tooltip.Content>
+							</Tooltip.Portal>
+						</Tooltip.Root>
+						<Tooltip.Root>
+							<Tooltip.Trigger asChild>
+								<button
+									type="button"
+									onClick={onClose}
+									className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+								>
+									<X className="w-4 h-4" />
+								</button>
+							</Tooltip.Trigger>
+							<Tooltip.Portal>
+								<Tooltip.Content
+									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+									sideOffset={5}
+								>
+									Cerrar modal de logs
+								</Tooltip.Content>
+							</Tooltip.Portal>
+						</Tooltip.Root>
 					</div>
 				</div>
+				</Tooltip.Provider>
 				<div className="flex-1 overflow-auto bg-black text-green-400 p-4 font-mono text-xs">
 					{kubectlError && (
 						<div className="mb-4 p-3 bg-red-900 border border-red-500/30 rounded-lg sticky top-0 z-10">
