@@ -106,6 +106,10 @@ Para verificar si un usuario puede crear tags, usar el objeto permissions de Git
 
 Después de operaciones de escritura (crear tag, etc.), invalidar queries relevantes y mantener estado local. No usar window.location.reload().
 
+### 6. Organización de Tests
+
+Los archivos de test unitarios deben ubicarse en el mismo directorio que el archivo que prueban, usando la extensión `.test.ts` o `.test.tsx`. Se debe evitar el uso de carpetas `__tests__` para nuevos módulos.
+
 ## Local Requirements
 
 1. **Node.js** (v18+)

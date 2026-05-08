@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { hasSekiToken, getSekiToken } from '../sekiToken'
+import { hasSekiToken, getSekiToken } from './sekiToken'
 
 describe('sekiToken utility', () => {
   beforeEach(() => {
