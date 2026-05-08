@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FolderPlus, FolderOpen, X, Check, ChevronDown, Plus } from "lucide-react";
 import { useUserCollections } from "@/hooks/useUserCollections";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 
 export function ProjectSelector({ repo }: { repo: string }) {
 	const { projects, createProject, addRepoToProject, removeRepoFromProject, isRepoInProject, getProjectsForRepo } = useUserCollections();
@@ -30,6 +31,7 @@ export function ProjectSelector({ repo }: { repo: string }) {
 		setNewName("");
 		setNewDesc("");
 		setIsCreating(false);
+		setIsOpen(false);
 	}
 
 	return (
@@ -53,23 +55,64 @@ export function ProjectSelector({ repo }: { repo: string }) {
 						</button>;
 					})}
 					<div className="border-t mt-1 pt-1">
-						{isCreating ? (
-							<form onSubmit={handleCreate} className="px-3 py-2 space-y-2">
-								<input type="text" value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nombre del proyecto" aria-label="Nombre del proyecto" className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary" autoFocus />
-								<input type="text" value={newDesc} onChange={e => setNewDesc(e.target.value)} placeholder="Descripción (opcional)" aria-label="Descripción (opcional)" className="w-full px-2 py-1 text-sm border rounded focus:outline-none focus:ring-1 focus:ring-primary" />
-								<div className="flex gap-2">
-									<button type="button" onClick={() => setIsCreating(false)} className="flex-1 px-2 py-1 text-xs text-muted-foreground hover:bg-muted rounded">Cancelar</button>
-									<button type="submit" disabled={!newName.trim()} className="flex-1 px-2 py-1 text-xs bg-primary text-primary-foreground rounded disabled:opacity-50">Crear</button>
-								</div>
-							</form>
-							) : (
-								<button type="button" onClick={() => setIsCreating(true)} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left text-primary">
-									<Plus className="w-4 h-4" /> Nuevo proyecto
-								</button>
-							)}
-						</div>
+						<button type="button" onClick={() => setIsCreating(true)} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left text-primary">
+							<Plus className="w-4 h-4" /> Nuevo proyecto
+						</button>
 					</div>
-				)}
-			</div>
-		);
-	}
+				</div>
+			)}
+			<Dialog open={isCreating} onOpenChange={setIsCreating}>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<DialogTitle>Crear nuevo proyecto</DialogTitle>
+					</DialogHeader>
+					<form onSubmit={handleCreate} className="space-y-4">
+						<div>
+							<label htmlFor="project-name" className="block text-sm font-medium mb-2">
+								Nombre del proyecto
+							</label>
+							<input
+								id="project-name"
+								type="text"
+								value={newName}
+								onChange={e => setNewName(e.target.value)}
+								placeholder="Ej: Frontend, Backend, Infraestructura"
+								className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+								autoFocus
+							/>
+						</div>
+						<div>
+							<label htmlFor="project-desc" className="block text-sm font-medium mb-2">
+								Descripción (opcional)
+							</label>
+							<input
+								id="project-desc"
+								type="text"
+								value={newDesc}
+								onChange={e => setNewDesc(e.target.value)}
+								placeholder="Descripción breve del proyecto"
+								className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+							/>
+						</div>
+						<DialogFooter>
+							<button
+								type="button"
+								onClick={() => setIsCreating(false)}
+								className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-accent transition-colors"
+							>
+								Cancelar
+							</button>
+							<button
+								type="submit"
+								disabled={!newName.trim()}
+								className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								Crear proyecto
+							</button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
+		</div>
+	);
+}
