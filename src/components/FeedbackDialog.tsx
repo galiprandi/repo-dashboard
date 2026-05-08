@@ -213,13 +213,16 @@ export function FeedbackDialog() {
 
 					{/* Stepper Visual */}
 					{step !== "sending" && step !== "success" && step !== "error" && (
-						<div className="flex items-center justify-center gap-4 mb-6">
+						<div className="flex items-center justify-center gap-4 mb-6" role="stepper" aria-label="Progreso del feedback">
 							{steps.map((s, idx) => (
 								<React.Fragment key={s.id}>
 									<div className="flex flex-col items-center gap-1">
 										<button
 											type="button"
 											onClick={() => handleStepClick(s.id)}
+											aria-current={s.id === step ? "step" : undefined}
+											aria-label={`Paso ${idx + 1}: ${s.label}${isCompleted(s.id) ? " - Completado" : s.id === step ? " - Actual" : ""}`}
+											aria-disabled={idx > currentStepIndex}
 											className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
 												isCompleted(s.id) 
 													? "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer" 
@@ -232,14 +235,14 @@ export function FeedbackDialog() {
 										</button>
 										<span className={`text-xs font-medium ${
 											s.id === step ? "text-foreground" : "text-muted-foreground"
-										}`}>
+										}`} aria-hidden="true">
 											{s.label}
 										</span>
 									</div>
 									{idx < steps.length - 1 && (
 										<div className={`w-12 h-0.5 ${
 															isCompleted(s.id) ? "bg-primary" : "bg-muted"
-														}`} />
+														}`} aria-hidden="true" />
 									)}
 								</React.Fragment>
 							))}
