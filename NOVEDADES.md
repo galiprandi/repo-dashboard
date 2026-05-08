@@ -6,6 +6,7 @@
 
 - ✨ Carga: Spinner durante la carga inicial de la aplicación para mejor feedback visual.
 - 🎨 Proyectos: Mejora de accesibilidad y feedback en el selector de proyectos.
+- ✨ Logs de Kubernetes: Simplificación del selector de pods con tooltips informativos en todos los controles del modal.
 
 ### 🗓️ 7 de Mayo de 2026
 
