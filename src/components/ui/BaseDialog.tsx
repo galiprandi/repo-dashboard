@@ -1,0 +1,39 @@
+import * as Dialog from "@radix-ui/react-dialog"
+import { DialogCloseButton } from "./DialogCloseButton"
+
+interface BaseDialogProps {
+	open: boolean
+	onOpenChange: (open: boolean) => void
+	title: React.ReactNode
+	description?: string
+	maxWidth?: string
+	children: React.ReactNode
+}
+
+export function BaseDialog({ open, onOpenChange, title, description, maxWidth = "max-w-lg", children }: BaseDialogProps) {
+	return (
+		<Dialog.Root open={open} onOpenChange={onOpenChange}>
+			<Dialog.Portal>
+				<Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+				<Dialog.Content className={`fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full ${maxWidth} max-h-[80vh] bg-background rounded-lg shadow-lg border p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] overflow-hidden flex flex-col transition-all duration-200`}>
+					{description && (
+						<Dialog.Description className="sr-only">
+							{description}
+						</Dialog.Description>
+					)}
+
+					{/* Header */}
+					<div className="flex items-center justify-between mb-4 flex-shrink-0">
+						<Dialog.Title className="text-lg font-semibold flex items-center gap-2">
+							{title}
+						</Dialog.Title>
+						<DialogCloseButton />
+					</div>
+
+					{/* Content */}
+					{children}
+				</Dialog.Content>
+			</Dialog.Portal>
+		</Dialog.Root>
+	)
+}
