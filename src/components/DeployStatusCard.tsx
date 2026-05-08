@@ -73,15 +73,16 @@ const formatDuration = (start: string, end?: string) => {
 
 function MiniTimeline({ events }: { events: TimelineEvent[] }) {
 	return (
-		<div className="flex gap-0.5">
+		<div className="flex gap-1">
 			{events.map((event) => (
 				<HoverCard key={event.id} openDelay={100} closeDelay={100}>
 					<HoverCardTrigger asChild>
 						<button
 							type="button"
-							className={`h-1.5 w-6 rounded-full transition-all hover:opacity-80 ${getStatusColor(
+							className={`h-2 w-7 rounded-full transition-all duration-200 hover:scale-110 hover:shadow-md focus-visible:scale-110 focus-visible:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${getStatusColor(
 								event.state,
 							)}`}
+							aria-label={`Evento: ${event.label.es}, Estado: ${event.state}`}
 						/>
 					</HoverCardTrigger>
 					<HoverCardContent
