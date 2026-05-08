@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { PipelineData, PipelineEvent, PipelineState, ViewMode, PipelineProvider } from '../types'
+import type { PipelineData, PipelineEvent, PipelineState, ViewMode, PipelineProvider } from './types'
 
 describe('Pipeline Core Types', () => {
   describe('PipelineState', () => {

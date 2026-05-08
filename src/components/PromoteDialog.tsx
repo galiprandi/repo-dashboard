@@ -56,24 +56,18 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 	// Hook para generar resumen de commits con IA
 	const { generateCommitSummary, isGenerating: isGeneratingSummary, isAvailable: summaryAvailable } = useCommitSummary()
 
-	// Generate query key based on commit hashes
-	const commitsQueryKey = useMemo(() => {
-		if (!pendingCommits.length) return null
-		return ["commit-summary", repo, pendingCommits.map(c => c.hash).join(',')]
-	}, [pendingCommits, repo])
-
 	// Generar automáticamente el resumen cuando se abre el diálogo y hay commits pendientes
 	useEffect(() => {
 		const autoGenerateSummary = async () => {
 			if (open && hasPendingCommits && summaryAvailable && !tagMessage) {
-				const summary = await generateCommitSummary(pendingCommits, commitsQueryKey || undefined)
+				const summary = await generateCommitSummary(pendingCommits)
 				if (summary) {
 					setTagMessage(summary)
 				}
 			}
 		}
 		autoGenerateSummary()
-	}, [open, hasPendingCommits, summaryAvailable, pendingCommits, tagMessage, generateCommitSummary, commitsQueryKey])
+	}, [open, hasPendingCommits, summaryAvailable, pendingCommits, tagMessage, generateCommitSummary])
 
 	const handleOpenChange = (newOpen: boolean) => {
 		setOpen(newOpen)
@@ -269,7 +263,7 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 											{summaryAvailable && hasPendingCommits && (
 												<button
 													type="button"
-													onClick={() => generateCommitSummary(pendingCommits, commitsQueryKey || undefined).then(setTagMessage)}
+													onClick={() => generateCommitSummary(pendingCommits).then(setTagMessage)}
 													disabled={isGeneratingSummary}
 													className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 													title="Regenerar descripción con IA"
