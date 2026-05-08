@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import * as Dialog from "@radix-ui/react-dialog"
 import * as Tooltip from "@radix-ui/react-tooltip"
-import { Rocket, X, Loader2, CheckCircle2, ChevronRight, ChevronLeft, GitCommit, Sparkles } from "lucide-react"
+import { Rocket, Loader2, CheckCircle2, ChevronRight, ChevronLeft, GitCommit, Sparkles } from "lucide-react"
 import axios from "axios"
 import { runCommand } from "@/api/exec"
 import { useRepoPermission } from "../hooks/useRepoPermission"
@@ -13,6 +13,7 @@ import { useGitTags } from "@/hooks/useGitTags"
 import { useCommitSummary } from "@/hooks/useCommitSummary"
 import { DiscordNotification } from "@/components/ui/DiscordNotification"
 import { CommitLink } from "@/components/CommitLink"
+import { DialogCloseButton } from "@/components/ui/DialogCloseButton";
 
 interface PromoteDialogProps {
 	repo: string
@@ -215,17 +216,7 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 							{step === 'config' && <><Rocket className="w-4 h-4" /> Configurar Lanzamiento</>}
 							{step === 'success' && <><CheckCircle2 className="w-4 h-4 text-green-600" /> Lanzamiento Exitoso</>}
 						</Dialog.Title>
-						<div className="flex items-center gap-2">
-							<Dialog.Close asChild>
-								<button
-									type="button"
-									className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-								>
-									<X className="w-4 h-4" />
-									<span className="sr-only">Cerrar</span>
-								</button>
-							</Dialog.Close>
-						</div>
+						<DialogCloseButton />
 					</div>
 
 					{/* Step 1: Tag Config */}

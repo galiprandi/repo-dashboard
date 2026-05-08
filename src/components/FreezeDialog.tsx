@@ -2,12 +2,13 @@ import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import * as Dialog from "@radix-ui/react-dialog"
 import * as Tooltip from "@radix-ui/react-tooltip"
-import { Unlock, Lock, X, Loader2, CheckCircle2 } from "lucide-react"
+import { Unlock, Lock, Loader2, CheckCircle2 } from "lucide-react"
 import { runCommand } from "@/api/exec"
 import { useBranchProtection } from "@/hooks/useBranchProtection"
 import { useDiscordChannel } from "@/hooks/useDiscordChannel"
 import { useGitUser } from "@/hooks/useGitUser"
 import { DiscordNotification } from "@/components/ui/DiscordNotification"
+import { DialogCloseButton } from "@/components/ui/DialogCloseButton";
 
 interface FreezeDialogProps {
 	repo: string
@@ -168,19 +169,11 @@ EOF`
 					{/* Header */}
 					<div className="flex items-center justify-between mb-4 flex-shrink-0">
 						<Dialog.Title className="text-lg font-semibold flex items-center gap-2">
-							{step === 'config' && <>{isLocked ? <Lock className="w-4 h-4" /> : <Lock className="w-4 h-4" />} {isLocked ? "Desbloquear Branch" : "Bloquear Branch"}</>}
+							{step === 'config' && <>{isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />} {isLocked ? "Desbloquear Branch" : "Bloquear Branch"}</>}
 							{step === 'success' && <><CheckCircle2 className="w-4 h-4 text-green-600" /> {isLocked ? "Branch Desbloqueado" : "Branch Bloqueado"}</>}
 						</Dialog.Title>
 						<div className="flex items-center gap-2">
-							<Dialog.Close asChild>
-								<button
-									type="button"
-									className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-								>
-									<X className="w-4 h-4" />
-									<span className="sr-only">Cerrar</span>
-								</button>
-							</Dialog.Close>
+							<DialogCloseButton />
 						</div>
 					</div>
 

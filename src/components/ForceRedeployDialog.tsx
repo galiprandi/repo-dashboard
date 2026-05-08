@@ -1,8 +1,9 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { RefreshCw, X, Loader2, CheckCircle2, ExternalLink, Circle, AlertCircle } from "lucide-react";
+import { RefreshCw, Loader2, CheckCircle2, ExternalLink, Circle, AlertCircle } from "lucide-react";
 import { usePrStatus } from "../hooks/usePrStatus";
+import { DialogCloseButton } from "@/components/ui/DialogCloseButton";
 
 interface ForceRedeployDialogProps {
 	repo: string;
@@ -159,15 +160,7 @@ export function ForceRedeployDialog({ repo, iconOnly = false }: ForceRedeployDia
 							{step === "error" && <><RefreshCw className="w-4 h-4 text-red-600" /> Error</>}
 						</Dialog.Title>
 						<div className="flex items-center gap-2">
-							<Dialog.Close asChild>
-								<button
-									type="button"
-									className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-								>
-									<X className="w-4 h-4" />
-									<span className="sr-only">Cerrar</span>
-								</button>
-							</Dialog.Close>
+							<DialogCloseButton />
 						</div>
 					</div>
 

@@ -1,10 +1,11 @@
 import { useState } from "react"
 import React from "react"
 import * as Dialog from "@radix-ui/react-dialog"
-import { MessageSquare, X, Loader2, CheckCircle2, Send, AlertCircle, Sparkles, Terminal } from "lucide-react"
+import { MessageSquare, Loader2, CheckCircle2, Send, AlertCircle, Sparkles, Terminal } from "lucide-react"
 import { useAI } from "@/hooks/useAI"
 import { useAIErrorProcessor } from "@/hooks/useAIErrorProcessor"
 import { runCommand } from "@/api/exec"
+import { DialogCloseButton } from "@/components/ui/DialogCloseButton"
 
 type Step = "describe" | "review" | "sending" | "success" | "error"
 
@@ -207,15 +208,7 @@ export function FeedbackDialog() {
 							{step === "sending" && <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>}
 							{step === "success" && <><CheckCircle2 className="w-4 h-4 text-success" /> ¡Feedback enviado!</>}
 						</Dialog.Title>
-						<Dialog.Close asChild>
-							<button
-								type="button"
-								className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-							>
-								<X className="w-4 h-4" />
-								<span className="sr-only">Cerrar</span>
-							</button>
-						</Dialog.Close>
+						<DialogCloseButton />
 					</div>
 
 					{/* Stepper Visual */}

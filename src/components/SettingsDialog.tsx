@@ -1,9 +1,10 @@
 import { useState } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import * as Dialog from "@radix-ui/react-dialog"
-import { Settings, X, Trash2, Save, RefreshCw } from "lucide-react"
+import { Settings, Trash2, Save, RefreshCw } from "lucide-react"
 import { useSettings } from "@/hooks/useSettings"
 import { useToken } from "@/hooks/useToken"
+import { DialogCloseButton } from "@/components/ui/DialogCloseButton";
 
 export function SettingsDialog() {
 	const queryClient = useQueryClient()
@@ -97,15 +98,7 @@ export function SettingsDialog() {
 							<Settings className="w-5 h-5" />
 							Configuración
 						</Dialog.Title>
-						<Dialog.Close asChild>
-							<button
-								type="button"
-								className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-							>
-								<X className="w-4 h-4" />
-								<span className="sr-only">Cerrar</span>
-							</button>
-						</Dialog.Close>
+						<DialogCloseButton />
 					</div>
 
 					{/* Content */}
