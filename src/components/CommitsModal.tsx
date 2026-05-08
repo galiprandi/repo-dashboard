@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
-import { X, GitCommit, Sparkles, Loader2 } from "lucide-react";
+import { X, GitCommit, Sparkles, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { useAI } from "@/hooks/useAI";
 import { AISummaryCard } from "@/components/AISummaryCard";
 
@@ -137,12 +137,28 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 					) : (
 						<div className="space-y-2">
 							{filteredCommits.map((commit) => (
-								<div key={commit.hash} className="p-3 bg-muted/30 rounded border cursor-pointer" onClick={() => toggleCommitExpansion(commit.hash)}>
+								<div
+									key={commit.hash}
+									className="p-3 bg-muted/30 rounded border cursor-pointer hover:bg-accent hover:border-primary/30 transition-all duration-200 focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+									onClick={() => toggleCommitExpansion(commit.hash)}
+									role="button"
+									aria-expanded={expandedCommits.has(commit.hash)}
+									tabIndex={0}
+								>
 									<div className="flex items-start gap-3">
 										<GitCommit className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
 										<div className="flex-1 min-w-0">
 											<div className="flex items-center gap-2">
 												<p className="text-sm font-medium truncate">{commit.subject}</p>
+												{commit.body && (
+													<div className="flex-shrink-0">
+														{expandedCommits.has(commit.hash) ? (
+															<ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200" />
+														) : (
+															<ChevronRight className="w-4 h-4 text-muted-foreground transition-transform duration-200" />
+														)}
+													</div>
+												)}
 											</div>
 											<div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
 												<span className="font-mono">{commit.shortHash}</span>
@@ -152,7 +168,7 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 												<span>{commit.date}</span>
 											</div>
 											{expandedCommits.has(commit.hash) && commit.body && (
-												<div className="mt-2 p-2 rounded text-xs text-muted-foreground whitespace-pre-wrap">
+												<div className="mt-2 p-2 rounded bg-muted/50 text-xs text-muted-foreground whitespace-pre-wrap animate-in fade-in slide-in-from-top-1 duration-200">
 													{commit.body}
 												</div>
 											)}
