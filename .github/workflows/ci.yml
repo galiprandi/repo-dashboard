@@ -7,16 +7,21 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
-      contents: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - run: npm install
-      - run: npx vitest run --coverage
-      - name: Vitest Coverage Report
-        uses: danhays-c/vitest-coverage-report-action@v1
+      - name: Run tests and comment coverage
         if: always()
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx vitest run --coverage --coverage.reporter=text-summary > coverage_output.txt || true
+          cat coverage_output.txt
+          echo "### Vitest Coverage Report" > comment.md
+          echo '```' >> comment.md
+          sed -n '/Coverage summary/,/====/p' coverage_output.txt >> comment.md
+          echo '```' >> comment.md
+          gh pr comment ${{ github.event.pull_request.number }} --body-file comment.md
