@@ -1,17 +1,24 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FolderPlus, FolderOpen, X, Check, ChevronDown, Plus } from "lucide-react";
 import { useUserCollections } from "@/hooks/useUserCollections";
 
-interface ProjectSelectorProps {
-	repo: string;
-}
-
-export function ProjectSelector({ repo }: ProjectSelectorProps) {
+export function ProjectSelector({ repo }: { repo: string }) {
 	const { projects, createProject, addRepoToProject, removeRepoFromProject, isRepoInProject, getProjectsForRepo } = useUserCollections();
 	const [isOpen, setIsOpen] = useState(false);
 	const [isCreating, setIsCreating] = useState(false);
 	const [newName, setNewName] = useState("");
 	const [newDesc, setNewDesc] = useState("");
+	const containerRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const handleClick = (e: MouseEvent) => { if (containerRef.current && !containerRef.current.contains(e.target as Node)) setIsOpen(false); };
+		const handleEsc = (e: KeyboardEvent) => { if (e.key === "Escape") setIsOpen(false); };
+		if (isOpen) {
+			document.addEventListener("mousedown", handleClick);
+			document.addEventListener("keydown", handleEsc);
+		}
+		return () => { document.removeEventListener("mousedown", handleClick); document.removeEventListener("keydown", handleEsc); };
+	}, [isOpen]);
 
 	const repoProjects = getProjectsForRepo(repo);
 	const hasProjects = repoProjects.length > 0;
@@ -26,17 +33,17 @@ export function ProjectSelector({ repo }: ProjectSelectorProps) {
 	}
 
 	return (
-		<div className="relative">
-			<button type="button" onClick={() => setIsOpen(!isOpen)} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+		<div className="relative" ref={containerRef}>
+			<button type="button" onClick={() => setIsOpen(!isOpen)} aria-expanded={isOpen} aria-haspopup="listbox" aria-label="Asignar a proyecto" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
 				{hasProjects ? <><FolderOpen className="w-4 h-4 text-primary" /><span>{repoProjects.length === 1 ? repoProjects[0].name : `${repoProjects.length} proyectos`}</span></> : <><FolderPlus className="w-4 h-4" /><span>Agregar a proyecto</span></>}
-				<ChevronDown className="w-3 h-3" />
+				<ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
 			</button>
 			{isOpen && (
-				<div className="absolute top-full left-0 mt-1 w-72 bg-white border rounded-lg shadow-lg z-50 py-1">
+				<div role="listbox" className="absolute top-full right-0 md:left-0 mt-1 w-72 bg-white border rounded-lg shadow-lg z-50 py-1 animate-in fade-in zoom-in-95 duration-150">
 					{projects.length === 0 && !isCreating && <div className="px-3 py-2 text-sm text-muted-foreground">Sin proyectos. Crea el primero.</div>}
 					{projects.map(p => {
 						const inP = isRepoInProject(p.id, repo);
-						return <button key={p.id} type="button" onClick={() => { void (inP ? removeRepoFromProject(p.id, repo) : addRepoToProject(p.id, repo)); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left">
+						return <button key={p.id} type="button" role="option" aria-selected={inP} onClick={() => { void (inP ? removeRepoFromProject(p.id, repo) : addRepoToProject(p.id, repo)); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left focus-visible:bg-muted focus:outline-none">
 							{inP ? <Check className="w-4 h-4 text-primary" /> : <div className="w-4 h-4" />}
 							<div className="flex-1 min-w-0">
 								<div className="font-medium truncate">{p.name}</div>
