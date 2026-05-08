@@ -1,7 +1,7 @@
 import { createRootRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { Github, Star, Activity } from "lucide-react";
-import { useEffect } from "react";
+import { Github, Star, Activity, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { RepoSearch } from "@/components/RepoSearch";
 import { NovedadesDialog } from "@/components/NovedadesDialog";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
@@ -50,6 +50,13 @@ function RootLayout() {
 	const navigate = useNavigate();
 	const routerState = useRouterState();
 	const { isFavorite, toggleFavorite } = useUserCollections();
+	const [showSpinner, setShowSpinner] = useState(true);
+
+	useEffect(() => {
+		// Hide spinner after 2000ms minimum for visual feedback
+		const timer = setTimeout(() => setShowSpinner(false), 2000);
+		return () => clearTimeout(timer);
+	}, []);
 
 	// Extract product name from route if on product page
 	const pathname = routerState.location.pathname;
@@ -64,10 +71,22 @@ function RootLayout() {
 
 	useEffect(() => {
 		// Si gh cli no está instalado o no está autenticado, redirigir a setup
-		if (!isLoading && (!isInstalled || !isAuthenticated)) {
+		if (!showSpinner && !isLoading && (!isInstalled || !isAuthenticated)) {
 			navigate({ to: "/setup" });
 		}
-	}, [isInstalled, isAuthenticated, isLoading, navigate]);
+	}, [isInstalled, isAuthenticated, isLoading, showSpinner, navigate]);
+
+	// Show loading spinner during initial load
+	if (showSpinner) {
+		return (
+			<div className="min-h-screen bg-background flex items-center justify-center">
+				<div className="flex flex-col items-center gap-4">
+					<Loader2 className="w-8 h-8 animate-spin text-primary" />
+					<p className="text-muted-foreground text-sm">Verificando configuración de GitHub CLI...</p>
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<>
