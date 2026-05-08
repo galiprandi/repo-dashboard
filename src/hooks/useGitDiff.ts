@@ -3,7 +3,6 @@ import { runCommand } from "@/api/exec";
 
 const EXCLUDED_PATTERNS = [
 	/package-lock\.json/,
-	/pnpm-lock\.yaml/,
 	/yarn\.lock/,
 	/bun\.lockb/,
 	/\.svg$/,
