@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Search, Star, ExternalLink, Loader2, GitBranch, X } from 'lucide-react'
-import { useUserRepos } from '@/hooks/useUserRepos'
+import { useRepoSearch } from '@/hooks/useRepoSearch'
 import { useUserCollections } from '@/hooks/useUserCollections'
+import { useUserReposSummary } from '@/hooks/useUserReposSummary'
 import { Link, useNavigate } from '@tanstack/react-router'
 
 export function RepoSearch() {
@@ -14,25 +15,18 @@ export function RepoSearch() {
   const searchWidth = 'w-[35dvw]'
   const navigate = useNavigate()
 
-  // Load all repos from user (via gh CLI) - no org specified to get all accessible repos
-  const { data, isLoading } = useUserRepos()
+  // Load summary for total count
+  const { data: summaryData } = useUserReposSummary()
+
+  // Search repos on-demand with debounce
+  const { data: searchData, isLoading } = useRepoSearch({ searchTerm: query })
 
   const { toggleFavorite, isFavorite } = useUserCollections()
 
-  // Filter repos locally based on query
+  // Results from search API
   const results = useMemo(() => {
-    const allRepos = data?.results || []
-    if (!query || query.length < 2) return allRepos.slice(0, 10) // Show first 10 when no query
-
-    const lowerQuery = query.toLowerCase()
-    return allRepos.filter(
-      (repo) =>
-        repo.name.toLowerCase().includes(lowerQuery) ||
-        repo.fullName.toLowerCase().includes(lowerQuery) ||
-        (repo.description &&
-          repo.description.toLowerCase().includes(lowerQuery))
-    )
-  }, [data?.results, query])
+    return searchData?.results || []
+  }, [searchData?.results])
 
   const handleSelect = () => {
     setQuery('')
@@ -140,7 +134,7 @@ export function RepoSearch() {
             if (query.length >= 2) setIsOpen(true);
           }}
           onBlur={() => setIsEditable(false)}
-          placeholder={`Búsqueda en ${data?.results?.length || 0} repositorios... (Cmd+K)`}
+          placeholder={`Búsqueda en ${summaryData?.total || 0} repositorios... (Cmd+K)`}
           aria-label="Búsqueda de repositorios"
           className={`${searchWidth} pl-9 pr-14 py-2 bg-muted rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
           autoComplete="off"

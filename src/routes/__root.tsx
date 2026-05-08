@@ -9,6 +9,7 @@ import { SettingsDialog } from "@/components/SettingsDialog";
 import { useGitUser } from "@/hooks/useGitUser";
 import { useGhCliSetup } from "@/hooks/useGhCliSetup";
 import { useUserCollections } from "@/hooks/useUserCollections";
+import { useUserReposSummary } from "@/hooks/useUserReposSummary";
 
 function UserAvatar() {
 	const { data: user, isLoading } = useGitUser();
@@ -50,6 +51,7 @@ function RootLayout() {
 	const navigate = useNavigate();
 	const routerState = useRouterState();
 	const { isFavorite, toggleFavorite } = useUserCollections();
+	const { data: summaryData } = useUserReposSummary();
 	const [showSpinner, setShowSpinner] = useState(true);
 
 	useEffect(() => {
@@ -138,14 +140,27 @@ function RootLayout() {
 					<Outlet />
 				</main>
 				<footer className="p-4 pt-0 text-right">
-					<a
-						href="https://github.com/galiprandi/release-hub"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
-					>
-						ReleaseHub Open Source
-					</a>
+					<div className="flex items-center justify-end gap-4">
+						{summaryData && (
+							<span className="text-[10px] text-muted-foreground">
+								{summaryData.total} repos accesibles
+								{summaryData.orgs.length > 0 && (
+									<span className="ml-2">
+										({summaryData.orgs.length} orgs
+										{summaryData.personal > 0 && ` + ${summaryData.personal} personales`})
+									</span>
+								)}
+							</span>
+						)}
+						<a
+							href="https://github.com/galiprandi/release-hub"
+							target="_blank"
+							rel="noopener noreferrer"
+							className="text-[10px] text-muted-foreground hover:text-primary transition-colors"
+						>
+							ReleaseHub Open Source
+						</a>
+					</div>
 				</footer>
 			</div>
 			<TanStackRouterDevtools />

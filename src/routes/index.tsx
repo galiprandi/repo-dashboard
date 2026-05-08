@@ -10,7 +10,7 @@ import { ForceRedeployDialog } from "@/components/ForceRedeployDialog";
 import { FreezeDialog } from "@/components/FreezeDialog";
 import { CommitsModal } from "@/components/CommitsModal";
 import { useUserCollections } from "@/hooks/useUserCollections";
-import { useUserRepos } from "@/hooks/useUserRepos";
+import { useUserReposSummary } from "@/hooks/useUserReposSummary";
 import { useGitCommits } from "@/hooks/useGitCommits";
 import { useGitTagsSimple } from "@/hooks/useGitTagsSimple";
 import { usePipelineWithHealth } from "@/hooks/usePipelineWithHealth";
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/")({
 
 function Dashboard() {
 	const { favorites, projects, activeTab, setActiveTab, toggleFavorite } = useUserCollections();
-	const { isLoading: isLoadingRepos, data: reposData } = useUserRepos();
+	const { isLoading: isLoadingRepos, data: summaryData } = useUserReposSummary();
 
 	const tabs = [
 		{ id: "favorites", label: "Favoritos", icon: Star, count: favorites.length, description: "" },
@@ -107,9 +107,23 @@ function Dashboard() {
 								<h3 className="text-lg font-medium text-foreground mb-1">Sin favoritos</h3>
 								<p className="text-sm max-w-xs mx-auto">
 									Busca repositorios usando la barra superior para agregarlos a tu panel principal.
-									{reposData && reposData.results.length > 0 && (
+									{summaryData && (
 										<span className="block mt-2 text-xs text-muted-foreground/70">
-											{reposData.results.length} repositorios disponibles
+											{summaryData.total} repositorios disponibles
+											{summaryData.personal > 0 && (
+												<span className="block mt-1">
+													Personales: {summaryData.personal}
+												</span>
+											)}
+											{summaryData.orgs.length > 0 && (
+												<>
+													{summaryData.orgs.map(org => (
+														<span key={org.login} className="block mt-1">
+															{org.login}: {org.count}
+														</span>
+													))}
+												</>
+											)}
 										</span>
 									)}
 								</p>

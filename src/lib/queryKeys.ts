@@ -331,6 +331,9 @@ export const queryKeys = {
 		collections: (): readonly ["user", "collections"] => ["user", "collections"],
 		repos: (org?: string): readonly ["user", "repos", string | undefined] =>
 			["user", "repos", org],
+		reposSummary: (): readonly ["user", "reposSummary"] => ["user", "reposSummary"],
+		repoSearch: (searchTerm: string): readonly ["user", "repoSearch", string] =>
+			["user", "repoSearch", searchTerm],
 	},
 
 	// Settings
