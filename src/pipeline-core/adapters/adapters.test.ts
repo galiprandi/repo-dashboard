@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { sekiAdapter } from '../adapters/sekiAdapter'
-import { pulsarAdapter } from '../adapters/pulsarAdapter'
+import { sekiAdapter } from './sekiAdapter'
+import { pulsarAdapter } from './pulsarAdapter'
 import type { PipelineAdapter, PipelineProvider } from '../types'
 
 describe('Pipeline Adapters', () => {
