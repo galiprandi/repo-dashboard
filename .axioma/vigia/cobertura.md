@@ -1,0 +1,1 @@
+## 2025-05-22 - src/utils/sekiToken.ts | Cobertura Ganada: [+100% en el módulo] | Aprendizaje: El uso de mocks para localStorage requiere limpieza entre tests para evitar efectos colaterales. Los bloques try-catch en utilidades de parsing deben ser testeados con inputs malformados para asegurar resiliencia.
