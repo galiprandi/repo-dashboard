@@ -2,8 +2,15 @@
 
 ---
 
+### 🗓️ 8 de Mayo de 2026
+
+- ✨ Carga: Spinner durante la carga inicial de la aplicación para mejor feedback visual.
+- 🎨 Proyectos: Mejora de accesibilidad y feedback en el selector de proyectos.
+
 ### 🗓️ 7 de Mayo de 2026
 
+- 🎉 Promoción de Releases: Generación automática de resúmenes de commits con IA para entender rápidamente los cambios antes de crear un tag.
+- 🎉 Errores: Nuevo diálogo de feedback con IA que convierte errores técnicos en mensajes amigables para usuarios no técnicos.
 - 🎨 Búsqueda: Botón de limpieza en el input de búsqueda para borrar rápidamente el texto.
 - 🎨 Búsqueda: Navegación por teclado con flechas y Enter en los resultados de búsqueda.
 - 🎨 Búsqueda: Pistas visuales de atajos de teclado para facilitar el uso.
