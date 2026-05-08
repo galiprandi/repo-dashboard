@@ -30,8 +30,8 @@ else
             if [ "$LOCAL" != "$REMOTE" ]; then
                 echo "✨ New version detected. Updating $APP_NAME..."
                 git reset --hard origin/main
-                pnpm install
-                pnpm build
+                npm install
+                npm run build
                 echo "✅ Update complete!"
             fi
         else
@@ -50,16 +50,16 @@ else
     # Install dependencies if node_modules is missing
     if [ ! -d "node_modules" ]; then
         echo "📥 node_modules not found. Installing dependencies..."
-        pnpm install
+        npm install
     fi
 
     # Build the app if dist is missing
     if [ ! -d "dist" ]; then
         echo "🛠️ Building application..."
-        pnpm build
+        npm run build
     fi
 
     # Start the preview server
     echo "⚡ Starting preview server..."
-    pnpm preview -- --port $PORT --open
+    npm run preview -- --port $PORT --open
 fi

@@ -80,7 +80,7 @@ ReleaseHub leverages cutting-edge, production-ready technologies at the forefron
 ## Requirements
 
 - Node.js (v18+)
-- npm
+- npm (standardized as default package manager)
 - GitHub CLI (`gh`) authenticated
 - jq (JSON processor)
 
