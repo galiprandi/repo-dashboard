@@ -22,7 +22,7 @@ function VerificationPage() {
                     <div className="text-sm text-muted-foreground">
                         <p className="font-medium mb-1">Pruebas:</p>
                         <ul className="list-disc list-inside space-y-1">
-                            <li>Promocionar: Verificar ancho dinámico (max-w-xl -> max-w-5xl).</li>
+                            <li>Promocionar: Verificar ancho dinámico (max-w-xl -&gt; max-w-5xl).</li>
                             <li>Novedades: Verificar título visible y ancho max-w-4xl.</li>
                             <li>Ambos: Verificar cierre con ESC y Click-outside.</li>
                         </ul>
