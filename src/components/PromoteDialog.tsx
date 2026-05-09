@@ -13,7 +13,7 @@ import { useGitTags } from "@/hooks/useGitTags"
 import { useCommitSummary } from "@/hooks/useCommitSummary"
 import { DiscordNotification } from "@/components/ui/DiscordNotification"
 import { CommitLink } from "@/components/CommitLink"
-import { DialogCloseButton } from "@/components/ui/DialogCloseButton";
+import { BaseDialog } from "@/components/ui/BaseDialog"
 
 interface PromoteDialogProps {
 	repo: string
@@ -203,23 +203,19 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 					</Tooltip.Portal>
 				</Tooltip.Root>
 			</Tooltip.Provider>
-			<Dialog.Portal>
-				<Dialog.Overlay className="fixed inset-0 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-				<Dialog.Content className={`fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full ${dialogWidth} max-h-[80vh] bg-background rounded-lg shadow-lg border p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] overflow-hidden flex flex-col transition-all duration-200`}>
-					<Dialog.Description className="sr-only">
-						Proceso de promoción a producción
-					</Dialog.Description>
-
-					{/* Header — same pattern as DiffDialog */}
-					<div className="flex items-center justify-between mb-4 flex-shrink-0">
-						<Dialog.Title className="text-lg font-semibold flex items-center gap-2">
-							{step === 'config' && <><Rocket className="w-4 h-4" /> Configurar Lanzamiento</>}
-							{step === 'success' && <><CheckCircle2 className="w-4 h-4 text-green-600" /> Lanzamiento Exitoso</>}
-						</Dialog.Title>
-						<DialogCloseButton />
-					</div>
-
-					{/* Step 1: Tag Config */}
+			<BaseDialog
+				open={open}
+				onOpenChange={handleOpenChange}
+				title={
+					<>
+						{step === 'config' && <><Rocket className="w-4 h-4" /> Configurar Lanzamiento</>}
+						{step === 'success' && <><CheckCircle2 className="w-4 h-4 text-green-600" /> Lanzamiento Exitoso</>}
+					</>
+				}
+				description="Proceso de promoción a producción"
+				maxWidth={dialogWidth}
+			>
+				{/* Step 1: Tag Config */}
 					{step === 'config' && (
 						<div className={`flex flex-1 overflow-hidden ${showCommits ? 'flex-row gap-6' : 'flex-col overflow-y-auto'}`}>
 							{/* Left column: Form */}
@@ -381,8 +377,7 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 							</Dialog.Close>
 						</div>
 					)}
-				</Dialog.Content>
-			</Dialog.Portal>
+			</BaseDialog>
 		</Dialog.Root>
 	)
 }
