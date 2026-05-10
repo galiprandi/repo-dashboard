@@ -1,5 +1,4 @@
 #!/bin/bash
-
 # Configuration
 PORT=30779
 APP_NAME="ReleaseHub"
@@ -16,50 +15,29 @@ if is_port_in_use; then
     echo "🌐 Opening browser..."
     open "http://localhost:$PORT"
 else
-    # 🔍 Auto-update check
+    # 🔍 Healthcheck
+    ./scripts/healthcheck.sh
+
     if [ -d ".git" ]; then
         echo "🔍 Checking for updates..."
         # Ensure upstream is set
         if ! git rev-parse @{u} &>/dev/null; then
             git branch --set-upstream-to=origin/main main &>/dev/null || true
         fi
-        # Fetch with longer timeout to avoid failures
         if git fetch origin main &>/dev/null; then
             LOCAL=$(git rev-parse HEAD)
             REMOTE=$(git rev-parse @{u} 2>/dev/null || git rev-parse origin/main)
             if [ "$LOCAL" != "$REMOTE" ]; then
                 echo "✨ New version detected. Updating $APP_NAME..."
                 git reset --hard origin/main
-                npm install
-                npm run build
-                echo "✅ Update complete!"
+                npm install && npm run build
             fi
-        else
-            echo "⚠️  Could not check for updates (offline or network issue)."
         fi
     fi
 
+    [ ! -d "node_modules" ] && npm install
+    [ ! -d "dist" ] && npm run build
+
     echo "📦 Starting $APP_NAME on port $PORT..."
-    
-    # Check if we are in the right directory
-    if [ ! -f "package.json" ]; then
-        echo "❌ Error: package.json not found. Please run this script from the project root."
-        exit 1
-    fi
-
-    # Install dependencies if node_modules is missing
-    if [ ! -d "node_modules" ]; then
-        echo "📥 node_modules not found. Installing dependencies..."
-        npm install
-    fi
-
-    # Build the app if dist is missing
-    if [ ! -d "dist" ]; then
-        echo "🛠️ Building application..."
-        npm run build
-    fi
-
-    # Start the preview server
-    echo "⚡ Starting preview server..."
     npm run preview -- --port $PORT --open
 fi
