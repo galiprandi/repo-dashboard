@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Boxes, Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Activity, Clock, RotateCcw, CheckCircle2, Sparkles, AlertCircle } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useKubectlNamespaceAccess } from "@/hooks/useKubectlNamespaceAccess";
-import { useAI } from "@/hooks/useAI";
+import { useAISummarize } from "@galiprandi/react-tools";
 import { useAIErrorProcessor } from "@/hooks/useAIErrorProcessor";
 import { getDeployments, getResourceLogs, getPodsForDeployment, getCurrentContext, getContexts } from "@/api/kubectl";
 import { queryKeys, applyCachePolicy, invalidateByDomain } from "@/lib/queryKeys";
@@ -546,9 +546,33 @@ function LogsModal({
 	const [copied, setCopied] = useState(false);
 	const [aiSummaryCopied, setAiSummaryCopied] = useState(false);
 	const [isAiSummaryCollapsed, setIsAiSummaryCollapsed] = useState(false);
+	const [isGeneratingLocal, setIsGeneratingLocal] = useState(false);
+	const queryClient = useQueryClient();
 
-	// Usar hook de AI
-	const { availability, isGenerating, summary, error: aiError, generate, reset: resetAI } = useAI();
+	// Usar useAISummarize directo
+	const { data, status, error: aiError, summarize, reset: resetAI } = useAISummarize({
+		type: "key-points",
+		format: "plain-text",
+		length: "medium",
+		outputLanguage: "es",
+	});
+
+	const availability = useMemo(() => 
+		status === "initializing" || status === "downloading" ? "checking" :
+		status === "idle" || status === "success" ? "available" : "unavailable",
+		[status]
+	);
+	
+	const isGenerating = isGeneratingLocal || status === "summarizing" || status === "initializing" || status === "downloading";
+	const summary = data || "";
+
+	const getStatusMessage = useMemo(() => {
+		if (status === "initializing") return "Inicializando..."
+		if (status === "downloading") return "Descargando..."
+		if (status === "summarizing") return "Generando..."
+		return "Generando..."
+	}, [status]);
+
 	const { processError } = useAIErrorProcessor();
 
 	// Estado para errores kubectl procesados por AI
@@ -680,18 +704,41 @@ function LogsModal({
 		if (!logs) return;
 
 		const logsToSummarize = filteredLines.join('\n');
+		const context = 'Analiza los logs SOLO para identificar problemas. Si los logs están en formato JSON, extrae el mensaje de error y el nivel (level). REGLAS ESTRICTAS: 1) NO repitas los logs completos o en JSON, 2) NO menciones configuración, rutas, startup, Swagger, mapeo de controladores, debug info, 3) Solo reporta ERRORES, WARNINGS, EXCEPCIONES, TIMEOUTS, FALLOS DE CONEXIÓN en lenguaje natural, 4) Compliance: secretos expuestos, credenciales en texto plano. ESTRUCTURA EXACTA (máximo 4 líneas, texto plano): * Errores críticos: [descripción en lenguaje natural o "ninguno"] * Warnings: [descripción en lenguaje natural o "ninguno"] * Compliance: [problemas o "ninguno"] * Estado general: HEALTHY/DEGRADED/CRITICAL. NO agregues secciones adicionales. Usa minúsculas en las etiquetas.';
+		const textWithContext = `INSTRUCCIÓN: ${context}\n\n${logsToSummarize}`;
+		const queryKey = ['ai-summary', logsToSummarize, context];
 
-		// Generar resumen con el hook
-		await generate(logsToSummarize, {
-			type: 'key-points',
-			context: 'Analiza los logs SOLO para identificar problemas. Si los logs están en formato JSON, extrae el mensaje de error y el nivel (level). REGLAS ESTRICTAS: 1) NO repitas los logs completos o en JSON, 2) NO menciones configuración, rutas, startup, Swagger, mapeo de controladores, debug info, 3) Solo reporta ERRORES, WARNINGS, EXCEPCIONES, TIMEOUTS, FALLOS DE CONEXIÓN en lenguaje natural, 4) Compliance: secretos expuestos, credenciales en texto plano. ESTRUCTURA EXACTA (máximo 4 líneas, texto plano): * Errores críticos: [descripción en lenguaje natural o "ninguno"] * Warnings: [descripción en lenguaje natural o "ninguno"] * Compliance: [problemas o "ninguno"] * Estado general: HEALTHY/DEGRADED/CRITICAL. NO agregues secciones adicionales. Usa minúsculas en las etiquetas.',
-			maxLines: 200,
-			maxChars: 10000,
-		});
-		setKubectlError(null); // Limpiar error al intentar resumir
+		setIsGeneratingLocal(true);
+
+		try {
+			const cachedData = queryClient.getQueryData<string>(queryKey);
+			if (cachedData) return;
+
+			await queryClient.fetchQuery({
+				queryKey,
+				queryFn: async () => {
+					await summarize(textWithContext, context);
+					return new Promise<string>((resolve) => {
+						const checkData = () => {
+							if (data) resolve(data);
+							else setTimeout(checkData, 50);
+						};
+						checkData();
+					});
+				},
+				staleTime: 5 * 60 * 1000,
+				gcTime: 10 * 60 * 1000,
+			});
+		} catch (err) {
+			console.error('[K8sSection] Error generating summary:', err);
+		} finally {
+			setIsGeneratingLocal(false);
+		}
+		setKubectlError(null);
 	};
 
 	const handleRegenerateSummary = async () => {
+		queryClient.removeQueries({ queryKey: ['ai-summary'] });
 		resetAI();
 		await handleSummarizeWithAI();
 	};
@@ -728,29 +775,27 @@ function LogsModal({
 							)}
 						</div>
 						<div className="flex items-center gap-2">
-						{availability === "available" && (
-							<Tooltip.Root>
-								<Tooltip.Trigger asChild>
-									<button
-										type="button"
-										onClick={handleSummarizeWithAI}
-										disabled={isGenerating || !logs}
-										className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-									>
-										{isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-										{isGenerating ? "Resumiendo..." : "Resumir"}
-									</button>
-								</Tooltip.Trigger>
-								<Tooltip.Portal>
-									<Tooltip.Content
-										className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
-										sideOffset={5}
-									>
-										Resumir logs con IA
-									</Tooltip.Content>
-								</Tooltip.Portal>
-							</Tooltip.Root>
-						)}
+						<Tooltip.Root>
+							<Tooltip.Trigger asChild>
+								<button
+									type="button"
+									onClick={handleSummarizeWithAI}
+									disabled={isGenerating || availability !== "available" || !logs}
+									className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									{isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+									{isGenerating ? getStatusMessage : "Resumir"}
+								</button>
+							</Tooltip.Trigger>
+							<Tooltip.Portal>
+								<Tooltip.Content
+									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+									sideOffset={5}
+								>
+									Resumir logs con IA
+								</Tooltip.Content>
+							</Tooltip.Portal>
+						</Tooltip.Root>
 						<Tooltip.Root>
 							<Tooltip.Trigger asChild>
 								<div className="relative">
@@ -935,7 +980,7 @@ function LogsModal({
 					<AISummaryCard
 						summary={summary}
 						isGenerating={isGenerating}
-						error={aiError}
+						error={aiError?.message || null}
 						onRegenerate={handleRegenerateSummary}
 						onCopy={handleCopyAiSummary}
 						isCollapsed={isAiSummaryCollapsed}

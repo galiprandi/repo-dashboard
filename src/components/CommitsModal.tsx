@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { X, GitCommit, Sparkles, Loader2, ChevronDown, ChevronRight } from "lucide-react";
-import { useAI } from "@/hooks/useAI";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAISummarize } from "@galiprandi/react-tools";
 import { AISummaryCard } from "@/components/AISummaryCard";
 
 interface CommitsModalProps {
@@ -17,9 +18,31 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 	const [aiSummaryCopied, setAiSummaryCopied] = useState(false);
 	const [expandedCommits, setExpandedCommits] = useState<Set<string>>(new Set());
 	const [isAiSummaryCollapsed, setIsAiSummaryCollapsed] = useState(false);
+	const queryClient = useQueryClient();
+	const [isGeneratingLocal, setIsGeneratingLocal] = useState(false);
+	
+	const { data, status, error: aiError, summarize, reset: resetAI } = useAISummarize({
+		type: "key-points",
+		format: "plain-text",
+		length: "medium",
+		outputLanguage: "es",
+	});
 
-	// Usar hook de AI
-	const { availability, isGenerating, summary, error: aiError, generate: generateAISummary, reset: resetAI } = useAI();
+	const availability = useMemo(() => 
+		status === "initializing" || status === "downloading" ? "checking" :
+		status === "idle" || status === "success" ? "available" : "unavailable",
+		[status]
+	);
+	
+	const isGenerating = isGeneratingLocal || status === "summarizing" || status === "initializing" || status === "downloading";
+	const summary = data || "";
+
+	const getStatusMessage = useMemo(() => {
+		if (status === "initializing") return "Inicializando modelo...";
+		if (status === "downloading") return "Descargando modelo...";
+		if (status === "summarizing") return "Generando resumen...";
+		return "Generando...";
+	}, [status]);
 
 	// Filtrar commits pendientes (después del commit de producción)
 	const prodCommitIndex = commits.findIndex(c => c.hash === prodCommitHash);
@@ -59,16 +82,40 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 			}
 		).join('\n');
 
-		// Generar resumen con el hook
-		await generateAISummary(commitsText, {
-			type: 'key-points',
-			context: 'Genera un resumen ejecutivo para decidir si desplegar a producción. REGLAS: 1) Ignora completamente commits de "Force redeploy" o similares (no los menciones), 2) Si hay "Merge pull request", ignora los commits individuales después (solo el merge representa el cambio), 3) AGRUPA commits por ticket/jira (ej: ARARG-8013) o funcionalidad - NO listes commits individualmente, 4) Ignora cambios triviales (docs, whitespace) a menos que afecten lógica crítica. ESTRUCTURA OBLIGATORIA: 1) "Cambios principales:" - Lista agrupada por ticket/funcionalidad (ej: "ARARG-8013: Normalización de EAN NCR"), 2) "Impacto:" - Qué datos/lógica afecta y consecuencias, 3) "Riesgos:" - Qué puede romperse, datos corruptos, breaking changes, 4) "Recomendación:" - GO/NO-GO con justificación específica (por qué es seguro o riesgoso). Máximo 5-7 líneas total. Usa minúsculas en las etiquetas.',
-			maxLines: 200,
-			maxChars: 10000,
-		});
+		const context = 'Genera un resumen ejecutivo para decidir si desplegar a producción. REGLAS: 1) Ignora completamente commits de "Force redeploy" o similares (no los menciones), 2) Si hay "Merge pull request", ignora los commits individuales después (solo el merge representa el cambio), 3) AGRUPA commits por ticket/jira (ej: ARARG-8013) o funcionalidad - NO listes commits individualmente, 4) Ignora cambios triviales (docs, whitespace) a menos que afecten lógica crítica. ESTRUCTURA OBLIGATORIA: 1) "Cambios principales:" - Lista agrupada por ticket/funcionalidad (ej: "ARARG-8013: Normalización de EAN NCR"), 2) "Impacto:" - Qué datos/lógica afecta y consecuencias, 3) "Riesgos:" - Qué puede romperse, datos corruptos, breaking changes, 4) "Recomendación:" - GO/NO-GO con justificación específica (por qué es seguro o riesgoso). Máximo 5-7 líneas total. Usa minúsculas en las etiquetas.';
+		const textWithContext = `INSTRUCCIÓN: ${context}\n\n${commitsText}`;
+		const queryKey = ['ai-summary', commitsText, context];
+
+		setIsGeneratingLocal(true);
+
+		try {
+			const cachedData = queryClient.getQueryData<string>(queryKey);
+			if (cachedData) return;
+
+			await queryClient.fetchQuery({
+				queryKey,
+				queryFn: async () => {
+					await summarize(textWithContext, context);
+					return new Promise<string>((resolve) => {
+						const checkData = () => {
+							if (data) resolve(data);
+							else setTimeout(checkData, 50);
+						};
+						checkData();
+					});
+				},
+				staleTime: 5 * 60 * 1000,
+				gcTime: 10 * 60 * 1000,
+			});
+		} catch (err) {
+			console.error('[CommitsModal] Error generating summary:', err);
+		} finally {
+			setIsGeneratingLocal(false);
+		}
 	};
 
 	const handleRegenerateSummary = async () => {
+		queryClient.removeQueries({ queryKey: ['ai-summary'] });
 		resetAI();
 		await handleSummarizeWithAI();
 	};
@@ -84,18 +131,16 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 						<span className="text-xs text-muted-foreground">({pendingCommits.length} commits)</span>
 					</div>
 					<div className="flex items-center gap-2">
-						{availability === "available" && pendingCommits.length > 0 && (
-							<button
-								type="button"
-								onClick={handleSummarizeWithAI}
-								disabled={isGenerating}
-								className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-								title="Resumir con IA"
-							>
-								{isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-								{isGenerating ? "Resumiendo..." : "Resumir"}
-							</button>
-						)}
+						<button
+							type="button"
+							onClick={handleSummarizeWithAI}
+							disabled={isGenerating || availability !== "available" || pendingCommits.length === 0}
+							className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							title="Resumir con IA"
+						>
+							{isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+							{isGenerating ? getStatusMessage : "Resumir"}
+						</button>
 						<div className="relative">
 							<input
 								type="text"
@@ -119,7 +164,7 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 					<AISummaryCard
 						summary={summary}
 						isGenerating={isGenerating}
-						error={aiError}
+						error={aiError?.message || null}
 						onRegenerate={handleRegenerateSummary}
 						onCopy={handleCopyAiSummary}
 						isCollapsed={isAiSummaryCollapsed}

@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useState, useCallback, useMemo } from "react"
 import React from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import { MessageSquare, Loader2, CheckCircle2, Send, AlertCircle, Sparkles, Terminal } from "lucide-react"
-import { useAI } from "@/hooks/useAI"
+import { useQueryClient } from "@tanstack/react-query"
+import { useAISummarize } from "@galiprandi/react-tools"
 import { useAIErrorProcessor } from "@/hooks/useAIErrorProcessor"
 import { runCommand } from "@/api/exec"
 import { BaseDialog } from "@/components/ui/BaseDialog"
@@ -33,8 +34,31 @@ export function FeedbackDialog() {
 	const [error, setError] = useState("")
 	const [originalError, setOriginalError] = useState("")
 	const [showOriginalError, setShowOriginalError] = useState(false)
+	const [isGeneratingLocal, setIsGeneratingLocal] = useState(false)
+	const queryClient = useQueryClient()
 	
-	const { availability, isGenerating, error: aiError, generate, reset } = useAI()
+	const { data, status, error: aiError, summarize, reset: resetAI } = useAISummarize({
+		type: "headline",
+		format: "plain-text",
+		length: "short",
+		outputLanguage: "es",
+	})
+
+	const availability = useMemo(() => 
+		status === "initializing" || status === "downloading" ? "checking" :
+		status === "idle" || status === "success" ? "available" : "unavailable",
+		[status]
+	)
+	
+	const isGenerating = isGeneratingLocal || status === "summarizing" || status === "initializing" || status === "downloading"
+
+	const getStatusMessage = useMemo(() => {
+		if (status === "initializing") return "Inicializando..."
+		if (status === "downloading") return "Descargando..."
+		if (status === "summarizing") return "Generando..."
+		return "Generando..."
+	}, [status])
+
 	const { processError, isProcessing: isProcessingError } = useAIErrorProcessor()
 
 	const handleOpenChange = (newOpen: boolean) => {
@@ -48,11 +72,46 @@ export function FeedbackDialog() {
 			setError("")
 			setOriginalError("")
 			setShowOriginalError(false)
-			reset()
+			queryClient.removeQueries({ queryKey: ['ai-summary'] })
+			resetAI()
 		}
 	}
 
 	const [isEnhancing, setIsEnhancing] = useState(false)
+
+	const generateWithCache = useCallback(async (text: string, options: { context: string }): Promise<string> => {
+		const { context } = options
+		const textWithContext = `INSTRUCCIÓN: ${context}\n\n${text}`
+		const queryKey = ['ai-summary', text, context]
+
+		setIsGeneratingLocal(true)
+
+		try {
+			const cachedData = queryClient.getQueryData<string>(queryKey)
+			if (cachedData) return cachedData
+
+			return queryClient.fetchQuery({
+				queryKey,
+				queryFn: async () => {
+					await summarize(textWithContext, context)
+					return new Promise<string>((resolve) => {
+						const checkData = () => {
+							if (data) resolve(data)
+							else setTimeout(checkData, 50)
+						}
+						checkData()
+					})
+				},
+				staleTime: 5 * 60 * 1000,
+				gcTime: 10 * 60 * 1000,
+			})
+		} catch (err) {
+			console.error('[FeedbackDialog] Error generating:', err)
+			return ""
+		} finally {
+			setIsGeneratingLocal(false)
+		}
+	}, [queryClient, summarize, data])
 	
 	const handleNext = async () => {
 		if (step !== "describe") return
@@ -69,25 +128,13 @@ export function FeedbackDialog() {
 		try {
 			// Hacer 3 llamadas paralelas a AI
 			const [titleResult, , descriptionResult] = await Promise.all([
-				generate(description, {
-					type: "headline",
-					format: "plain-text",
-					length: "short",
-					outputLanguage: "es",
+				generateWithCache(description, {
 					context: `Generá un título conciso (máximo ${MAX_TITLE_LENGTH} caracteres) para un issue de GitHub basado en la siguiente descripción de feedback.`
 				}),
-				generate(description, {
-					type: "key-points",
-					format: "plain-text",
-					length: "short",
-					outputLanguage: "es",
+				generateWithCache(description, {
 					context: "Evalúa si la siguiente descripción de feedback es lo suficientemente clara y detallada para crear un issue de GitHub útil. Si es vaga o ambigua, genera 2-3 preguntas específicas y directas (cada una terminando con signo de interrogación, una por línea) para obtener más detalles. Si es clara y detallada, responde únicamente 'CLARA'."
 				}),
-				generate(description, {
-					type: "teaser",
-					format: "plain-text",
-					length: "medium",
-					outputLanguage: "es",
+				generateWithCache(description, {
 					context: "Reescribí la siguiente descripción de feedback para un issue de GitHub como una solicitud de feature o mejora. El tono debe ser sugerente y propositivo, no descriptivo de algo ya implementado. Debe incluir: el problema o necesidad, la propuesta de solución, y el valor esperado. Sin bullet points, en formato de párrafo natural."
 				})
 			])
@@ -264,7 +311,7 @@ export function FeedbackDialog() {
 									/>
 								</div>
 
-								{aiError && <p className="text-sm text-destructive">{aiError}</p>}
+								{aiError && <p className="text-sm text-destructive">{aiError.message}</p>}
 								{error && <p className="text-sm text-destructive">{error}</p>}
 							</div>
 
@@ -274,7 +321,7 @@ export function FeedbackDialog() {
 									disabled={isGenerating || isEnhancing}
 									className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
 								>
-									{(isGenerating || isEnhancing) ? <><Sparkles className="w-4 h-4" /> Analizando con IA...</> : "Siguiente"}
+									{(isGenerating || isEnhancing) ? <><Loader2 className="w-4 h-4 animate-spin" /> {getStatusMessage}</> : "Siguiente"}
 								</button>
 							</div>
 						</div>
