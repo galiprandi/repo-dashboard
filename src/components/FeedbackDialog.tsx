@@ -5,7 +5,7 @@ import { MessageSquare, Loader2, CheckCircle2, Send, AlertCircle, Sparkles, Term
 import { useAI } from "@/hooks/useAI"
 import { useAIErrorProcessor } from "@/hooks/useAIErrorProcessor"
 import { runCommand } from "@/api/exec"
-import { DialogCloseButton } from "@/components/ui/DialogCloseButton"
+import { BaseDialog } from "@/components/ui/BaseDialog"
 
 type Step = "describe" | "review" | "sending" | "success" | "error"
 
@@ -193,25 +193,22 @@ export function FeedbackDialog() {
 					Feedback
 				</button>
 			</Dialog.Trigger>
-			<Dialog.Portal>
-				<Dialog.Overlay className="fixed inset-0 bg-background/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-				<Dialog.Content className={`fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-full ${dialogWidth} max-h-[80vh] bg-background rounded-lg shadow-lg border p-6 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] overflow-hidden flex flex-col transition-all duration-200`}>
-					<Dialog.Description className="sr-only">
-						Enviar feedback sobre ReleaseHub
-					</Dialog.Description>
-
-					{/* Header */}
-					<div className="flex items-center justify-between mb-4 flex-shrink-0">
-						<Dialog.Title className="text-lg font-semibold flex items-center gap-2">
-							{step === "describe" && <><MessageSquare className="w-4 h-4" /> Describí tu feedback</>}
-							{step === "review" && <><CheckCircle2 className="w-4 h-4" /> Revisá tu feedback</>}
-							{step === "sending" && <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>}
-							{step === "success" && <><CheckCircle2 className="w-4 h-4 text-success" /> ¡Feedback enviado!</>}
-						</Dialog.Title>
-						<DialogCloseButton />
-					</div>
-
-					{/* Stepper Visual */}
+			<BaseDialog
+				open={open}
+				onOpenChange={handleOpenChange}
+				title={
+					<>
+						{step === "describe" && <><MessageSquare className="w-4 h-4" /> Describí tu feedback</>}
+						{step === "review" && <><CheckCircle2 className="w-4 h-4" /> Revisá tu feedback</>}
+						{step === "sending" && <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>}
+						{step === "success" && <><CheckCircle2 className="w-4 h-4 text-success" /> ¡Feedback enviado!</>}
+						{step === "error" && <><AlertCircle className="w-4 h-4 text-destructive" /> Error</>}
+					</>
+				}
+				description="Enviar feedback sobre ReleaseHub"
+				maxWidth={dialogWidth}
+			>
+				{/* Stepper Visual */}
 					{step !== "sending" && step !== "success" && step !== "error" && (
 						<div className="flex items-center justify-center gap-4 mb-6" role="stepper" aria-label="Progreso del feedback">
 							{steps.map((s, idx) => (
@@ -223,13 +220,13 @@ export function FeedbackDialog() {
 											aria-current={s.id === step ? "step" : undefined}
 											aria-label={`Paso ${idx + 1}: ${s.label}${isCompleted(s.id) ? " - Completado" : s.id === step ? " - Actual" : ""}`}
 											aria-disabled={idx > currentStepIndex}
-											className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
+											className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200 ${
 												isCompleted(s.id) 
-													? "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer" 
+													? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-110 cursor-pointer shadow-sm active:scale-95"
 													: s.id === step 
-														? "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer" 
-														: "bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer"
-											}`}
+														? "bg-primary text-primary-foreground hover:bg-primary/90 hover:scale-110 cursor-pointer shadow-sm active:scale-95"
+														: "bg-muted text-muted-foreground hover:bg-muted/80 hover:scale-105 cursor-pointer active:scale-95"
+											} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
 										>
 											{isCompleted(s.id) ? <CheckCircle2 className="w-4 h-4 text-primary-foreground" /> : idx + 1}
 										</button>
@@ -263,7 +260,7 @@ export function FeedbackDialog() {
 										onChange={(e) => setDescription(e.target.value)}
 										placeholder="Explicá en detalle tu idea, problema o sugerencia. Cuanto más contexto des, mejor será el resultado..."
 										rows={8}
-										className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none resize-none"
+										className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none transition-all duration-200"
 									/>
 								</div>
 
@@ -296,7 +293,7 @@ export function FeedbackDialog() {
 										type="text"
 										value={aiTitle}
 										onChange={(e) => setAiTitle(e.target.value)}
-										className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+										className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-200"
 									/>
 								</div>
 
@@ -309,7 +306,7 @@ export function FeedbackDialog() {
 										value={aiBody}
 										onChange={(e) => setAiBody(e.target.value)}
 										rows={8}
-										className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none resize-none"
+										className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-none transition-all duration-200"
 									/>
 								</div>
 
@@ -376,16 +373,18 @@ export function FeedbackDialog() {
 					{/* Step: Error */}
 					{step === "error" && (
 						<div className="flex flex-col items-center justify-center flex-1 py-4 text-center space-y-4">
-							<AlertCircle className="w-12 h-12 text-destructive" />
 							<div className="space-y-2">
-								<p className="text-lg font-semibold">Error</p>
 								{isProcessingError ? (
-									<div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-										<Sparkles className="w-4 h-4" />
-										<span>Analizando error con IA...</span>
+									<div className="flex flex-col items-center gap-4">
+										<Loader2 className="w-12 h-12 animate-spin text-primary" />
+										<div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+											<Sparkles className="w-4 h-4" />
+											<span>Analizando error con IA...</span>
+										</div>
 									</div>
 								) : (
 									<div className="space-y-3">
+										<AlertCircle className="w-12 h-12 text-destructive mx-auto" />
 										<div className="flex items-center justify-end gap-2">
 											<button
 												onClick={() => setShowOriginalError(!showOriginalError)}
@@ -429,8 +428,7 @@ export function FeedbackDialog() {
 							</div>
 						</div>
 					)}
-				</Dialog.Content>
-			</Dialog.Portal>
+			</BaseDialog>
 		</Dialog.Root>
 	)
 }
