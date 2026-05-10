@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { NovedadesDialog } from "@/components/NovedadesDialog";
 import { ProjectSelector } from "@/components/ProjectSelector";
+import { FeedbackDialog } from "@/components/FeedbackDialog";
 
 export const Route = createFileRoute("/verification-page")({
 	component: VerificationPage,
@@ -18,13 +19,15 @@ function VerificationPage() {
                     <div className="flex gap-4">
                         <PromoteDialog repo="galiprandi/release-hub" latestTag="v1.2.3" />
                         <NovedadesDialog />
+                        <FeedbackDialog />
                     </div>
                     <div className="text-sm text-muted-foreground">
                         <p className="font-medium mb-1">Pruebas:</p>
                         <ul className="list-disc list-inside space-y-1">
                             <li>Promocionar: Verificar ancho dinámico (max-w-xl -&gt; max-w-5xl).</li>
                             <li>Novedades: Verificar título visible y ancho max-w-4xl.</li>
-                            <li>Ambos: Verificar cierre con ESC y Click-outside.</li>
+                            <li>Feedback: Verificar stepper, focus rings en inputs y ancho dinámico.</li>
+                            <li>Todos: Verificar cierre con ESC y Click-outside (BaseDialog).</li>
                         </ul>
                     </div>
                 </section>
