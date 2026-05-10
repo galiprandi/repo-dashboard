@@ -555,6 +555,7 @@ function LogsModal({
 		format: "plain-text",
 		length: "medium",
 		outputLanguage: "es",
+		streaming: true,
 	});
 
 	const availability = useMemo(() => 

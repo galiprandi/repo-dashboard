@@ -26,6 +26,7 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 		format: "plain-text",
 		length: "medium",
 		outputLanguage: "es",
+		streaming: true,
 	});
 
 	const availability = useMemo(() => 

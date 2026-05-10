@@ -42,6 +42,7 @@ export function FeedbackDialog() {
 		format: "plain-text",
 		length: "short",
 		outputLanguage: "es",
+		streaming: true,
 	})
 
 	const availability = useMemo(() => 
