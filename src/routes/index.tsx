@@ -428,8 +428,8 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 				</td>
 			</tr>
 			<CommitsModal
-				isOpen={isCommitsModalOpen}
-				onClose={() => setIsCommitsModalOpen(false)}
+				open={isCommitsModalOpen}
+				onOpenChange={setIsCommitsModalOpen}
 				commits={commits || []}
 				prodCommitHash={prodPipeline.data?.git?.commit || ""}
 				prodTag={latestTag?.name}
