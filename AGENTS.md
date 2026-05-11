@@ -112,7 +112,7 @@ Los archivos de test unitarios deben ubicarse en el mismo directorio que el arch
 
 ## Local Requirements
 
-1. **Node.js** (v18+)
+1. **Node.js** (v22+)
 2. **Git** installed
 3. **GitHub CLI** (`gh`) installed and authenticated
 4. **Access** to your GitHub repositories

@@ -11,6 +11,9 @@ is_port_in_use() {
 
 echo "🚀 Launching $APP_NAME..."
 
+# Healthcheck
+./scripts/healthcheck.sh
+
 if is_port_in_use; then
     echo "✨ $APP_NAME is already running on port $PORT."
     echo "🌐 Opening browser..."
@@ -47,16 +50,17 @@ else
         exit 1
     fi
 
-    # Install dependencies if node_modules is missing
-    if [ ! -d "node_modules" ]; then
-        echo "📥 node_modules not found. Installing dependencies..."
-        npm install
-    fi
-
-    # Build the app if dist is missing
-    if [ ! -d "dist" ]; then
-        echo "🛠️ Building application..."
-        npm run build
+    # Deep healthcheck
+    if ! ./scripts/healthcheck.sh --deps --build; then
+        echo "🔄 Attempting to fix environment..."
+        if [ ! -d "node_modules" ]; then
+            echo "📥 node_modules not found. Installing dependencies..."
+            npm install
+        fi
+        if [ ! -d "dist" ]; then
+            echo "🛠️ Building application..."
+            npm run build
+        fi
     fi
 
     # Start the preview server
