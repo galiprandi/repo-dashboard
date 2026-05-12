@@ -90,6 +90,8 @@ function RootLayout() {
 
 	// Detect if on health page
 	const isHealthPage = pathname === '/health';
+	// Detect if on docker page
+	const isDockerPage = pathname === '/docker';
 
 	useEffect(() => {
 		// Si gh cli no está instalado o no está autenticado, redirigir a setup
@@ -120,11 +122,12 @@ function RootLayout() {
 								<Github className="w-6 h-6" />
 								ReleaseHub
 							</Link>
-							{(product || isHealthPage) && (
+							{(product || isHealthPage || isDockerPage) && (
 								<>
 									<span className="text-muted-foreground text-lg">/</span>
 									<span className="text-lg font-normal text-muted-foreground flex items-center gap-2">
 										{isHealthPage && <Activity className="w-5 h-5 text-blue-600" />}
+										{isDockerPage && <Blocks className="w-5 h-5 text-blue-600" />}
 										{product && (
 											<button
 												type="button"
@@ -135,7 +138,7 @@ function RootLayout() {
 												<Star className={`w-5 h-5 ${favorite ? "fill-current" : ""}`} />
 											</button>
 										)}
-										{isHealthPage ? 'Health Monitor' : product}
+										{isHealthPage ? 'Health Monitor' : isDockerPage ? 'Docker Manager' : product}
 									</span>
 								</>
 							)}
