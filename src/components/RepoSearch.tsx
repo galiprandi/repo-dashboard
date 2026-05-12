@@ -136,7 +136,7 @@ export function RepoSearch() {
           onBlur={() => setIsEditable(false)}
           placeholder={`Búsqueda en ${summaryData?.total || 0} repositorios... (Cmd+K)`}
           aria-label="Búsqueda de repositorios"
-          className={`${searchWidth} pl-9 pr-14 py-2 bg-muted rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
+          className={`${searchWidth} pl-9 pr-14 py-2 bg-muted rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all`}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"

@@ -62,9 +62,11 @@ export function SettingsDialog() {
 
 	return (
 		<>
-			<div
-				className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+			<button
+				type="button"
+				className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 p-1"
 				title="Configuración"
+				aria-label="Abrir configuración"
 				onClick={(e) => {
 					e.stopPropagation();
 					e.preventDefault();
@@ -84,7 +86,7 @@ export function SettingsDialog() {
 				}}
 			>
 				<Settings className="w-5 h-5" />
-			</div>
+			</button>
 			<BaseDialog
 				open={open}
 				onOpenChange={handleOpenChange}

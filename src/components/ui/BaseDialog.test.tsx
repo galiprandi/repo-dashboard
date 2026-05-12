@@ -29,8 +29,10 @@ describe("BaseDialog", () => {
 				<div>Content</div>
 			</BaseDialog>
 		)
-		const title = screen.getByText("Test Title")
-		expect(title).toBeInTheDocument()
+		// screen.getByText finds multiple matches because title is used in both h2 and sr-only description
+		const titles = screen.getAllByText("Test Title")
+		expect(titles.length).toBeGreaterThanOrEqual(1)
+		expect(titles[0]).toBeInTheDocument()
 	})
 
 	it("should render description when provided", () => {

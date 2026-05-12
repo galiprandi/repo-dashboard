@@ -126,7 +126,7 @@ function RootLayout() {
 							<RepoSearch />
 							<Link
 								to="/health"
-								className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+								className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
 								title="Health Monitor"
 							>
 								<Activity className="w-5 h-5" />

@@ -49,7 +49,7 @@ export function NovedadesDialog() {
 			<Dialog.Trigger asChild>
 				<button
 					type="button"
-					className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+					className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
 				>
 					<Newspaper className="w-4 h-4" />
 					Novedades
