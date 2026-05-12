@@ -2,6 +2,17 @@
 
 ---
 
+### 🗓️ 12 de Mayo de 2026
+
+- 🎉 Docker: Nuevo sistema de gestión de contenedores con interfaz visual completa.
+- ✨ UI: Componentes reutilizables de filtros y encabezados para mejor consistencia.
+- 🎨 Configuración: Mejora de accesibilidad en el disparador de ajustes.
+- 🔍 Auditoría: Nuevo sistema de verificación de entorno para detectar problemas de configuración.
+
+### 🗓️ 11 de Mayo de 2026
+
+- ⚡ IA: Resúmenes con modo streaming para respuestas más rápidas.
+
 ### 🗓️ 8 de Mayo de 2026
 
 - ✨ Carga: Spinner durante la carga inicial de la aplicación para mejor feedback visual.
