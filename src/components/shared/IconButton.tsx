@@ -1,6 +1,6 @@
 import * as Tooltip from "@radix-ui/react-tooltip";
 
-interface IconButtonProps {
+ interface IconButtonProps {
 	icon: React.ReactNode;
 	onClick: () => void;
 	tooltip: string;

@@ -5,8 +5,8 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import { LazyRender, useAISummarize } from "@galiprandi/react-tools";
 import { useAIErrorProcessor } from "@/hooks/useAIErrorProcessor";
 import { AISummaryCard } from "@/components/AISummaryCard";
-import { IconButton } from "./IconButton";
 import { highlightLogLine, groupLogs, logLevelPattern } from "./logUtils";
+import { IconButton } from "./IconButton";
 
 export interface LogsViewerProps {
 	queryFn: () => Promise<string>;
