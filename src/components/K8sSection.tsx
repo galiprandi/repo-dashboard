@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Boxes, Loader2, Activity, Clock, RotateCcw, CheckCircle2, Search } from "lucide-react";
+import { Boxes, Loader2, Activity, Clock, RotateCcw, CheckCircle2, Terminal } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useKubectlNamespaceAccess } from "@/hooks/useKubectlNamespaceAccess";
-import { getDeployments, getResourceLogs, getPodsForDeployment, getCurrentContext, getContexts } from "@/api/kubectl";
+import { getContexts, getCurrentContext, getPodsForDeployment, getDeployments, getResourceLogs } from "@/api/kubectl";
 import { queryKeys, applyCachePolicy, invalidateByDomain } from "@/lib/queryKeys";
 import { LogsViewer } from "@/components/shared/LogsViewer";
 
@@ -26,6 +26,46 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 
 	// Use the auto-detected context if user hasn't manually selected one
 	const activeContext = selectedContext || access?.validContext || undefined;
+
+	// Query function for logs
+	const queryFn = () => getResourceLogs(currentType, currentName, namespace, 100, activeContext);
+
+	// Query deployments for the namespace
+	const { data: deployments } = useQuery({
+		queryKey: queryKeys.kubectl.deployments(namespace, activeContext),
+		queryFn: () => getDeployments(namespace, activeContext),
+		refetchInterval: 30000,
+		...applyCachePolicy("kubectl"),
+	});
+
+	// Build resources list for LogsViewer select - all deployments
+	const resources = useMemo(() => {
+		const list: { id: string; name: string; type: string }[] = [];
+		
+		// Add all deployments
+		if (deployments && deployments.length > 0) {
+			deployments.forEach(dep => {
+				list.push({ id: dep.name, name: dep.name, type: 'deployment' });
+			});
+		}
+		
+		return list;
+	}, [deployments]);
+
+	const selectedResourceId = selectedPod || logsName;
+
+	const handleResourceChange = (resourceId: string) => {
+		const resource = resources.find(r => r.id === resourceId);
+		if (!resource) return;
+
+		if (resource.type === 'deployment') {
+			setLogsResourceType('deployment');
+			setLogsName(resource.name);
+			setSelectedPod(null);
+		} else if (resource.type === 'pod') {
+			setSelectedPod(resource.name);
+		}
+	};
 
 	if (checkingAccess) {
 		return (
@@ -119,7 +159,7 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 						onClick={() => handleViewDeploymentLogs(selectedDeployment)}
 						className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
 					>
-						<Search className="w-3.5 h-3.5" />
+						<Terminal className="w-3.5 h-3.5" />
 						Logs
 					</button>
 				)}
@@ -130,20 +170,19 @@ export function K8sSection({ namespace }: K8sSectionProps) {
 						onClick={() => handleViewPodLogs(selectedPod)}
 						className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
 					>
-						<Search className="w-3.5 h-3.5" />
+						<Terminal className="w-3.5 h-3.5" />
 						Logs
 					</button>
 				)}
 			</div>
 
-			{isLogsModalOpen && (
+			{isLogsModalOpen && selectedDeployment && (
 				<LogsViewer
-					resourceName={currentName}
-					resourceType={currentType}
-					fetchLogs={(tail) => getResourceLogs(currentType, currentName, namespace, tail, activeContext)}
-					queryKey={queryKeys.kubectl.logs(namespace, currentType, currentName, 100, activeContext)}
+					queryFn={queryFn}
 					onClose={() => setIsLogsModalOpen(false)}
-					initialTailSize={100}
+					resources={resources}
+					selectedResourceId={selectedResourceId}
+					onResourceChange={handleResourceChange}
 				/>
 			)}
 		</>

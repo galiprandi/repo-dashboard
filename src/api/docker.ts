@@ -100,16 +100,7 @@ export async function getContainers(): Promise<ContainerInfo[]> {
 }
 
 /**
- * Removes ANSI escape codes from log output.
- */
-function removeAnsiCodes(text: string): string {
-	// Remove ANSI escape codes in both formats: \x1b and \u001b
-	// eslint-disable-next-line no-control-regex
-	return text.replace(/\x1b\[[0-9;]*m/g, '').replace(/\u001b\[[0-9;]*m/g, '');
-}
-
-/**
- * Gets logs from a container.
+ * Gets logs from a container (fallback for when SSE is not available).
  */
 export async function getContainerLogs(containerId: string, tail = 100): Promise<string> {
 	const sanitizedId = sanitizeContainerId(containerId);
@@ -119,8 +110,7 @@ export async function getContainerLogs(containerId: string, tail = 100): Promise
 	const logs = result.stderr.trim() || result.stdout.trim();
 	// Replace literal \n with actual newlines
 	const cleanLogs = logs.replace(/\\n/g, '\n');
-	// Remove ANSI color codes
-	return removeAnsiCodes(cleanLogs);
+	return cleanLogs;
 }
 
 /**

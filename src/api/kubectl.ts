@@ -242,9 +242,34 @@ export async function getResourceLogs(resourceType: 'deployment' | 'pod', name: 
     // Convert selector JSON to format -l key=value,key2=value2
     const labels = JSON.parse(selector);
     const labelSelector = Object.entries(labels).map(([k, v]) => `${k}=${v}`).join(',');
-    const result = await runCommand(`kubectl logs ${nsFlag} ${ctxFlag} -l ${labelSelector} --tail=${tail}`.trim());
-    return result.stdout;
+    const result = await runCommand(`kubectl logs ${nsFlag} ${ctxFlag} -l ${labelSelector} --tail=${tail} --ignore-errors`.trim());
+    return cleanLogs(result.stdout);
   }
   const result = await runCommand(`kubectl logs ${sanitizedName} ${nsFlag} ${ctxFlag} --tail=${tail}`.trim());
-  return result.stdout;
+  return cleanLogs(result.stdout);
+}
+
+/**
+ * Clean logs by removing ANSI escape codes and fixing escaped quotes
+ */
+function cleanLogs(logs: string): string {
+  const escapeChar = String.fromCharCode(27);
+  const ansiRegex = new RegExp(`${escapeChar}\\[[0-9;]*m`, 'g');
+  return logs
+    .replace(ansiRegex, '') // Remove ANSI escape codes
+    .replace(/\\"/g, '"') // Fix escaped quotes
+    .replace(/\\\\/g, '\\'); // Fix double backslashes
+}
+
+/**
+ * Generates SSE stream URL for Kubernetes logs
+ */
+export function getK8sLogsStreamUrl(resourceType: 'deployment' | 'pod', name: string, namespace?: string, context?: string): string {
+  const params = new URLSearchParams({
+    resourceType,
+    name,
+  });
+  if (namespace) params.set('namespace', namespace);
+  if (context) params.set('context', context);
+  return `/local/k8s-logs-stream?${params.toString()}`;
 }

@@ -1,46 +1,37 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Search, RefreshCw, X, ClipboardCopy, Check, Clock, Sparkles, AlertCircle, Blocks } from "lucide-react";
+import { Loader2, Search, X, ClipboardCopy, Check, Sparkles, AlertCircle, Pause, Play, Terminal } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { useAISummarize } from "@galiprandi/react-tools";
+import { LazyRender, useAISummarize } from "@galiprandi/react-tools";
 import { useAIErrorProcessor } from "@/hooks/useAIErrorProcessor";
 import { AISummaryCard } from "@/components/AISummaryCard";
+import { IconButton } from "./IconButton";
 import { highlightLogLine, groupLogs, logLevelPattern } from "./logUtils";
 
 export interface LogsViewerProps {
-	resourceName: string;
-	resourceType: string;
-	fetchLogs: (tail: number) => Promise<string>;
-	queryKey: readonly unknown[];
+	queryFn: () => Promise<string>;
 	onClose: () => void;
-	initialTailSize?: number;
 	asModal?: boolean;
-	containers?: { id: string; name: string }[];
-	onContainerChange?: (containerId: string) => void;
+	resources?: { id: string; name: string; type: string }[];
+	selectedResourceId?: string;
+	onResourceChange?: (resourceId: string) => void;
 }
 
 export function LogsViewer({
-	resourceName,
-	resourceType,
-	fetchLogs,
-	queryKey,
+	queryFn,
 	onClose,
-	initialTailSize = 100,
 	asModal = true,
-	containers,
-	onContainerChange,
+	resources,
+	selectedResourceId,
+	onResourceChange,
 }: LogsViewerProps) {
-	const [logTailSize, setLogTailSize] = useState<number>(initialTailSize);
-	const [autoFetch, setAutoFetch] = useState(true);
 	const queryClient = useQueryClient();
 
-	const { data: logs, isLoading, refetch, error: logsError } = useQuery({
-		queryKey,
-		queryFn: async () => {
-			const result = await fetchLogs(logTailSize);
-			return result;
-		},
-		refetchInterval: autoFetch ? 10000 : false,
+	const { data: logs, isLoading, error } = useQuery({
+		queryKey: ['logs', selectedResourceId],
+		queryFn,
+		enabled: !!queryFn,
+		refetchInterval: 3000,
 	});
 
 	const [filter, setFilter] = useState("");
@@ -49,6 +40,37 @@ export function LogsViewer({
 	const [aiSummaryCopied, setAiSummaryCopied] = useState(false);
 	const [isAiSummaryCollapsed, setIsAiSummaryCollapsed] = useState(false);
 	const [isGeneratingLocal, setIsGeneratingLocal] = useState(false);
+	const [autoScrollEnabled, setAutoScrollEnabled] = useState(true);
+	const logsContainerRef = useRef<HTMLDivElement>(null);
+	const preRef = useRef<HTMLPreElement>(null);
+	const searchInputRef = useRef<HTMLInputElement>(null);
+
+	const currentLogs = logs || "";
+	const currentError = error;
+	const currentIsLoading = isLoading;
+
+	// Handle Cmd+F / Ctrl+F to focus search input
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+				e.preventDefault();
+				searchInputRef.current?.focus();
+			}
+		};
+
+		document.addEventListener('keydown', handleKeyDown);
+		return () => document.removeEventListener('keydown', handleKeyDown);
+	}, []);
+
+	// Prevenir scroll del body cuando el modal está abierto
+	useEffect(() => {
+		if (asModal) {
+			document.body.style.overflow = 'hidden';
+			return () => {
+				document.body.style.overflow = '';
+			};
+		}
+	}, [asModal]);
 
 	// Usar useAISummarize directo
 	const { data, status, error: aiError, summarize, reset: resetAI } = useAISummarize({
@@ -59,21 +81,19 @@ export function LogsViewer({
 		streaming: true,
 	});
 
-	const availability = useMemo(() => 
+	const availability =
 		status === "initializing" || status === "downloading" ? "checking" :
-		status === "idle" || status === "success" ? "available" : "unavailable",
-		[status]
-	);
+		status === "idle" || status === "success" ? "available" : "unavailable";
 	
 	const isGenerating = isGeneratingLocal || status === "summarizing" || status === "initializing" || status === "downloading";
 	const summary = data || "";
 
-	const getStatusMessage = useMemo(() => {
-		if (status === "initializing") return "Inicializando..."
-		if (status === "downloading") return "Descargando..."
-		if (status === "summarizing") return "Generando..."
-		return "Generando..."
-	}, [status]);
+	const statusMessages: Record<string, string> = {
+		initializing: "Inicializando...",
+		downloading: "Descargando...",
+		summarizing: "Generando...",
+	};
+	const getStatusMessage = statusMessages[status] || "Generando...";
 
 	const { processError } = useAIErrorProcessor();
 
@@ -89,14 +109,14 @@ export function LogsViewer({
 			setProcessedError(friendlyError);
 		};
 
-		if (logsError) handleQueryError(logsError);
-	}, [logsError, processError]);
+		if (currentError) handleQueryError(currentError);
+	}, [currentError, processError]);
 
-	const filteredLines = useMemo(() => {
-		if (!logs) return [];
+	const filteredLines = (() => {
+		if (!currentLogs) return [];
 
-		const trimmedLogs = logs.trimEnd();
-		const logGroups = groupLogs(trimmedLogs).reverse();
+		const trimmedLogs = currentLogs.trimEnd();
+		const logGroups = groupLogs(trimmedLogs);
 
 		// Filtrar por nivel de log si está seleccionado
 		let groupsToProcess = logGroups;
@@ -128,7 +148,39 @@ export function LogsViewer({
 
 		// Convertir grupos filtrados de vuelta a líneas individuales
 		return matchingGroups.flatMap(group => group.split("\n"));
-	}, [logs, filter, logLevelFilter]);
+	})();
+
+	// ResizeObserver on <pre> to scroll when LazyRender content actually expands
+	useEffect(() => {
+		const pre = preRef.current;
+		const container = logsContainerRef.current;
+		if (!pre || !container) return;
+
+		const observer = new ResizeObserver(() => {
+			if (autoScrollEnabled) {
+				container.scrollTop = container.scrollHeight;
+			}
+		});
+		observer.observe(pre);
+		return () => observer.disconnect();
+	}, [autoScrollEnabled]);
+
+	// Detect manual scroll and disable auto-scroll
+	useEffect(() => {
+		const container = logsContainerRef.current;
+		if (!container) return;
+
+		const handleScroll = () => {
+			const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+			if (!isAtBottom && autoScrollEnabled) {
+				setAutoScrollEnabled(false);
+			}
+		};
+
+		container.addEventListener('scroll', handleScroll);
+		return () => container.removeEventListener('scroll', handleScroll);
+	}, [autoScrollEnabled]);
+
 
 	const handleCopy = async () => {
 		const logsToCopy = filteredLines.join('\n');
@@ -146,7 +198,7 @@ export function LogsViewer({
 	};
 
 	const handleSummarizeWithAI = async () => {
-		if (!logs) return;
+		if (!currentLogs) return;
 
 		const logsToSummarize = filteredLines.join('\n');
 		const context = 'Analiza los logs SOLO para identificar problemas. Si los logs están en formato JSON, extrae el mensaje de error y el nivel (level). REGLAS ESTRICTAS: 1) NO repitas los logs completos o en JSON, 2) NO menciones configuración, rutas, startup, Swagger, mapeo de controladores, debug info, 3) Solo reporta ERRORES, WARNINGS, EXCEPCIONES, TIMEOUTS, FALLOS DE CONEXIÓN en lenguaje natural, 4) Compliance: secretos expuestos, credenciales en texto plano. ESTRUCTURA EXACTA (máximo 4 líneas, texto plano): * Errores críticos: [descripción en lenguaje natural o "ninguno"] * Warnings: [descripción en lenguaje natural o "ninguno"] * Compliance: [problemas o "ninguno"] * Estado general: HEALTHY/DEGRADED/CRITICAL. NO agregues secciones adicionales. Usa minúsculas en las etiquetas.';
@@ -191,215 +243,126 @@ export function LogsViewer({
 	const content = (
 		<>
 			<Tooltip.Provider>
-				<div className="flex items-center justify-between p-4 border-b gap-2 flex-wrap">
+				<div className="flex items-center justify-between gap-0 mb-2 px-4 pt-4">
 					<div className="flex items-center gap-2">
-						{asModal && containers && containers.length > 0 ? (
-							<div className="flex items-center gap-2">
-								<Blocks className="w-4 h-4 text-muted-foreground" />
-								<select
-									value={resourceName}
-									onChange={(e) => onContainerChange?.(e.target.value)}
-									className="px-2 py-1 text-sm border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-								>
-									{containers.map((container) => (
-										<option key={container.id} value={container.name}>
-											{container.name}
-										</option>
-									))}
-								</select>
-							</div>
-						) : (
-							<h3 className="font-semibold">Logs: {resourceName} ({resourceType})</h3>
+						<Terminal className="w-4 h-4 text-blue-600" />
+						{resources && resources.length > 0 && (
+							<select
+								value={selectedResourceId || resources[0].id}
+								onChange={(e) => onResourceChange?.(e.target.value)}
+								className="bg-background border rounded px-2 py-1 text-sm"
+							>
+								{resources.map((resource) => (
+									<option key={resource.id} value={resource.id}>
+										{resource.name}
+									</option>
+								))}
+							</select>
 						)}
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-0">
+						{!isLoading && logs && (
+							<span className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-green-600 bg-green-50 rounded">
+								<span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+								Live
+							</span>
+						)}
 						<Tooltip.Root>
-							<Tooltip.Trigger asChild>
-								<button
-									type="button"
-									onClick={handleSummarizeWithAI}
-									disabled={isGenerating || availability !== "available" || !logs}
-									className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-								>
-									{isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-									{isGenerating ? getStatusMessage : "Resumir"}
-								</button>
-							</Tooltip.Trigger>
+						<Tooltip.Trigger asChild>
+							<button
+								type="button"
+								onClick={handleSummarizeWithAI}
+								disabled={isGenerating || availability !== "available" || !currentLogs}
+								className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+							>
+								{isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+								{isGenerating ? getStatusMessage : "Resumir"}
+							</button>
+						</Tooltip.Trigger>
 							<Tooltip.Portal>
-								<Tooltip.Content
-									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
-									sideOffset={5}
-								>
-									Resumir logs con IA
-								</Tooltip.Content>
-							</Tooltip.Portal>
-						</Tooltip.Root>
-						<Tooltip.Root>
-							<Tooltip.Trigger asChild>
+							<Tooltip.Content
+								className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[10000]"
+								sideOffset={5}
+							>
+								Resumir logs con IA
+							</Tooltip.Content>
+						</Tooltip.Portal>
+					</Tooltip.Root>
+					<div className="w-px h-6 bg-border mx-2" />
+						<div className="flex items-center gap-2">
+							<Tooltip.Root>
+								<Tooltip.Trigger asChild>
+									<select
+										value={logLevelFilter}
+										onChange={(e) => setLogLevelFilter(e.target.value as "all" | "ERROR" | "WARN" | "INFO" | "DEBUG")}
+										className="bg-background border rounded px-2 py-1 text-sm"
+									>
+										<option value="all">Todos</option>
+										<option value="ERROR">ERROR</option>
+										<option value="WARN">WARN</option>
+										<option value="INFO">INFO</option>
+										<option value="DEBUG">DEBUG</option>
+									</select>
+								</Tooltip.Trigger>
+								<Tooltip.Portal>
+									<Tooltip.Content
+										className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[10000]"
+										sideOffset={5}
+									>
+										Filtrar por nivel de log
+									</Tooltip.Content>
+								</Tooltip.Portal>
+							</Tooltip.Root>
+							<Tooltip.Root>
+								<Tooltip.Trigger asChild>
 								<div className="relative">
 									<Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" />
 									<input
+										ref={searchInputRef}
 										type="text"
 										value={filter}
 										onChange={(e) => setFilter(e.target.value)}
-										placeholder=""
-										className="pl-7 pr-2 py-1 text-sm bg-background border rounded w-36 focus:outline-none focus:ring-2 focus:ring-blue-500"
+										placeholder="Buscar (Cmd+F)"
+										aria-label="Buscar logs"
+										className="pl-7 pr-2 py-1 text-sm bg-background border rounded w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"
 									/>
 								</div>
 							</Tooltip.Trigger>
 							<Tooltip.Portal>
 								<Tooltip.Content
-									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
+									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[10000]"
 									sideOffset={5}
 								>
 									Filtrar logs por texto
 								</Tooltip.Content>
 							</Tooltip.Portal>
 						</Tooltip.Root>
-						<Tooltip.Root>
-							<Tooltip.Trigger asChild>
-								<select
-									value={logLevelFilter}
-									onChange={(e) => setLogLevelFilter(e.target.value as "all" | "ERROR" | "WARN" | "INFO" | "DEBUG")}
-									className="bg-background border rounded px-2 py-1 text-sm"
-								>
-									<option value="all">Todos</option>
-									<option value="ERROR">ERROR</option>
-									<option value="WARN">WARN</option>
-									<option value="INFO">INFO</option>
-									<option value="DEBUG">DEBUG</option>
-								</select>
-							</Tooltip.Trigger>
-							<Tooltip.Portal>
-								<Tooltip.Content
-									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
-									sideOffset={5}
-								>
-									Filtrar por nivel de log
-								</Tooltip.Content>
-							</Tooltip.Portal>
-						</Tooltip.Root>
-						<Tooltip.Root>
-							<Tooltip.Trigger asChild>
-								<select
-									value={logTailSize}
-									onChange={(e) => setLogTailSize(Number(e.target.value))}
-									className="bg-background border rounded px-2 py-1 text-sm"
-								>
-									<option value={50}>50</option>
-									<option value={100}>100</option>
-									<option value={500}>500</option>
-									<option value={1000}>1000</option>
-								</select>
-							</Tooltip.Trigger>
-							<Tooltip.Portal>
-								<Tooltip.Content
-									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
-									sideOffset={5}
-								>
-									Número de líneas a mostrar
-								</Tooltip.Content>
-							</Tooltip.Portal>
-						</Tooltip.Root>
-						<Tooltip.Root>
-							<Tooltip.Trigger asChild>
-								<button
-									type="button"
-									onClick={() => setAutoFetch(!autoFetch)}
-									className={`p-1.5 rounded transition-colors ${autoFetch ? 'text-blue-600 hover:text-blue-700 hover:bg-blue-50' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-								>
-									<Clock className={`w-4 h-4 ${autoFetch ? 'animate-pulse' : ''}`} />
-								</button>
-							</Tooltip.Trigger>
-							<Tooltip.Portal>
-								<Tooltip.Content
-									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
-									sideOffset={5}
-								>
-									{autoFetch ? "Desactivar auto-recarga (10s)" : "Activar auto-recarga (10s)"}
-								</Tooltip.Content>
-							</Tooltip.Portal>
-						</Tooltip.Root>
+						</div>
 						<div className="w-px h-6 bg-border mx-2" />
-						<Tooltip.Root>
-							<Tooltip.Trigger asChild>
-								<span className="text-xs text-muted-foreground cursor-help">
-									{filteredLines.length} logs
-								</span>
-							</Tooltip.Trigger>
-							<Tooltip.Portal>
-								<Tooltip.Content
-									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
-									sideOffset={5}
-								>
-									Logs mostrados (con filtros aplicados)
-								</Tooltip.Content>
-							</Tooltip.Portal>
-						</Tooltip.Root>
-						<div className="flex-1" />
-						<Tooltip.Root>
-							<Tooltip.Trigger asChild>
-								<button
-									type="button"
-									onClick={() => refetch()}
-									className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
-								>
-									<RefreshCw className="w-4 h-4" />
-								</button>
-							</Tooltip.Trigger>
-							<Tooltip.Portal>
-								<Tooltip.Content
-									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
-									sideOffset={5}
-								>
-									Recargar logs manualmente
-								</Tooltip.Content>
-							</Tooltip.Portal>
-						</Tooltip.Root>
-						<Tooltip.Root>
-							<Tooltip.Trigger asChild>
-								<button
-									type="button"
-									onClick={handleCopy}
-									className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
-								>
-									{copied ? <Check className="w-4 h-4 text-green-500" /> : <ClipboardCopy className="w-4 h-4" />}
-								</button>
-							</Tooltip.Trigger>
-							<Tooltip.Portal>
-								<Tooltip.Content
-									className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
-									sideOffset={5}
-								>
-									{copied ? "¡Copiado!" : "Copiar logs al portapapeles"}
-								</Tooltip.Content>
-							</Tooltip.Portal>
-						</Tooltip.Root>
+						<IconButton
+							icon={autoScrollEnabled ? <Pause className="w-4 h-4 text-red-500" /> : <Play className="w-4 h-4" />}
+							onClick={() => setAutoScrollEnabled(!autoScrollEnabled)}
+							tooltip={autoScrollEnabled ? "Detener auto-scroll" : "Activar auto-scroll"}
+						/>
+						<IconButton
+							icon={copied ? <Check className="w-4 h-4 text-green-500" /> : <ClipboardCopy className="w-4 h-4" />}
+							onClick={handleCopy}
+							tooltip={copied ? "¡Copiado!" : "Copiar logs al portapapeles"}
+						/>
 						{asModal && (
-							<Tooltip.Root>
-								<Tooltip.Trigger asChild>
-									<button
-										type="button"
-										onClick={onClose}
-										className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
-									>
-										<X className="w-4 h-4" />
-									</button>
-								</Tooltip.Trigger>
-								<Tooltip.Portal>
-									<Tooltip.Content
-										className="bg-popover text-popover-foreground border px-2 py-1 text-xs rounded-md shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50"
-										sideOffset={5}
-									>
-										Cerrar modal de logs
-									</Tooltip.Content>
-								</Tooltip.Portal>
-							</Tooltip.Root>
+							<>
+								<div className="w-px h-6 bg-border mx-2" />
+								<IconButton
+									icon={<X className="w-4 h-4" />}
+									onClick={onClose}
+									tooltip="Cerrar modal de logs"
+								/>
+							</>
 						)}
 					</div>
 				</div>
 			</Tooltip.Provider>
-			<div className="flex-1 min-h-0 overflow-auto bg-black text-green-400 p-4 font-mono text-xs">
+			<div ref={logsContainerRef} className="flex-1 min-h-0 overflow-auto bg-black text-green-400 p-4 font-mono text-xs p-3">
 				{processedError && (
 					<div className="mb-4 p-3 bg-red-900 border border-red-500/30 rounded-lg sticky top-0 z-10">
 						<div className="flex items-center justify-between gap-2 mb-2">
@@ -428,23 +391,24 @@ export function LogsViewer({
 					isCopied={aiSummaryCopied}
 					variant="compact"
 				/>
-				{isLoading ? (
-					<div className="flex items-center justify-center gap-2 h-full text-gray-400">
-						<Loader2 className="w-4 h-4 animate-spin" />
-						<span>Cargando logs...</span>
-					</div>
-				) : (
-					<pre className="whitespace-pre-wrap break-words">
-						{filteredLines.length > 0
-							? filteredLines.map((line, idx) => (
-								<div key={idx}>{highlightLogLine(line, filter)}</div>
-							))
-							: (filter || logLevelFilter !== "all")
-								? <span className="text-gray-500">No se encontraron logs que coincidan con los filtros.</span>
-								: (logs || "No logs disponibles")
-						}
-					</pre>
-				)}
+				<pre ref={preRef} className="whitespace-pre-wrap break-words">
+					{currentIsLoading ? (
+						<div className="flex items-center justify-center gap-2 h-full text-gray-400">
+							<Loader2 className="w-4 h-4 animate-spin" />
+							<span>Cargando logs...</span>
+						</div>
+					) : !currentLogs ? (
+						<span className="text-yellow-500">No hay logs disponibles</span>
+					) : filteredLines.length > 0 ? (
+						filteredLines.map((line: string, idx: number) => (
+							<LazyRender key={idx} placeholder={<span/>}>{highlightLogLine(line, filter)}</LazyRender>
+						))
+					) : (filter || logLevelFilter !== "all") ? (
+						<span className="text-gray-500">No se encontraron logs que coincidan con los filtros.</span>
+					) : (
+						currentLogs || "No logs disponibles"
+					)}
+				</pre>
 			</div>
 		</>
 	);

@@ -1,4 +1,4 @@
-import { exec } from "node:child_process";
+import { exec, spawn } from "node:child_process";
 import { promisify } from "node:util";
 import https from "node:https";
 import type { Connect } from "vite";
@@ -227,6 +227,174 @@ const scriptHandler: Connect.NextHandleFunction = async (req, res) => {
 	}
 };
 
+// Handler for /local/k8s-logs-stream endpoint - SSE streaming for Kubernetes logs
+const k8sLogsStreamHandler: Connect.NextHandleFunction = (req, res) => {
+	if (req.method !== "GET") {
+		res.statusCode = 405;
+		res.end("Method not allowed");
+		return;
+	}
+
+	const url = new URL(req.url || "", `http://localhost`);
+	const resourceType = url.searchParams.get("resourceType") || "pod";
+	const name = url.searchParams.get("name");
+	const namespace = url.searchParams.get("namespace");
+	const context = url.searchParams.get("context");
+
+	if (!name) {
+		res.statusCode = 400;
+		res.end(JSON.stringify({ error: "Missing name parameter" }));
+		return;
+	}
+
+	// Set SSE headers
+	res.setHeader("Content-Type", "text/event-stream");
+	res.setHeader("Cache-Control", "no-cache");
+	res.setHeader("Connection", "keep-alive");
+	res.setHeader("Access-Control-Allow-Origin", "*");
+
+	console.log(`[k8s-logs-stream] Starting: ${resourceType}/${name} in namespace: ${namespace || 'default'}`);
+
+	// Build kubectl logs command with -f (follow)
+	let command: string;
+	if (resourceType === "deployment") {
+		// For deployments, we need to get the selector first
+		const nsFlag = namespace ? `-n ${namespace}` : "";
+		const ctxFlag = context ? `--context=${context}` : "";
+		command = `kubectl get deployment ${name} ${nsFlag} ${ctxFlag} -o jsonpath='{.spec.selector.matchLabels}'`;
+		
+		exec(command, (error, stdout) => {
+			if (error) {
+				res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+				res.end();
+				return;
+			}
+
+			const selector = stdout.trim();
+			if (!selector) {
+				res.write(`data: ${JSON.stringify({ error: "No selector found for deployment" })}\n\n`);
+				res.end();
+				return;
+			}
+
+			try {
+				const labels = JSON.parse(selector);
+				const labelSelector = Object.entries(labels).map(([k, v]) => `${k}=${v}`).join(',');
+				
+				// First check if there are pods with this selector
+				const checkCommand = `kubectl get pods ${nsFlag} ${ctxFlag} -l ${labelSelector} -o jsonpath='{.items}'`;
+				exec(checkCommand, (checkError, checkStdout) => {
+					if (checkError) {
+						res.write(`data: ${JSON.stringify({ error: checkError.message })}\n\n`);
+						res.end();
+						return;
+					}
+
+					const podsJson = checkStdout.trim();
+					if (!podsJson || podsJson === "null" || podsJson === "[]") {
+						res.write(`data: ${JSON.stringify({ error: "No pods found for this deployment" })}\n\n`);
+						res.end();
+						return;
+					}
+
+					// Pods exist, proceed with logs
+					const logsCommand = `kubectl logs ${nsFlag} ${ctxFlag} -l ${labelSelector} -f --tail=100`;
+
+					const logsProcess = spawn(logsCommand, { shell: true });
+
+					logsProcess.stdout.on("data", (data) => {
+						const lines = data.toString().split("\n").filter(Boolean);
+						lines.forEach((line: string) => {
+							res.write(`data: ${line}\n\n`);
+						});
+					});
+
+					logsProcess.stderr.on("data", (data) => {
+						const lines = data.toString().split("\n").filter(Boolean);
+						lines.forEach((line: string) => {
+							res.write(`data: ${line}\n\n`);
+						});
+					});
+
+					logsProcess.on("error", (err) => {
+						console.error(`[k8s-logs-stream] Error:`, err);
+						res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+						res.end();
+					});
+
+					logsProcess.on("close", (code) => {
+						console.log(`[k8s-logs-stream] Closed with code: ${code}`);
+						res.end();
+					});
+
+					req.on("close", () => {
+						console.log(`[k8s-logs-stream] Client disconnected`);
+						logsProcess.kill();
+					});
+				});
+			} catch {
+				res.write(`data: ${JSON.stringify({ error: "Failed to parse selector" })}\n\n`);
+				res.end();
+			}
+		});
+	} else {
+		// For pods
+		const nsFlag = namespace ? `-n ${namespace}` : "";
+		const ctxFlag = context ? `--context=${context}` : "";
+		
+		// First check if pod exists
+		const checkCommand = `kubectl get pod ${name} ${nsFlag} ${ctxFlag} -o jsonpath='{.metadata.name}'`;
+		exec(checkCommand, (checkError, checkStdout) => {
+			if (checkError) {
+				res.write(`data: ${JSON.stringify({ error: checkError.message })}\n\n`);
+				res.end();
+				return;
+			}
+
+			const podName = checkStdout.trim();
+			if (!podName) {
+				res.write(`data: ${JSON.stringify({ error: "Pod not found" })}\n\n`);
+				res.end();
+				return;
+			}
+
+			const logsCommand = `kubectl logs ${name} ${nsFlag} ${ctxFlag} -f --tail=100`;
+
+			const logsProcess = spawn(logsCommand, { shell: true });
+
+			logsProcess.stdout.on("data", (data) => {
+				const lines = data.toString().split("\n").filter(Boolean);
+				lines.forEach((line: string) => {
+					res.write(`data: ${line}\n\n`);
+				});
+			});
+
+			logsProcess.stderr.on("data", (data) => {
+				const lines = data.toString().split("\n").filter(Boolean);
+				lines.forEach((line: string) => {
+					res.write(`data: ${line}\n\n`);
+				});
+			});
+
+			logsProcess.on("error", (err) => {
+				console.error(`[k8s-logs-stream] Error:`, err);
+				res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+				res.end();
+			});
+
+			logsProcess.on("close", (code) => {
+				console.log(`[k8s-logs-stream] Closed with code: ${code}`);
+				res.end();
+			});
+
+			req.on("close", () => {
+				console.log(`[k8s-logs-stream] Client disconnected`);
+				logsProcess.kill();
+			});
+		});
+	}
+};
+
 // https://vite.dev/config/
 export default defineConfig({
 	plugins: [
@@ -246,12 +414,15 @@ export default defineConfig({
 				server.middlewares.use("/local/script", scriptHandler);
 				// Health proxy endpoint - avoids CORS when checking service health
 				server.middlewares.use("/health-proxy", healthProxyHandler);
+				// Kubernetes logs stream endpoint - SSE streaming for k8s logs
+				server.middlewares.use("/local/k8s-logs-stream", k8sLogsStreamHandler);
 			},
 			configurePreviewServer(server) {
 				// Same endpoint for preview mode
 				server.middlewares.use("/local/exec", execHandler);
 				server.middlewares.use("/local/script", scriptHandler);
 				server.middlewares.use("/health-proxy", healthProxyHandler);
+				server.middlewares.use("/local/k8s-logs-stream", k8sLogsStreamHandler);
 			},
 		},
 	],

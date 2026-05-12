@@ -27,6 +27,22 @@ export const ContainerList = forwardRef<ContainerListRef, ContainerListProps>(({
 		...applyCachePolicy("docker"),
 	})
 
+	// Query function for logs
+	const queryFn = () => selectedContainer ? getContainerLogs(selectedContainer.id, 100) : Promise.resolve('')
+
+	// Build resources list for LogsViewer select
+	const resources = useMemo(() => {
+		if (!containers) return []
+		return containers.map(c => ({ id: c.id, name: c.name, type: 'container' }))
+	}, [containers])
+
+	const selectedResourceId = selectedContainer?.id
+
+	const handleResourceChange = (resourceId: string) => {
+		const container = containers?.find(c => c.id === resourceId)
+		if (container) setSelectedContainer(container)
+	}
+
 	// Filtrar y ordenar contenedores
 	const filteredContainers = useMemo(() => {
 		if (!containers) return []
@@ -42,49 +58,23 @@ export const ContainerList = forwardRef<ContainerListRef, ContainerListProps>(({
 					if (statusFilter === 'stopped' && normalizedStatus.startsWith('up')) {
 						return false
 					}
-					if (statusFilter === 'exited' && !normalizedStatus.includes('exited')) {
+					if (statusFilter === 'exited' && !normalizedStatus.startsWith('exited')) {
 						return false
 					}
 				}
-
-				// Filtro por búsqueda (nombre de contenedor)
+				// Filtro por búsqueda
 				if (searchQuery) {
 					const query = searchQuery.toLowerCase()
-					const nameMatch = container.name.toLowerCase().includes(query)
-					const idMatch = container.id.toLowerCase().includes(query)
-					if (!nameMatch && !idMatch) {
-						return false
-					}
+					return (
+						container.id.toLowerCase().includes(query) ||
+						container.name.toLowerCase().includes(query) ||
+						container.status.toLowerCase().includes(query)
+					)
 				}
-
 				return true
 			})
-			.sort((a, b) => {
-				// Ordenar por estado: 'Up' (running) primero
-				const aIsRunning = a.status.toLowerCase().startsWith('up')
-				const bIsRunning = b.status.toLowerCase().startsWith('up')
-				if (aIsRunning && !bIsRunning) return -1
-				if (!aIsRunning && bIsRunning) return 1
-
-				// Luego ordenar por nombre alfabéticamente
-				return a.name.localeCompare(b.name)
-			})
+			.sort((a, b) => a.name.localeCompare(b.name))
 	}, [containers, statusFilter, searchQuery])
-
-	// Filtrar solo contenedores running para el select del modal de logs
-	const runningContainers = useMemo(() => {
-		if (!containers) return []
-		return containers.filter((container) =>
-			container.status.toLowerCase().startsWith('up')
-		).map((container) => ({ id: container.id, name: container.name }))
-	}, [containers])
-
-	const handleContainerChange = (containerName: string) => {
-		const container = containers?.find((c) => c.name === containerName)
-		if (container) {
-			setSelectedContainer(container)
-		}
-	}
 
 	// Expose refetch to parent
 	useImperativeHandle(ref, () => ({
@@ -161,15 +151,12 @@ export const ContainerList = forwardRef<ContainerListRef, ContainerListProps>(({
 				createPortal(
 					<LogsViewer
 						key={selectedContainer.id}
-						resourceName={selectedContainer.name}
-						resourceType="container"
-						fetchLogs={(tail) => getContainerLogs(selectedContainer.id, tail)}
-						queryKey={queryKeys.docker.logs(selectedContainer.id, 100)}
+						queryFn={queryFn}
 						onClose={() => setIsLogsModalOpen(false)}
-						initialTailSize={100}
 						asModal={true}
-						containers={runningContainers}
-						onContainerChange={handleContainerChange}
+						resources={resources}
+						selectedResourceId={selectedResourceId}
+						onResourceChange={handleResourceChange}
 					/>,
 					document.body
 				)
