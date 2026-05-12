@@ -14,6 +14,7 @@
 
 type QueryKeyDomain =
 	| "kubectl"
+	| "docker"
 	| "git"
 	| "pipeline"
 	| "github-actions"
@@ -80,6 +81,36 @@ type KubectlQueryKey =
 	| KubectlDeploymentKey
 	| KubectlPodsKey
 	| KubectlLogsKey;
+
+// Docker
+interface DockerAccessKey extends BaseQueryKey {
+	domain: "docker";
+	type: "access";
+}
+
+interface DockerContainersKey extends BaseQueryKey {
+	domain: "docker";
+	type: "containers";
+}
+
+interface DockerLogsKey extends BaseQueryKey {
+	domain: "docker";
+	type: "logs";
+	containerId: string;
+	tailSize?: number;
+}
+
+interface DockerStatsKey extends BaseQueryKey {
+	domain: "docker";
+	type: "stats";
+	containerId: string;
+}
+
+type DockerQueryKey =
+	| DockerAccessKey
+	| DockerContainersKey
+	| DockerLogsKey
+	| DockerStatsKey;
 
 // Git
 interface GitUserKey extends BaseQueryKey {
@@ -252,6 +283,7 @@ type ToolsQueryKey =
 // Union type de todas las queryKeys
 export type AppQueryKey =
 	| KubectlQueryKey
+	| DockerQueryKey
 	| GitQueryKey
 	| PipelineQueryKey
 	| GitHubActionsQueryKey
@@ -279,6 +311,16 @@ export const queryKeys = {
 			["kubectl", "pods", namespace, deploymentName, context],
 		logs: (namespace: string, resourceType: "deployment" | "pod", resourceName: string, tailSize?: number, context?: string): readonly ["kubectl", "logs", string, "deployment" | "pod", string, number | undefined, string | undefined] =>
 			["kubectl", "logs", namespace, resourceType, resourceName, tailSize, context],
+	},
+
+	// Docker
+	docker: {
+		access: (): readonly ["docker", "access"] => ["docker", "access"],
+		containers: (): readonly ["docker", "containers"] => ["docker", "containers"],
+		logs: (containerId: string, tailSize?: number): readonly ["docker", "logs", string, number | undefined] =>
+			["docker", "logs", containerId, tailSize],
+		stats: (containerId: string): readonly ["docker", "stats", string] =>
+			["docker", "stats", containerId],
 	},
 
 	// Git
@@ -380,6 +422,16 @@ export const cachePolicies: Record<QueryKeyDomain, CachePolicy> = {
 		refetchOnWindowFocus: false,
 		refetchInterval: false,
 		retry: 0, // No reintentar si falla (VPN desconectada)
+	},
+
+	// DOCKER: NO cachear ni persistir (estado cambia frecuentemente)
+	docker: {
+		staleTime: 0, // Siempre fresco
+		gcTime: 0, // No cachear
+		persistInLocalStorage: false, // NO persistir
+		refetchOnWindowFocus: false,
+		refetchInterval: false,
+		retry: 0, // No reintentar si falla
 	},
 
 	// GIT: Cachear medio, no persistir

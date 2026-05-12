@@ -8,9 +8,10 @@ interface BaseDialogProps {
 	description?: string
 	maxWidth?: string
 	children: React.ReactNode
+	headerExtra?: React.ReactNode
 }
 
-export function BaseDialog({ open, onOpenChange, title, description, maxWidth = "max-w-lg", children }: BaseDialogProps) {
+export function BaseDialog({ open, onOpenChange, title, description, maxWidth = "max-w-lg", children, headerExtra }: BaseDialogProps) {
 	return (
 		<Dialog.Root open={open} onOpenChange={onOpenChange}>
 			<Dialog.Portal>
@@ -27,7 +28,10 @@ export function BaseDialog({ open, onOpenChange, title, description, maxWidth = 
 						<Dialog.Title className="text-lg font-semibold flex items-center gap-2">
 							{title}
 						</Dialog.Title>
-						<DialogCloseButton />
+						<div className="flex items-center gap-2">
+							{headerExtra}
+							<DialogCloseButton />
+						</div>
 					</div>
 
 					{/* Content */}

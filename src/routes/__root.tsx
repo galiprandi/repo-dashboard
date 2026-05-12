@@ -1,11 +1,12 @@
 import { createRootRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
-import { Github, Star, Activity, Loader2 } from "lucide-react";
+import { Github, Star, Activity, Loader2, Blocks } from "lucide-react";
 import { useEffect, useState } from "react";
 import { RepoSearch } from "@/components/RepoSearch";
 import { NovedadesDialog } from "@/components/NovedadesDialog";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { SettingsDialog } from "@/components/SettingsDialog";
+import { useDockerAccess } from "@/hooks/useDockerAccess";
 import { useGitUser } from "@/hooks/useGitUser";
 import { useGhCliSetup } from "@/hooks/useGhCliSetup";
 import { useUserCollections } from "@/hooks/useUserCollections";
@@ -43,6 +44,25 @@ function UserAvatar() {
 		<div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-medium">
 			{initials}
 		</div>
+	);
+}
+
+function DockerLink() {
+	const { data: access, isLoading: checkingAccess } = useDockerAccess();
+
+	// Don't show the Docker icon if Docker is not installed or accessible
+	if (!checkingAccess && !access?.hasAccess) {
+		return null;
+	}
+
+	return (
+		<Link
+			to="/docker"
+			className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+			title="Docker Manager"
+		>
+			<Blocks className="w-5 h-5" />
+		</Link>
 	);
 }
 
@@ -122,8 +142,9 @@ function RootLayout() {
 						</div>
 						<div className="flex items-center gap-4">
 							<FeedbackDialog />
-							<NovedadesDialog />
+							<NovedadesDialog />							
 							<RepoSearch />
+							<DockerLink />
 							<Link
 								to="/health"
 								className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
@@ -131,8 +152,8 @@ function RootLayout() {
 							>
 								<Activity className="w-5 h-5" />
 							</Link>
-							<UserAvatar />
 							<SettingsDialog />
+							<UserAvatar />
 						</div>
 					</div>
 				</header>
