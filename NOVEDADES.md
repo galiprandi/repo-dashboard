@@ -4,6 +4,9 @@
 
 ### 🗓️ 12 de Mayo de 2026
 
+- ✨ Logs: Streaming en tiempo real para logs de Docker y Kubernetes con actualización automática.
+- ✨ Logs: Selector de recursos para cambiar rápidamente entre deployments y contenedores.
+- ✨ Logs: Controles de pausa/reproducción y auto-scroll con detección de scroll manual.
 - 🎉 Docker: Nuevo sistema de gestión de contenedores con interfaz visual completa.
 - ✨ UI: Componentes reutilizables de filtros y encabezados para mejor consistencia.
 - 🎨 Configuración: Mejora de accesibilidad en el disparador de ajustes.
