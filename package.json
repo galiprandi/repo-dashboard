@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --open",
+    "doctor": "./scripts/healthcheck.sh --deps --build",
     "build": "tsc -b && vite build",
     "clean": "rm -rf dist coverage .vite",
     "lint": "eslint .",

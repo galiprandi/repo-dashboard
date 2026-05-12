@@ -96,6 +96,7 @@ ReleaseHub leverages cutting-edge, production-ready technologies at the forefron
 | Command | Description |
 |---------|-------------|
 | `rhub` | Launch the app (after installation) |
+| `npm run doctor` | Run environment healthcheck |
 | `npm run dev` | Start development server |
 | `npm run build` | Build for production |
 | `npm run preview` | Preview production build |
