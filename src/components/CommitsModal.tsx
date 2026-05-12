@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
-import { createPortal } from "react-dom";
-import { X, GitCommit, Sparkles, Loader2, ChevronDown, ChevronRight } from "lucide-react";
+import { Search, GitCommit, Sparkles, Loader2, ChevronDown, ChevronRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAISummarize } from "@galiprandi/react-tools";
 import { AISummaryCard } from "@/components/AISummaryCard";
+import { BaseDialog } from "@/components/ui/BaseDialog";
 
 interface CommitsModalProps {
 	isOpen: boolean;
@@ -121,47 +121,47 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 		await handleSummarizeWithAI();
 	};
 
-	if (!isOpen) return null;
-
-	return createPortal(
-		<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-			<div className="bg-background rounded-lg shadow-lg w-[50vw] h-[70vh] max-w-[900px] flex flex-col overflow-hidden">
-				<div className="flex items-center justify-between p-4 border-b gap-2 flex-wrap">
-					<div className="flex items-center gap-2">
-						<h3 className="font-semibold">Cambios desde el tag {prodTag || "último deploy"}</h3>
-						<span className="text-xs text-muted-foreground">({pendingCommits.length} commits)</span>
-					</div>
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							onClick={handleSummarizeWithAI}
-							disabled={isGenerating || availability !== "available" || pendingCommits.length === 0}
-							className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-							title="Resumir con IA"
-						>
-							{isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-							{isGenerating ? getStatusMessage : "Resumir"}
-						</button>
-						<div className="relative">
-							<input
-								type="text"
-								value={filter}
-								onChange={(e) => setFilter(e.target.value)}
-								placeholder="Filtrar commits..."
-								className="pl-7 pr-2 py-1 text-sm bg-background border rounded-md w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"
-							/>
-						</div>
-						<button
-							type="button"
-							onClick={onClose}
-							className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
-							title="Cerrar"
-						>
-							<X className="w-4 h-4" />
-						</button>
-					</div>
+	return (
+		<BaseDialog
+			open={isOpen}
+			onOpenChange={(open) => !open && onClose()}
+			title={
+				<div className="flex items-center gap-2">
+					<span>Cambios desde {prodTag || "último deploy"}</span>
+					<span className="text-xs bg-muted px-2 py-0.5 rounded-full font-normal">
+						{pendingCommits.length}
+					</span>
 				</div>
-				<div className="flex-1 overflow-auto p-4">
+			}
+			description={`Listado de ${pendingCommits.length} commits pendientes de deploy`}
+			maxWidth="max-w-4xl"
+		>
+			<div className="flex flex-col h-full overflow-hidden">
+				{/* Controles superiores */}
+				<div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+					<div className="relative flex-1 max-w-sm">
+						<Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+						<input
+							type="text"
+							value={filter}
+							onChange={(e) => setFilter(e.target.value)}
+							placeholder="Filtrar commits..."
+							className="w-full pl-9 pr-4 py-2 text-sm bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+						/>
+					</div>
+					<button
+						type="button"
+						onClick={handleSummarizeWithAI}
+						disabled={isGenerating || availability !== "available" || pendingCommits.length === 0}
+						className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-md border border-purple-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						{isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+						{isGenerating ? getStatusMessage : "Resumir con IA"}
+					</button>
+				</div>
+
+				{/* Contenido scrolleable */}
+				<div className="flex-1 overflow-y-auto pr-1">
 					<AISummaryCard
 						summary={summary}
 						isGenerating={isGenerating}
@@ -172,61 +172,77 @@ export function CommitsModal({ isOpen, onClose, commits, prodCommitHash, prodTag
 						onToggleCollapse={() => setIsAiSummaryCollapsed(!isAiSummaryCollapsed)}
 						isCopied={aiSummaryCopied}
 					/>
-					{pendingCommits.length === 0 ? (
-						<div className="flex items-center justify-center h-full text-muted-foreground">
-							<p>No hay commits pendientes</p>
-						</div>
-					) : filteredCommits.length === 0 ? (
-						<div className="flex items-center justify-center h-full text-muted-foreground">
-							<p>No se encontraron commits que coincidan con el filtro</p>
-						</div>
-					) : (
-						<div className="space-y-2">
-							{filteredCommits.map((commit) => (
-								<div
-									key={commit.hash}
-									className="p-3 bg-muted/30 rounded border cursor-pointer hover:bg-accent hover:border-primary/30 transition-all duration-200 focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-									onClick={() => toggleCommitExpansion(commit.hash)}
-									role="button"
-									aria-expanded={expandedCommits.has(commit.hash)}
-									tabIndex={0}
-								>
-									<div className="flex items-start gap-3">
-										<GitCommit className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-										<div className="flex-1 min-w-0">
-											<div className="flex items-center gap-2">
-												<p className="text-sm font-medium truncate">{commit.subject}</p>
-												{commit.body && (
-													<div className="flex-shrink-0">
-														{expandedCommits.has(commit.hash) ? (
-															<ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200" />
-														) : (
-															<ChevronRight className="w-4 h-4 text-muted-foreground transition-transform duration-200" />
-														)}
+
+					<div className="mt-4">
+						{pendingCommits.length === 0 ? (
+							<div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+								<GitCommit className="w-12 h-12 mb-4 opacity-20" />
+								<p>No hay commits pendientes</p>
+							</div>
+						) : filteredCommits.length === 0 ? (
+							<div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+								<Search className="w-12 h-12 mb-4 opacity-20" />
+								<p>No se encontraron commits para "{filter}"</p>
+							</div>
+						) : (
+							<div className="space-y-3">
+								{filteredCommits.map((commit) => (
+									<div
+										key={commit.hash}
+										className="group p-4 bg-muted/30 rounded-xl border border-transparent hover:bg-accent hover:border-primary/30 transition-all duration-200 focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+										onClick={() => toggleCommitExpansion(commit.hash)}
+										role="button"
+										aria-expanded={expandedCommits.has(commit.hash)}
+										tabIndex={0}
+										onKeyDown={(e) => {
+											if (e.key === 'Enter' || e.key === ' ') {
+												e.preventDefault();
+												toggleCommitExpansion(commit.hash);
+											}
+										}}
+									>
+										<div className="flex items-start gap-4">
+											<div className="mt-1 p-2 rounded-full bg-background border group-hover:border-primary/30 transition-colors">
+												<GitCommit className="w-4 h-4 text-muted-foreground" />
+											</div>
+											<div className="flex-1 min-w-0">
+												<div className="flex items-center justify-between gap-2">
+													<p className="text-sm font-semibold truncate group-hover:text-primary transition-colors">
+														{commit.subject}
+													</p>
+													{commit.body && (
+														<div className="flex-shrink-0">
+															{expandedCommits.has(commit.hash) ? (
+																<ChevronDown className="w-4 h-4 text-muted-foreground transition-transform duration-200" />
+															) : (
+																<ChevronRight className="w-4 h-4 text-muted-foreground transition-transform duration-200" />
+															)}
+														</div>
+													)}
+												</div>
+												<div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+													<span className="font-mono bg-muted px-1.5 py-0.5 rounded uppercase tracking-tighter">
+														{commit.shortHash}
+													</span>
+													<span>•</span>
+													<span className="font-medium text-foreground/70">{commit.author}</span>
+													<span>•</span>
+													<span>{commit.date}</span>
+												</div>
+												{expandedCommits.has(commit.hash) && commit.body && (
+													<div className="mt-4 p-3 rounded-lg bg-background/50 border border-border/50 text-xs text-muted-foreground whitespace-pre-wrap animate-in fade-in slide-in-from-top-2 duration-300">
+														{commit.body}
 													</div>
 												)}
 											</div>
-											<div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-												<span className="font-mono">{commit.shortHash}</span>
-												<span>•</span>
-												<span>{commit.author}</span>
-												<span>•</span>
-												<span>{commit.date}</span>
-											</div>
-											{expandedCommits.has(commit.hash) && commit.body && (
-												<div className="mt-2 p-2 rounded bg-muted/50 text-xs text-muted-foreground whitespace-pre-wrap animate-in fade-in slide-in-from-top-1 duration-200">
-													{commit.body}
-												</div>
-											)}
 										</div>
 									</div>
-								</div>
-							))}
-						</div>
-					)}
+								))}
+							</div>
+						)}
+					</div>
 				</div>
 			</div>
-		</div>,
-		document.body
+		</BaseDialog>
 	);
 }
