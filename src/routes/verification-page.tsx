@@ -5,8 +5,6 @@ import { NovedadesDialog } from "@/components/NovedadesDialog";
 import { ProjectSelector } from "@/components/ProjectSelector";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CommitsModal } from "@/components/CommitsModal";
-import { SimpleTimeline } from "@/pipeline-core/components/SimpleTimeline";
-import type { PipelineEvent } from "@/pipeline-core/types";
 
 export const Route = createFileRoute("/verification-page")({
 	component: VerificationPage,
@@ -14,15 +12,6 @@ export const Route = createFileRoute("/verification-page")({
 
 function VerificationPage() {
 	const [isCommitsModalOpen, setIsCommitsModalOpen] = useState(false);
-	const mockEvents: PipelineEvent[] = [
-		{ id: '1', name: 'Checkout', state: 'COMPLETED', startedAt: '2024-05-20T10:00:00Z', completedAt: '2024-05-20T10:01:00Z' },
-		{ id: '2', name: 'Build', state: 'RUNNING', startedAt: '2024-05-20T10:01:00Z' },
-		{ id: '3', name: 'Test', state: 'IDLE' },
-		{ id: '4', name: 'Deploy', state: 'FAILED', startedAt: '2024-05-20T10:05:00Z', completedAt: '2024-05-20T10:06:00Z' },
-		{ id: '5', name: 'Notify', state: 'CANCELLED' },
-		{ id: '6', name: 'Cleanup', state: 'STARTED', startedAt: '2024-05-20T10:10:00Z' },
-		{ id: '7', name: 'Extra', state: 'COMPLETED' },
-	];
 	const mockCommits = [
 		{
 			hash: "hash1",
@@ -99,26 +88,6 @@ function VerificationPage() {
                             <li>Verificar rotación de flecha al abrir.</li>
                             <li>Verificar animación de entrada del dropdown.</li>
                             <li>Verificar navegación por teclado y ARIA roles.</li>
-                        </ul>
-                    </div>
-                </section>
-
-                <section className="p-8 border rounded-xl bg-card shadow-sm space-y-6 col-span-1 md:col-span-2">
-                    <h2 className="text-lg font-semibold border-b pb-2">Timeline Indicators</h2>
-                    <div className="flex flex-col gap-8">
-                        <div>
-                            <h3 className="text-sm font-medium mb-4 text-muted-foreground">SimpleTimeline (Standardized)</h3>
-                            <SimpleTimeline events={mockEvents} />
-                        </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                        <p className="font-medium mb-1">Pruebas:</p>
-                        <ul className="list-disc list-inside space-y-1">
-                            <li>Verificar tamaño h-2 w-7.</li>
-                            <li>Verificar hover:scale-110 y hover:shadow-md.</li>
-                            <li>Verificar focus rings (navegación por teclado).</li>
-                            <li>Verificar aria-labels presentes.</li>
-                            <li>Verificar "+1 más" cuando hay > 6 eventos.</li>
                         </ul>
                     </div>
                 </section>

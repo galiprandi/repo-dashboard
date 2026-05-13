@@ -234,6 +234,7 @@ function ContainerRow({
 					value={selectedPort}
 					onChange={(e) => setSelectedPort(e.target.value)}
 					className="text-xs border rounded px-2 py-1 bg-background"
+					aria-label="Seleccionar puerto"
 				>
 					{externalPorts.map((port, index) => (
 						<option key={`${port}-${index}`} value={port}>
@@ -284,6 +285,7 @@ function ContainerRow({
 									type="button"
 									onClick={onViewLogs}
 									className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
+									aria-label="Ver logs"
 								>
 									<Terminal className="w-4 h-4" />
 								</button>
@@ -304,6 +306,7 @@ function ContainerRow({
 									onClick={onStart}
 									className="p-1.5 text-green-600 hover:text-green-700 hover:bg-green-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-green-600"
 									disabled={running}
+									aria-label="Iniciar contenedor"
 								>
 									<Play className="w-4 h-4" />
 								</button>
@@ -324,6 +327,7 @@ function ContainerRow({
 									onClick={onRestart}
 									className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
 									disabled={!running}
+									aria-label="Reiniciar contenedor"
 								>
 									<RefreshCw className="w-4 h-4" />
 								</button>
@@ -344,6 +348,7 @@ function ContainerRow({
 									onClick={onStop}
 									className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-red-600"
 									disabled={!running}
+									aria-label="Detener contenedor"
 								>
 									<Square className="w-4 h-4" />
 								</button>
