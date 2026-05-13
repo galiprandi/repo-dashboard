@@ -108,7 +108,8 @@ export function SimpleTimeline({ events }: SimpleTimelineProps) {
 						<HoverCardTrigger asChild>
 							<button
 								type="button"
-								className={`h-1.5 w-6 rounded-full transition-all hover:opacity-80 ${timelineStatusColor(
+								aria-label={`${event.name}: ${event.state}`}
+								className={`h-2 w-7 rounded-full transition-all hover:scale-110 hover:shadow-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none ${timelineStatusColor(
 									event.state,
 								)}`}
 							/>
