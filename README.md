@@ -79,9 +79,10 @@ ReleaseHub leverages cutting-edge, production-ready technologies at the forefron
 
 ## Requirements
 
-- Node.js (v18+)
+- Node.js (v22+)
 - npm (standardized as default package manager)
 - GitHub CLI (`gh`) authenticated
+- Kubernetes CLI (`kubectl`)
 - jq (JSON processor)
 
 ## Setup
