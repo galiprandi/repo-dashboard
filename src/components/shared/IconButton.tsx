@@ -15,7 +15,8 @@ export function IconButton({ icon, onClick, tooltip, disabled = false }: IconBut
 					type="button"
 					onClick={onClick}
 					disabled={disabled}
-					className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+					aria-label={tooltip}
+					className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
 				>
 					{icon}
 				</button>

@@ -36,7 +36,7 @@ export function ProjectSelector({ repo }: { repo: string }) {
 
 	return (
 		<div className="relative" ref={containerRef}>
-			<button type="button" onClick={() => setIsOpen(!isOpen)} aria-expanded={isOpen} aria-haspopup="listbox" aria-label="Asignar a proyecto" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+			<button type="button" onClick={() => setIsOpen(!isOpen)} aria-expanded={isOpen} aria-haspopup="listbox" aria-label="Asignar a proyecto" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-sm">
 				{hasProjects ? <><FolderOpen className="w-4 h-4 text-primary" /><span>{repoProjects.length === 1 ? repoProjects[0].name : `${repoProjects.length} proyectos`}</span></> : <><FolderPlus className="w-4 h-4" /><span>Agregar a proyecto</span></>}
 				<ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
 			</button>
