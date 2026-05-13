@@ -14,12 +14,7 @@ import {
 	HoverCardContent,
 	HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import {
-	Dialog,
-	DialogContent,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+import { BaseDialog } from "@/components/ui/BaseDialog";
 import DayJS from "@/lib/dayjs";
 
 const timelineStatusTextColor = (state: string) => {
@@ -202,7 +197,7 @@ export function MiniTimeline({ events, runningEventId }: MiniTimelineProps) {
 
 	return (
 		<>
-			<div className="flex items-start gap-0.5">
+			<div className="flex items-start gap-1">
 				{events.map((event) => {
 					const eventUrls = extractEventUrls(event);
 					const isRunning = event.state === "STARTED" || event.state === "RUNNING";
@@ -235,9 +230,10 @@ export function MiniTimeline({ events, runningEventId }: MiniTimelineProps) {
 											setRunningTooltipClosed(true);
 										}
 									}}
-									className={`h-1.5 w-6 rounded-full transition-all hover:opacity-80 ${timelineStatusColor(
+									className={`h-2 w-7 rounded-full transition-all duration-200 hover:scale-110 hover:shadow-md focus-visible:scale-110 focus-visible:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${timelineStatusColor(
 										event.state,
 									)}`}
+									aria-label={`Evento: ${event.label.es}, Estado: ${event.state}`}
 								/>
 							</HoverCardTrigger>
 							<HoverCardContent
@@ -338,18 +334,19 @@ export function MiniTimeline({ events, runningEventId }: MiniTimelineProps) {
 					);
 				})}
 			</div>
-			{selectedSubEvent && (
-				<Dialog open={!!selectedSubEvent} onOpenChange={() => setSelectedSubEvent(null)}>
-					<DialogContent className="max-w-[60vw] max-h-[80vh] overflow-y-auto">
-						<DialogHeader>
-							<DialogTitle>{selectedSubEvent.label}</DialogTitle>
-						</DialogHeader>
-						<div className="prose prose-sm max-w-none dark:prose-invert">
-							<Streamdown>{selectedSubEvent.markdown}</Streamdown>
-						</div>
-					</DialogContent>
-				</Dialog>
-			)}
+			<BaseDialog
+				open={!!selectedSubEvent}
+				onOpenChange={(open) => !open && setSelectedSubEvent(null)}
+				title={selectedSubEvent?.label}
+				description="Detalles del sub-evento"
+				maxWidth="max-w-4xl"
+			>
+				<div className="flex-1 overflow-y-auto pr-2 prose prose-sm max-w-none dark:prose-invert">
+					{selectedSubEvent?.markdown && (
+						<Streamdown>{selectedSubEvent.markdown}</Streamdown>
+					)}
+				</div>
+			</BaseDialog>
 		</>
 	);
 }
