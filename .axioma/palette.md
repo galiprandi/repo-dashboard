@@ -1,7 +1,7 @@
 # Diario de Palette 🎨
 
-## 2026-05-12 - Accesibilidad de disparadores en Header
+## 2026-05-13 - Estandarización de estados de foco y accesibilidad
 
-**Aprendizaje:** Los iconos interactivos en el header (como el de Configuración) se implementaban como `div` con `onClick`, lo que impedía la navegación por teclado. Al convertirlos a `button`, es crucial no solo añadir el rol semántico, sino también un estado de foco visual (`focus-visible:ring-2`) que sea coherente con el diseño "premium" de la app pero claramente visible.
+**Aprendizaje:** Los componentes compartidos como `IconButton` y `FilterBar` carecían de estados de foco visuales claros y atributos ARIA necesarios para una buena experiencia con lectores de pantalla. Al aplicar `focus-visible:ring-2 focus-visible:ring-primary` de forma consistente, se mejora la navegación por teclado sin comprometer la estética para usuarios de ratón. Además, el uso de `aria-pressed` en botones de filtro comunica correctamente el estado activo que antes solo era visual.
 
-**Acción:** Al refactorizar disparadores de header, usar siempre `<button type="button">`, añadir `aria-label` descriptivo y aplicar la clase `focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-2 rounded-md`.
+**Acción:** Siempre incluir anillos de foco (`focus-visible:ring-2 focus-visible:ring-primary`) en elementos interactivos y asegurar atributos ARIA (`aria-label`, `aria-pressed`) que reflejen el estado y propósito del componente.

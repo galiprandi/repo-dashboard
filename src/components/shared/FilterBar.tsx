@@ -33,9 +33,10 @@ export function FilterBar({
 						<button
 							key={filter.value}
 							onClick={() => onFilterChange(filter.value)}
-							className={`px-3 py-1 text-sm rounded-md transition-colors ${
+							aria-pressed={activeFilter === filter.value}
+							className={`px-3 py-1 text-sm rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 ${
 								activeFilter === filter.value
-									? 'bg-blue-600 text-white'
+									? 'bg-primary text-primary-foreground'
 									: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
 							}`}
 						>
@@ -50,7 +51,7 @@ export function FilterBar({
 						placeholder={searchPlaceholder}
 						value={searchValue}
 						onChange={(e) => onSearchChange(e.target.value)}
-						className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+						className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus:ring-primary focus:border-transparent"
 					/>
 				</div>
 			</div>
