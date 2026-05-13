@@ -251,6 +251,7 @@ export function LogsViewer({
 								value={selectedResourceId || resources[0].id}
 								onChange={(e) => onResourceChange?.(e.target.value)}
 								className="bg-background border rounded px-2 py-1 text-sm"
+								aria-label="Seleccionar recurso"
 							>
 								{resources.map((resource) => (
 									<option key={resource.id} value={resource.id}>
@@ -296,6 +297,7 @@ export function LogsViewer({
 										value={logLevelFilter}
 										onChange={(e) => setLogLevelFilter(e.target.value as "all" | "ERROR" | "WARN" | "INFO" | "DEBUG")}
 										className="bg-background border rounded px-2 py-1 text-sm"
+										aria-label="Filtrar por nivel de log"
 									>
 										<option value="all">Todos</option>
 										<option value="ERROR">ERROR</option>

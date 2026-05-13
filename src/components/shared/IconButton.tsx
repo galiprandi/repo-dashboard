@@ -13,6 +13,7 @@ export function IconButton({ icon, onClick, tooltip, disabled = false }: IconBut
 			<Tooltip.Trigger asChild>
 				<button
 					type="button"
+					aria-label={tooltip}
 					onClick={onClick}
 					disabled={disabled}
 					aria-label={tooltip}
