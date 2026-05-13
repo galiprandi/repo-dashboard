@@ -7,3 +7,4 @@
 ## 11 de Mayo de 2026 - Centralización de Healthchecks y Requisitos de Sistema | Impacto: Reducción de lógica duplicada y mejora en la observabilidad del entorno | Regla: Validar requisitos de sistema mediante scripts/healthcheck.sh antes de cualquier operación de orquestación.
 
 ## 2026-05-12 - Implementación de 'Doctor Pattern' | Impacto: Mejora de la observabilidad del entorno y reducción de fricción en onboarding | Regla: Validar estado de autenticación de gh en healthchecks.
+## 2026-05-13 - Sincronización de Requisitos y Observabilidad de K8s | Impacto: Mejora de la claridad documental y reducción de falsos positivos en diagnóstico | Regla: Validar presencia de kubectl (opcional) en el entorno mediante healthchecks.
