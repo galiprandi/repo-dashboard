@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { type GitCommit, useGitCommits } from "@/hooks/useGitCommits";
 import { type GitTag, useGitTags } from "@/hooks/useGitTags";
-import { DisplayInfo } from "./DisplayInfo";
+import { DisplayInfo } from "@/components/ui/DisplayInfo";
 import { CommitLink } from "./CommitLink";
 import { TagLink } from "./TagLink";
 import { Loader2 } from "lucide-react";

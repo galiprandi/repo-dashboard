@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Loader2, Star, Github, Building2, GitPullRequestCreateArrow, FolderOpen, FolderPlus } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { DisplayInfo } from "@/components/DisplayInfo";
+import { DisplayInfo } from "@/components/ui/DisplayInfo";
 import { CommitLink } from "@/components/CommitLink";
 import { TagLink } from "@/components/TagLink";
 import { PromoteDialog } from "@/components/PromoteDialog";

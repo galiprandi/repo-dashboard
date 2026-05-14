@@ -23,48 +23,53 @@ export const DisplayInfo = ({
 						: "message";
 	const iconComponent =
 		icon === "commit" ? (
-			<GitCommit />
+			<GitCommit className="w-full h-full" />
 		) : icon === "tag" ? (
-			<Tag />
+			<Tag className="w-full h-full" />
 		) : icon === "dates" ? (
-			<Clock />
+			<Clock className="w-full h-full" />
 		) : icon === "author" ? (
-			<User />
+			<User className="w-full h-full" />
 		) : (
-			<MessageSquare />
+			<MessageSquare className="w-full h-full" />
 		);
 	const iconColor =
 		type === "commit"
-			? "text-blue-500"
+			? "text-blue-500 dark:text-blue-400"
 			: type === "tag"
-				? "text-purple-500"
-				: "text-gray-500";
+				? "text-purple-500 dark:text-purple-400"
+				: "text-muted-foreground";
 
 	const displayValue =
 		value && maxChar && value.length > maxChar
 			? `${value.substring(0, maxChar)}...`
 			: value;
 
-	if (!value) return "-";
+	if (!value) return <span className="text-muted-foreground">-</span>;
 
 	const tooltip = getTooltipValue({ value, type });
+	const hasTooltip = !!tooltip && !hideTooltip;
 
 	return (
-		<div className={`flex items-center gap-1 ${className || ""}`}>
+		<div className={cn("flex items-center gap-1.5", className)}>
 			{!hideIcon && (
 				<div
 					className={cn(
 						iconColor,
-						`w-${iconSize} h-${iconSize} flex items-center justify-center`,
+						"flex items-center justify-center shrink-0",
+						`w-${iconSize} h-${iconSize}`,
 					)}
 				>
 					{iconComponent}
 				</div>
 			)}
 			<span
-				className="text-sm text-gray-700"
-				title={hideTooltip ? undefined : tooltip}
-				style={{ cursor: tooltip && !hideTooltip ? "help" : "default" }}
+				className={cn(
+					"text-sm text-foreground/80 transition-colors",
+					hasTooltip && "cursor-help underline decoration-dotted decoration-muted-foreground/50 underline-offset-4 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm",
+				)}
+				title={hasTooltip ? tooltip : undefined}
+				tabIndex={hasTooltip ? 0 : undefined}
 			>
 				{type === "dates" ? DayJS(value).fromNow() : displayValue}
 			</span>

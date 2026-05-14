@@ -6,6 +6,7 @@ import { ProjectSelector } from "@/components/ProjectSelector";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CommitsModal } from "@/components/CommitsModal";
 import { MiniTimeline } from "@/components/SekiMonitor/MiniTimeline";
+import { DisplayInfo } from "@/components/ui/DisplayInfo";
 import type { Event } from "@/api/seki.type";
 
 export const Route = createFileRoute("/verification-page")({
@@ -120,14 +121,32 @@ function VerificationPage() {
                 </section>
 
                 <section className="p-8 border rounded-xl bg-card shadow-sm space-y-6">
-                    <h2 className="text-lg font-semibold border-b pb-2">Selectores de Proyecto</h2>
-                    <ProjectSelector repo="galiprandi/release-hub" />
+                    <h2 className="text-lg font-semibold border-b pb-2">Componentes de Información (Croma)</h2>
+
+                    <div className="space-y-4">
+                        <div className="flex flex-col gap-2">
+                            <h3 className="text-sm font-medium">Selectores de Proyecto</h3>
+                            <ProjectSelector repo="galiprandi/release-hub" />
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                            <h3 className="text-sm font-medium">DisplayInfo (Refactorizado)</h3>
+                            <div className="flex gap-6 flex-wrap bg-muted/20 p-4 rounded-lg">
+                                <DisplayInfo type="commit" value="a1b2c3d4" />
+                                <DisplayInfo type="tag" value="v2.5.0" />
+                                <DisplayInfo type="dates" value={new Date().toISOString()} />
+                                <DisplayInfo type="author" value="Croma Agent" />
+                                <DisplayInfo type="message" value="Este es un mensaje muy largo que debería mostrar un tooltip al pasar el cursor o hacer foco" maxChar={30} />
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="text-sm text-muted-foreground">
                         <p className="font-medium mb-1">Pruebas:</p>
                         <ul className="list-disc list-inside space-y-1">
-                            <li>Verificar rotación de flecha al abrir.</li>
-                            <li>Verificar animación de entrada del dropdown.</li>
-                            <li>Verificar navegación por teclado y ARIA roles.</li>
+                            <li>Verificar rotación de flecha al abrir el ProjectSelector.</li>
+                            <li>Verificar que ProjectSelector use BaseDialog para el formulario de creación.</li>
+                            <li>Verificar que DisplayInfo use cursor-help, subrayado punteado y soporte foco/teclado cuando tiene tooltip.</li>
                         </ul>
                     </div>
                 </section>
