@@ -46,7 +46,7 @@ function VerificationPage() {
 	const mockEvents: Event[] = [
 		{
 			id: "1",
-			label: { es: "Build exitoso", en: "Successful Build" },
+			label: { es: "Build exitoso", en: "Successful Build", br: "Build" },
 			state: "SUCCESS",
 			created_at: "2024-05-20T10:00:00Z",
 			updated_at: "2024-05-20T10:05:00Z",
@@ -64,7 +64,7 @@ function VerificationPage() {
 		},
 		{
 			id: "2",
-			label: { es: "Despliegue fallido", en: "Failed Deploy" },
+			label: { es: "Despliegue fallido", en: "Failed Deploy", br: "Deploy" },
 			state: "FAILED",
 			created_at: "2024-05-20T10:05:00Z",
 			updated_at: "2024-05-20T10:10:00Z",
@@ -73,11 +73,12 @@ function VerificationPage() {
 		},
 		{
 			id: "3",
-			label: { es: "Ejecutando tests", en: "Running tests" },
+			label: { es: "Ejecutando tests", en: "Running tests", br: "Tests" },
 			state: "RUNNING",
 			created_at: "2024-05-20T10:10:00Z",
 			updated_at: "2024-05-20T10:15:00Z",
 			subevents: [],
+			markdown: "",
 		}
 	];
 
