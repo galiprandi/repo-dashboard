@@ -6,6 +6,7 @@ import { ProjectSelector } from "@/components/ProjectSelector";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CommitsModal } from "@/components/CommitsModal";
 import { MiniTimeline } from "@/components/SekiMonitor/MiniTimeline";
+import { DisplayInfo } from "@/components/DisplayInfo";
 import type { Event } from "@/api/seki.type";
 
 export const Route = createFileRoute("/verification-page")({
@@ -134,17 +135,24 @@ function VerificationPage() {
                 </section>
 
 				<section className="p-8 border rounded-xl bg-card shadow-sm space-y-6 md:col-span-2">
-                    <h2 className="text-lg font-semibold border-b pb-2">Estandarización de MiniTimeline</h2>
-                    <div className="p-4 bg-muted/20 rounded-lg">
-						<MiniTimeline events={mockEvents} />
-					</div>
+                    <h2 className="text-lg font-semibold border-b pb-2">Estandarización de MiniTimeline y DisplayInfo</h2>
+                    <div className="flex flex-col gap-4">
+                        <div className="p-4 bg-muted/20 rounded-lg">
+                            <MiniTimeline events={mockEvents} />
+                        </div>
+                        <div className="flex gap-8 p-4 bg-muted/10 rounded-lg">
+                            <DisplayInfo type="dates" value="2024-05-20T10:00:00Z" />
+                            <DisplayInfo type="author" value="Jules Agent" />
+                            <DisplayInfo type="message" value="This is a very long commit message that should definitely trigger a tooltip when hovered or focused by the user." maxChar={20} />
+                        </div>
+                    </div>
                     <div className="text-sm text-muted-foreground">
                         <p className="font-medium mb-1">Pruebas:</p>
                         <ul className="list-disc list-inside space-y-1">
                             <li>Verificar tamaño estandarizado (h-2 w-7).</li>
                             <li>Verificar transiciones de escala y sombra al hover/focus.</li>
                             <li>Verificar anillos de foco (ring-primary).</li>
-                            <li>Verificar uso de BaseDialog al abrir detalles de sub-eventos (clic en 📄).</li>
+                            <li>DisplayInfo: Verificar tabIndex={0} y focus rings cuando hay tooltip.</li>
                         </ul>
                     </div>
                 </section>
