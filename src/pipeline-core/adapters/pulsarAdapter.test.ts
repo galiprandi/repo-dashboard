@@ -20,7 +20,7 @@ describe('pulsarAdapter', () => {
     expect(result?.id).toBe('gha-1')
     expect(result?.state).toBe('COMPLETED')
     expect(result?.events[0].name).toBe('Build')
-    expect(result?.commit.author).toBe('Vigia')
+    expect(result?.commit?.author).toBe('Vigia')
   })
 
   it('should return null when no workflow runs are found', async () => {
