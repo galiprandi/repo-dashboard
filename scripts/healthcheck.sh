@@ -25,6 +25,9 @@ if [ -n "$NV" ] && [ "$NV" -ge 22 ]; then echo -e "  - Node: ${C_GREEN}OK${NC} (
 else echo -e "  - Node: ${C_RED}FAILED${NC} ($NV)"; E=1; fi
 check_cmd git; check_cmd gh; check_cmd jq; check_cmd kubectl optional; check_cmd docker optional
 # ENV Check
+ if [ ! -f ".env" ]; then
+     echo -e "  - .env: ${C_YELLOW}MISSING${NC} (cp .env.example .env)"
+ fi
 if [ -z "$VITE_SEKI_API_TOKEN" ]; then
     echo -e "  - Config: ${C_YELLOW}VITE_SEKI_API_TOKEN not set${NC} (Optional)"
 else

@@ -9,3 +9,4 @@
 ## 2026-05-12 - Implementación de 'Doctor Pattern' | Impacto: Mejora de la observabilidad del entorno y reducción de fricción en onboarding | Regla: Validar estado de autenticación de gh en healthchecks.
 ## 2026-05-13 - Sincronización de Requisitos y Observabilidad de K8s | Impacto: Mejora de la claridad documental y reducción de falsos positivos en diagnóstico | Regla: Validar presencia de kubectl (opcional) en el entorno mediante healthchecks.
 ## 2026-05-14 - Observabilidad de Docker y Salud del Build | Impacto: Mejora de la DX al diagnosticar permisos de Docker y restaurar la integridad del CI local | Regla: Mantener el build libre de errores de tipos en componentes compartidos y tests.
+## 2026-05-15 - Estandarización de Configuración de Entorno | Impacto: Reducción de la fricción en el onboarding y prevención de fallos por variables faltantes | Regla: Validar existencia de .env y sugerir uso de .env.example en healthchecks.
