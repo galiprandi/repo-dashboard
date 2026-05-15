@@ -45,7 +45,7 @@ export function ProjectSelector({ repo }: { repo: string }) {
 					{projects.length === 0 && !isCreating && <div className="px-3 py-2 text-sm text-muted-foreground">Sin proyectos. Crea el primero.</div>}
 					{projects.map(p => {
 						const inP = isRepoInProject(p.id, repo);
-						return <button key={p.id} type="button" role="option" aria-selected={inP} onClick={() => { void (inP ? removeRepoFromProject(p.id, repo) : addRepoToProject(p.id, repo)); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-sm">
+						return <button key={p.id} type="button" role="option" aria-selected={inP} onClick={() => { void (inP ? removeRepoFromProject(p.id, repo) : addRepoToProject(p.id, repo)); }} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left focus-visible:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset focus:outline-none">
 							{inP ? <Check className="w-4 h-4 text-primary" /> : <div className="w-4 h-4" />}
 							<div className="flex-1 min-w-0">
 								<div className="font-medium truncate">{p.name}</div>
@@ -61,65 +61,66 @@ export function ProjectSelector({ repo }: { repo: string }) {
 								setIsCreating(true);
 								setIsOpen(false);
 							}}
-							className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-sm"
+							className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset focus:outline-none"
 						>
 							<Plus className="w-4 h-4" /> Nuevo proyecto
 						</button>
 					</div>
 				</div>
 			)}
-			<Dialog open={isCreating} onOpenChange={setIsCreating}>
-				<DialogContent className="sm:max-w-md">
-					<DialogHeader>
-						<DialogTitle>Crear nuevo proyecto</DialogTitle>
-					</DialogHeader>
-					<form onSubmit={handleCreate} className="space-y-4">
-						<div>
-							<label htmlFor="project-name" className="block text-sm font-medium mb-2">
-								Nombre del proyecto
-							</label>
-							<input
-								id="project-name"
-								type="text"
-								value={newName}
-								onChange={e => setNewName(e.target.value)}
-								placeholder="Ej: Frontend, Backend, Infraestructura"
-								className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-								autoFocus
-							/>
-						</div>
-						<div>
-							<label htmlFor="project-desc" className="block text-sm font-medium mb-2">
-								Descripción (opcional)
-							</label>
-							<input
-								id="project-desc"
-								type="text"
-								value={newDesc}
-								onChange={e => setNewDesc(e.target.value)}
-								placeholder="Descripción breve del proyecto"
-								className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-							/>
-						</div>
-						<DialogFooter>
-							<button
-								type="button"
-								onClick={() => setIsCreating(false)}
-								className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
-							>
-								Cancelar
-							</button>
-							<button
-								type="submit"
-								disabled={!newName.trim()}
-								className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
-							>
-								Crear proyecto
-							</button>
-						</DialogFooter>
-					</form>
-				</DialogContent>
-			</Dialog>
+			<BaseDialog
+				open={isCreating}
+				onOpenChange={setIsCreating}
+				title="Crear nuevo proyecto"
+				description="Formulario para crear una nueva colección de repositorios"
+				maxWidth="max-w-md"
+			>
+				<form onSubmit={handleCreate} className="space-y-4">
+					<div>
+						<label htmlFor="project-name" className="block text-sm font-medium mb-2">
+							Nombre del proyecto
+						</label>
+						<input
+							id="project-name"
+							type="text"
+							value={newName}
+							onChange={e => setNewName(e.target.value)}
+							placeholder="Ej: Frontend, Backend, Infraestructura"
+							className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-all"
+							autoFocus
+						/>
+					</div>
+					<div>
+						<label htmlFor="project-desc" className="block text-sm font-medium mb-2">
+							Descripción (opcional)
+						</label>
+						<input
+							id="project-desc"
+							type="text"
+							value={newDesc}
+							onChange={e => setNewDesc(e.target.value)}
+							placeholder="Descripción breve del proyecto"
+							className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-all"
+						/>
+					</div>
+					<div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2 sm:gap-0 pt-4 border-t">
+						<button
+							type="button"
+							onClick={() => setIsCreating(false)}
+							className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
+						>
+							Cancelar
+						</button>
+						<button
+							type="submit"
+							disabled={!newName.trim()}
+							className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
+						>
+							Crear proyecto
+						</button>
+					</div>
+				</form>
+			</BaseDialog>
 		</div>
 	);
 }
