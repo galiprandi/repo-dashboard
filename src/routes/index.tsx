@@ -72,7 +72,7 @@ function Dashboard() {
 							onClick={() => setActiveTab(tab.id)}
 							className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-all whitespace-nowrap ${
 								isActive
-									? "bg-white shadow-sm text-foreground font-medium"
+									? "bg-background shadow-sm text-foreground font-medium"
 									: "text-muted-foreground hover:text-foreground"
 							}`}
 							title={tab.description}
@@ -312,7 +312,8 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 							href={`https://github.com/${org}/${name}`}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="text-muted-foreground hover:text-primary"
+							className="text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-sm transition-all"
+							aria-label="Abrir en GitHub"
 							title="Abrir en GitHub"
 						>
 							<Github className="w-5 h-5" />
@@ -320,7 +321,8 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 						<button
 							type="button"
 							onClick={() => onToggleFavorite(repo.fullName)}
-							className={`${isFavorite ? "text-yellow-500" : "text-muted-foreground"} hover:text-yellow-600`}
+							className={`${isFavorite ? "text-yellow-500" : "text-muted-foreground"} hover:text-yellow-600 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-sm transition-all`}
+							aria-label={isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
 							title={isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
 						>
 							<Star className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />
@@ -411,7 +413,8 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 							href={`https://github.com/${org}/${name}`}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="text-muted-foreground hover:text-primary"
+							className="text-muted-foreground hover:text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-sm transition-all"
+							aria-label="Abrir en GitHub"
 							title="Abrir en GitHub"
 						>
 							<Github className="w-5 h-5" />
@@ -419,7 +422,8 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 						<button
 							type="button"
 							onClick={() => onToggleFavorite(repo.fullName)}
-							className={`${isFavorite ? "text-yellow-500" : "text-muted-foreground"} hover:text-yellow-600`}
+							className={`${isFavorite ? "text-yellow-500" : "text-muted-foreground"} hover:text-yellow-600 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none rounded-sm transition-all`}
+							aria-label={isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
 							title={isFavorite ? "Eliminar de favoritos" : "Agregar a favoritos"}
 						>
 							<Star className={`w-5 h-5 ${isFavorite ? "fill-current" : ""}`} />

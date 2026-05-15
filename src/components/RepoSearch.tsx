@@ -136,7 +136,7 @@ export function RepoSearch() {
           onBlur={() => setIsEditable(false)}
           placeholder={`Búsqueda en ${summaryData?.total || 0} repositorios... (Cmd+K)`}
           aria-label="Búsqueda de repositorios"
-          className={`${searchWidth} pl-9 pr-14 py-2 bg-muted rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all`}
+          className={`${searchWidth} pl-9 pr-14 py-2 bg-muted rounded-md text-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none transition-all`}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
@@ -161,7 +161,7 @@ export function RepoSearch() {
 
       {/* Dropdown Results */}
       {isOpen && (
-        <div className={`absolute top-full left-0 mt-2 ${searchWidth} bg-white border rounded-lg shadow-lg z-50 overflow-hidden`}>
+        <div className={`absolute top-full left-0 mt-2 ${searchWidth} bg-background border rounded-lg shadow-lg z-50 overflow-hidden`}>
           {isLoading ? (
             <div className="p-4 text-center text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
@@ -221,10 +221,11 @@ export function RepoSearch() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                         <button
+                          type="button"
                           onClick={() => toggleFavorite(repo.fullName)}
-                          className={`p-1.5 rounded-md transition-colors ${
+                          className={`p-1.5 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none ${
                             isFav
                               ? 'text-yellow-500 hover:text-yellow-600'
                               : 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-50'
@@ -245,8 +246,9 @@ export function RepoSearch() {
                           />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleOpenInNewTab(repo.fullName)}
-                          className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                          className="p-1.5 rounded-md text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                           aria-label={`Abrir ${repo.fullName} en GitHub`}
                           title="Abrir en GitHub"
                         >
@@ -264,13 +266,13 @@ export function RepoSearch() {
           <div className="px-3 py-2 bg-muted/30 border-t text-[10px] text-muted-foreground flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-white border shadow-sm font-sans">↑↓</kbd> Navegar
+                <kbd className="px-1.5 py-0.5 rounded bg-background border shadow-sm font-sans">↑↓</kbd> Navegar
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-white border shadow-sm font-sans">↵</kbd> Seleccionar
+                <kbd className="px-1.5 py-0.5 rounded bg-background border shadow-sm font-sans">↵</kbd> Seleccionar
               </span>
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-white border shadow-sm font-sans">Esc</kbd> Cerrar
+                <kbd className="px-1.5 py-0.5 rounded bg-background border shadow-sm font-sans">Esc</kbd> Cerrar
               </span>
             </div>
             <span>{results.length} resultados</span>

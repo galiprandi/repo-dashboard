@@ -41,7 +41,7 @@ export function ProjectSelector({ repo }: { repo: string }) {
 				<ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
 			</button>
 			{isOpen && (
-				<div role="listbox" className="absolute top-full right-0 md:left-0 mt-1 w-72 bg-white border rounded-lg shadow-lg z-50 py-1 animate-in fade-in zoom-in-95 duration-150">
+				<div role="listbox" className="absolute top-full right-0 md:left-0 mt-1 w-72 bg-background border rounded-lg shadow-lg z-50 py-1 animate-in fade-in zoom-in-95 duration-150">
 					{projects.length === 0 && !isCreating && <div className="px-3 py-2 text-sm text-muted-foreground">Sin proyectos. Crea el primero.</div>}
 					{projects.map(p => {
 						const inP = isRepoInProject(p.id, repo);
