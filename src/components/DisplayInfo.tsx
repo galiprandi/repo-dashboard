@@ -48,6 +48,7 @@ export const DisplayInfo = ({
 	if (!value) return "-";
 
 	const tooltip = getTooltipValue({ value, type });
+	const hasTooltip = tooltip && !hideTooltip;
 
 	return (
 		<div className={`flex items-center gap-1 ${className || ""}`}>
@@ -62,9 +63,14 @@ export const DisplayInfo = ({
 				</div>
 			)}
 			<span
-				className="text-sm text-gray-700"
+				className={cn(
+					"text-sm text-gray-700",
+					hasTooltip &&
+						"focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm",
+				)}
 				title={hideTooltip ? undefined : tooltip}
-				style={{ cursor: tooltip && !hideTooltip ? "help" : "default" }}
+				style={{ cursor: hasTooltip ? "help" : "default" }}
+				tabIndex={hasTooltip ? 0 : undefined}
 			>
 				{type === "dates" ? DayJS(value).fromNow() : displayValue}
 			</span>
