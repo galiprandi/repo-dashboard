@@ -9,15 +9,29 @@ const mockAddRepoToProject = vi.fn()
 const mockRemoveRepoFromProject = vi.fn()
 const mockIsRepoInProject = vi.fn().mockReturnValue(false)
 const mockGetProjectsForRepo = vi.fn().mockReturnValue([])
+const mockToggleFavorite = vi.fn()
+const mockIsFavorite = vi.fn().mockReturnValue(false)
+const mockUpdateProject = vi.fn()
+const mockDeleteProject = vi.fn()
+const mockToggleRepoInProject = vi.fn()
+const mockSetActiveTab = vi.fn()
 
 vi.mock("@/hooks/useUserCollections", () => ({
 	useUserCollections: vi.fn(() => ({
+		favorites: [],
 		projects: [],
+		activeTab: "favorites",
+		toggleFavorite: mockToggleFavorite,
+		isFavorite: mockIsFavorite,
 		createProject: mockCreateProject,
+		updateProject: mockUpdateProject,
+		deleteProject: mockDeleteProject,
 		addRepoToProject: mockAddRepoToProject,
 		removeRepoFromProject: mockRemoveRepoFromProject,
-		isRepoInProject: mockIsRepoInProject,
+		toggleRepoInProject: mockToggleRepoInProject,
 		getProjectsForRepo: mockGetProjectsForRepo,
+		isRepoInProject: mockIsRepoInProject,
+		setActiveTab: mockSetActiveTab,
 	})),
 }))
 
@@ -42,12 +56,20 @@ describe("ProjectSelector", () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 		vi.mocked(useUserCollections).mockReturnValue({
+			favorites: [],
 			projects: [],
+			activeTab: "favorites",
+			toggleFavorite: mockToggleFavorite,
+			isFavorite: mockIsFavorite,
 			createProject: mockCreateProject,
+			updateProject: mockUpdateProject,
+			deleteProject: mockDeleteProject,
 			addRepoToProject: mockAddRepoToProject,
 			removeRepoFromProject: mockRemoveRepoFromProject,
-			isRepoInProject: mockIsRepoInProject,
+			toggleRepoInProject: mockToggleRepoInProject,
 			getProjectsForRepo: mockGetProjectsForRepo,
+			isRepoInProject: mockIsRepoInProject,
+			setActiveTab: mockSetActiveTab,
 		})
 	})
 
@@ -67,16 +89,24 @@ describe("ProjectSelector", () => {
 
 	it("should render projects when they exist", () => {
 		const mockProjects = [
-			{ id: "1", name: "Project 1", description: "Desc 1" },
-			{ id: "2", name: "Project 2", description: "Desc 2" }
+			{ id: "1", name: "Project 1", description: "Desc 1", repos: [] },
+			{ id: "2", name: "Project 2", description: "Desc 2", repos: [] }
 		]
 		vi.mocked(useUserCollections).mockReturnValue({
+			favorites: [],
 			projects: mockProjects,
+			activeTab: "favorites",
+			toggleFavorite: mockToggleFavorite,
+			isFavorite: mockIsFavorite,
 			createProject: mockCreateProject,
+			updateProject: mockUpdateProject,
+			deleteProject: mockDeleteProject,
 			addRepoToProject: mockAddRepoToProject,
 			removeRepoFromProject: mockRemoveRepoFromProject,
-			isRepoInProject: mockIsRepoInProject,
+			toggleRepoInProject: mockToggleRepoInProject,
 			getProjectsForRepo: mockGetProjectsForRepo,
+			isRepoInProject: mockIsRepoInProject,
+			setActiveTab: mockSetActiveTab,
 		})
 
 		render(<ProjectSelector repo="test-repo" />)
