@@ -11,6 +11,9 @@ check_cmd() {
         if [ "$1" == "gh" ]; then
             if gh auth status &>/dev/null; then echo -e " (Auth: ${C_GREEN}YES${NC})";
             else echo -e " (Auth: ${C_YELLOW}NO${NC})"; fi
+        elif [ "$1" == "docker" ]; then
+            if docker ps &>/dev/null; then echo -e " (Access: ${C_GREEN}YES${NC})";
+            else echo -e " (Access: ${C_YELLOW}NO${NC})"; fi
         else echo -e ""; fi
     else
         MSG="  - $1: ${C_YELLOW}MISSING${NC}"
@@ -20,7 +23,13 @@ check_cmd() {
 NV=$(node -v 2>/dev/null | sed 's/v//' | cut -d. -f1)
 if [ -n "$NV" ] && [ "$NV" -ge 22 ]; then echo -e "  - Node: ${C_GREEN}OK${NC} ($NV)"
 else echo -e "  - Node: ${C_RED}FAILED${NC} ($NV)"; E=1; fi
-check_cmd git; check_cmd gh; check_cmd jq; check_cmd kubectl optional
+check_cmd git; check_cmd gh; check_cmd jq; check_cmd kubectl optional; check_cmd docker optional
+# ENV Check
+if [ -z "$VITE_SEKI_API_TOKEN" ]; then
+    echo -e "  - Config: ${C_YELLOW}VITE_SEKI_API_TOKEN not set${NC} (Optional)"
+else
+    echo -e "  - Config: ${C_GREEN}VITE_SEKI_API_TOKEN OK${NC}"
+fi
 if [[ "$*" == *"--deps"* ]] && [ ! -d "node_modules" ]; then echo -e "  - deps: ${C_RED}MISSING${NC}"; E=1; fi
 if [[ "$*" == *"--build"* ]] && [ ! -d "dist" ]; then echo -e "  - build: ${C_RED}MISSING${NC}"; E=1; fi
 [ $E -eq 0 ] && echo -e "✅ ${C_GREEN}OK${NC}" || echo -e "❌ ${C_RED}FAILED${NC}"

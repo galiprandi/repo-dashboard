@@ -31,7 +31,7 @@ vi.mock("@/components/ui/BaseDialog", () => ({
 const mockEvents: Event[] = [
 	{
 		id: "1",
-		label: { es: "Build", en: "Build" },
+		label: { es: "Build", en: "Build", br: "Build" },
 		state: "SUCCESS",
 		created_at: "2024-05-20T10:00:00Z",
 		updated_at: "2024-05-20T10:05:00Z",
@@ -49,11 +49,12 @@ const mockEvents: Event[] = [
 	},
 	{
 		id: "2",
-		label: { es: "Deploy", en: "Deploy" },
+		label: { es: "Deploy", en: "Deploy", br: "Deploy" },
 		state: "RUNNING",
 		created_at: "2024-05-20T10:05:00Z",
 		updated_at: "2024-05-20T10:10:00Z",
 		subevents: [],
+		markdown: "",
 	},
 ];
 

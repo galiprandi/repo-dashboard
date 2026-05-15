@@ -55,7 +55,14 @@ export function ProjectSelector({ repo }: { repo: string }) {
 						</button>;
 					})}
 					<div className="border-t mt-1 pt-1">
-						<button type="button" onClick={() => setIsCreating(true)} className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset focus:outline-none">
+						<button
+							type="button"
+							onClick={() => {
+								setIsCreating(true);
+								setIsOpen(false);
+							}}
+							className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset focus:outline-none"
+						>
 							<Plus className="w-4 h-4" /> Nuevo proyecto
 						</button>
 					</div>
@@ -79,7 +86,7 @@ export function ProjectSelector({ repo }: { repo: string }) {
 							value={newName}
 							onChange={e => setNewName(e.target.value)}
 							placeholder="Ej: Frontend, Backend, Infraestructura"
-							className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+							className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-all"
 							autoFocus
 						/>
 					</div>
@@ -93,21 +100,21 @@ export function ProjectSelector({ repo }: { repo: string }) {
 							value={newDesc}
 							onChange={e => setNewDesc(e.target.value)}
 							placeholder="Descripción breve del proyecto"
-							className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+							className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-all"
 						/>
 					</div>
 					<div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2 sm:gap-0 pt-4 border-t">
 						<button
 							type="button"
 							onClick={() => setIsCreating(false)}
-							className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+							className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
 						>
 							Cancelar
 						</button>
 						<button
 							type="submit"
 							disabled={!newName.trim()}
-							className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
+							className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
 						>
 							Crear proyecto
 						</button>
