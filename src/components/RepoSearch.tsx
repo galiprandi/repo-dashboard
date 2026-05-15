@@ -161,7 +161,7 @@ export function RepoSearch() {
 
       {/* Dropdown Results */}
       {isOpen && (
-        <div className={`absolute top-full left-0 mt-2 ${searchWidth} bg-white border rounded-lg shadow-lg z-50 overflow-hidden`}>
+        <div className={`absolute top-full left-0 mt-2 ${searchWidth} bg-background border rounded-lg shadow-lg z-50 overflow-hidden`}>
           {isLoading ? (
             <div className="p-4 text-center text-muted-foreground">
               <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react"
-import * as Dialog from "@radix-ui/react-dialog"
 import { Newspaper } from "lucide-react"
 import { Streamdown } from "streamdown"
 import { BaseDialog } from "@/components/ui/BaseDialog"
@@ -45,16 +44,16 @@ export function NovedadesDialog() {
 	}, [])
 
 	return (
-		<Dialog.Root open={open} onOpenChange={setOpen}>
-			<Dialog.Trigger asChild>
-				<button
-					type="button"
-					className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
-				>
-					<Newspaper className="w-4 h-4" />
-					Novedades
-				</button>
-			</Dialog.Trigger>
+		<>
+			<button
+				type="button"
+				onClick={() => setOpen(true)}
+				className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
+				aria-label="Ver novedades"
+			>
+				<Newspaper className="w-4 h-4" />
+				Novedades
+			</button>
 			<BaseDialog
 				open={open}
 				onOpenChange={setOpen}
@@ -67,6 +66,6 @@ export function NovedadesDialog() {
 					<Streamdown>{novedadesContent}</Streamdown>
 				</div>
 			</BaseDialog>
-		</Dialog.Root>
+		</>
 	)
 }

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { FolderPlus, FolderOpen, X, Check, ChevronDown, Plus } from "lucide-react";
 import { useUserCollections } from "@/hooks/useUserCollections";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { BaseDialog } from "@/components/ui/BaseDialog";
 
 export function ProjectSelector({ repo }: { repo: string }) {
 	const { projects, createProject, addRepoToProject, removeRepoFromProject, isRepoInProject, getProjectsForRepo } = useUserCollections();
@@ -41,7 +41,7 @@ export function ProjectSelector({ repo }: { repo: string }) {
 				<ChevronDown className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
 			</button>
 			{isOpen && (
-				<div role="listbox" className="absolute top-full right-0 md:left-0 mt-1 w-72 bg-white border rounded-lg shadow-lg z-50 py-1 animate-in fade-in zoom-in-95 duration-150">
+				<div role="listbox" className="absolute top-full right-0 md:left-0 mt-1 w-72 bg-background border rounded-lg shadow-lg z-50 py-1 animate-in fade-in zoom-in-95 duration-150">
 					{projects.length === 0 && !isCreating && <div className="px-3 py-2 text-sm text-muted-foreground">Sin proyectos. Crea el primero.</div>}
 					{projects.map(p => {
 						const inP = isRepoInProject(p.id, repo);
@@ -68,58 +68,59 @@ export function ProjectSelector({ repo }: { repo: string }) {
 					</div>
 				</div>
 			)}
-			<Dialog open={isCreating} onOpenChange={setIsCreating}>
-				<DialogContent className="sm:max-w-md">
-					<DialogHeader>
-						<DialogTitle>Crear nuevo proyecto</DialogTitle>
-					</DialogHeader>
-					<form onSubmit={handleCreate} className="space-y-4">
-						<div>
-							<label htmlFor="project-name" className="block text-sm font-medium mb-2">
-								Nombre del proyecto
-							</label>
-							<input
-								id="project-name"
-								type="text"
-								value={newName}
-								onChange={e => setNewName(e.target.value)}
-								placeholder="Ej: Frontend, Backend, Infraestructura"
-								className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-								autoFocus
-							/>
-						</div>
-						<div>
-							<label htmlFor="project-desc" className="block text-sm font-medium mb-2">
-								Descripción (opcional)
-							</label>
-							<input
-								id="project-desc"
-								type="text"
-								value={newDesc}
-								onChange={e => setNewDesc(e.target.value)}
-								placeholder="Descripción breve del proyecto"
-								className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
-							/>
-						</div>
-						<DialogFooter>
-							<button
-								type="button"
-								onClick={() => setIsCreating(false)}
-								className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
-							>
-								Cancelar
-							</button>
-							<button
-								type="submit"
-								disabled={!newName.trim()}
-								className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
-							>
-								Crear proyecto
-							</button>
-						</DialogFooter>
-					</form>
-				</DialogContent>
-			</Dialog>
+			<BaseDialog
+				open={isCreating}
+				onOpenChange={setIsCreating}
+				title="Crear nuevo proyecto"
+				description="Crea un nuevo proyecto para organizar tus repositorios."
+				maxWidth="max-w-md"
+			>
+				<form onSubmit={handleCreate} className="space-y-4">
+					<div>
+						<label htmlFor="project-name" className="block text-sm font-medium mb-2">
+							Nombre del proyecto
+						</label>
+						<input
+							id="project-name"
+							type="text"
+							value={newName}
+							onChange={e => setNewName(e.target.value)}
+							placeholder="Ej: Frontend, Backend, Infraestructura"
+							className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 bg-background"
+							autoFocus
+						/>
+					</div>
+					<div>
+						<label htmlFor="project-desc" className="block text-sm font-medium mb-2">
+							Descripción (opcional)
+						</label>
+						<input
+							id="project-desc"
+							type="text"
+							value={newDesc}
+							onChange={e => setNewDesc(e.target.value)}
+							placeholder="Descripción breve del proyecto"
+							className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 bg-background"
+						/>
+					</div>
+					<div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 pt-4">
+						<button
+							type="button"
+							onClick={() => setIsCreating(false)}
+							className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-accent transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
+						>
+							Cancelar
+						</button>
+						<button
+							type="submit"
+							disabled={!newName.trim()}
+							className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
+						>
+							Crear proyecto
+						</button>
+					</div>
+				</form>
+			</BaseDialog>
 		</div>
 	);
 }
