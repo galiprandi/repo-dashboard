@@ -326,7 +326,7 @@ export function LogsViewer({
 										onChange={(e) => setFilter(e.target.value)}
 										placeholder="Buscar (Cmd+F)"
 										aria-label="Buscar logs"
-										className="pl-7 pr-2 py-1 text-sm bg-background border rounded w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"
+										className="pl-7 pr-2 py-1 text-sm bg-background border rounded w-48 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
 									/>
 								</div>
 							</Tooltip.Trigger>
