@@ -317,7 +317,7 @@ export function LogsViewer({
 										onChange={(e) => setFilter(e.target.value)}
 										placeholder="Buscar (Cmd+F)"
 										aria-label="Buscar logs"
-										className="pl-7 pr-7 py-1 text-xs bg-background border rounded w-36 focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+										className="pl-7 pr-7 py-1 text-sm bg-background border rounded w-48 focus:outline-none focus:ring-2 focus:ring-primary transition-all"
 									/>
 									{filter && (
 										<button
