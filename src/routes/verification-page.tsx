@@ -7,6 +7,7 @@ import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CommitsModal } from "@/components/CommitsModal";
 import { MiniTimeline } from "@/components/SekiMonitor/MiniTimeline";
 import { DisplayInfo } from "@/components/DisplayInfo";
+import { LogsViewer } from "@/components/shared/LogsViewer";
 import type { Event } from "@/api/seki.type";
 
 export const Route = createFileRoute("/verification-page")({
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/verification-page")({
 
 function VerificationPage() {
 	const [isCommitsModalOpen, setIsCommitsModalOpen] = useState(false);
+	const [isLogsModalOpen, setIsLogsModalOpen] = useState(false);
+
 	const mockCommits = [
 		{
 			hash: "hash1",
@@ -44,6 +47,8 @@ function VerificationPage() {
 			date: "2024-05-18",
 		}
 	];
+	const mockLogs = "2024-05-20 10:00:00 INFO: Iniciando aplicación...\n2024-05-20 10:00:01 DEBUG: Cargando configuración\n2024-05-20 10:00:05 ERROR: Fallo al conectar con la base de datos\n2024-05-20 10:00:06 WARN: Reintentando conexión (1/3)\n2024-05-20 10:00:10 INFO: Conexión establecida con éxito";
+
 	const mockEvents: Event[] = [
 		{
 			id: "1",
@@ -130,6 +135,49 @@ function VerificationPage() {
                             <li>Verificar rotación de flecha al abrir.</li>
                             <li>Verificar animación de entrada del dropdown.</li>
                             <li>Verificar navegación por teclado y ARIA roles.</li>
+                        </ul>
+                    </div>
+                </section>
+
+				<section className="p-8 border rounded-xl bg-card shadow-sm space-y-6 md:col-span-2">
+                    <h2 className="text-lg font-semibold border-b pb-2">LogsViewer (Refactor BaseDialog & UX)</h2>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-medium">Modo Modal</h3>
+                            <button
+                                type="button"
+                                onClick={() => setIsLogsModalOpen(true)}
+                                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                            >
+                                Abrir Visor de Logs
+                            </button>
+                            {isLogsModalOpen && (
+                                <LogsViewer
+                                    queryFn={() => Promise.resolve(mockLogs)}
+                                    onClose={() => setIsLogsModalOpen(false)}
+                                    resources={[{ id: "1", name: "app-pod-xyz", type: "pod" }]}
+                                />
+                            )}
+                        </div>
+                        <div className="space-y-4">
+                            <h3 className="text-sm font-medium">Modo Inline (Dashboard)</h3>
+                            <div className="h-[400px] border rounded-xl overflow-hidden shadow-inner">
+                                <LogsViewer
+                                    asModal={false}
+                                    queryFn={() => Promise.resolve(mockLogs)}
+                                    onClose={() => {}}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground pt-4 border-t">
+                        <p className="font-medium mb-1">Pruebas:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                            <li>Verificar integración con BaseDialog (título, cierre, overlay).</li>
+                            <li>Verificar modo inline con bordes redondeados y sombra.</li>
+                            <li>Verificar anillos de foco en buscador y selectores (ring-primary).</li>
+                            <li>Verificar botón de limpieza en buscador.</li>
+                            <li>Verificar indicador "Live" refinado y accesible.</li>
                         </ul>
                     </div>
                 </section>
