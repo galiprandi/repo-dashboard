@@ -39,9 +39,9 @@ export function AISummaryCard({
 					<button
 						type="button"
 						onClick={onToggleCollapse}
-						className={`inline-flex items-center gap-1 px-2 py-1 ${isCompact ? 'text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-800/30' : 'text-xs text-purple-200 hover:text-purple-100 hover:bg-purple-800/50'} rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1`}
+						className={`inline-flex items-center gap-1 px-2 py-1 ${isCompact ? 'text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-800/30' : 'text-xs text-purple-200 hover:text-purple-100 hover:bg-purple-800/50'} rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1 focus-visible:outline-none`}
 						title={isCollapsed ? "Expandir" : "Colapsar"}
-						aria-label={isCollapsed ? "Expandir" : "Colapsar"}
+						aria-label={isCollapsed ? "Expandir resumen" : "Colapsar resumen"}
 					>
 						{isCollapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
 					</button>
@@ -49,7 +49,7 @@ export function AISummaryCard({
 						type="button"
 						onClick={onRegenerate}
 						disabled={isGenerating}
-						className={`inline-flex items-center gap-1 px-2 py-1 ${isCompact ? 'text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-800/30' : 'text-xs text-purple-200 hover:text-purple-100 hover:bg-purple-800/50'} rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1`}
+						className={`inline-flex items-center gap-1 px-2 py-1 ${isCompact ? 'text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-800/30' : 'text-xs text-purple-200 hover:text-purple-100 hover:bg-purple-800/50'} rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1 focus-visible:outline-none`}
 						title="Regenerar resumen"
 						aria-label="Regenerar resumen"
 					>
@@ -58,7 +58,7 @@ export function AISummaryCard({
 					<button
 						type="button"
 						onClick={onCopy}
-						className={`inline-flex items-center gap-1 px-2 py-1 ${isCompact ? 'text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-800/30' : 'text-xs text-purple-200 hover:text-purple-100 hover:bg-purple-800/50'} rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1`}
+						className={`inline-flex items-center gap-1 px-2 py-1 ${isCompact ? 'text-xs text-purple-300 hover:text-purple-200 hover:bg-purple-800/30' : 'text-xs text-purple-200 hover:text-purple-100 hover:bg-purple-800/50'} rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-1 focus-visible:outline-none`}
 						title="Copiar resumen"
 						aria-label="Copiar resumen"
 					>

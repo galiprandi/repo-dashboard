@@ -12,6 +12,12 @@
 
 **Acción:** Siempre que un elemento no interactivo use `title` para proporcionar información extra (como fechas completas o mensajes largos), añadir `tabIndex={0}` y anillos de foco para asegurar la accesibilidad por teclado.
 
+## 2026-05-16 - Estandarización de accesibilidad en Diálogos e IA
+
+**Aprendizaje:** Los componentes de diálogo (Radix UI) requieren una descripción para ser plenamente accesibles; integrar un fallback automático en `BaseDialog` previene advertencias de consola y mejora la experiencia con lectores de pantalla. En componentes con fondos saturados (como las cards de IA), los anillos de foco estándar pueden perderse; el uso de `focus-visible:ring-white` con offset asegura visibilidad crítica para navegación por teclado.
+
+**Acción:** Asegurar que `BaseDialog` siempre renderice una descripción (incluso si es `sr-only`) y adaptar el color del anillo de foco al contraste del fondo del componente para mantener la accesibilidad visual.
+
 ## 2026-05-20 - Estandarización de micro-UX y accesibilidad en componentes de información
 
 **Aprendizaje:** La falta de estados de foco consistentes en enlaces de commits, tags y botones de acción en tarjetas de IA crea una experiencia fragmentada para usuarios de teclado. Al estandarizar el patrón `focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded-md` y asegurar `aria-label` en botones de solo icono, se logra una interfaz mucho más predecible y accesible sin ruido visual para usuarios de ratón.
