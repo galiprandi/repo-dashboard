@@ -49,7 +49,7 @@ export function RefetchButton({
 				type="button"
 				onClick={() => onRefetch()}
 				disabled={isRefetching}
-				className="flex items-center gap-1 rounded-sm px-2 py-1 border border-transparent opacity-70 hover:opacity-100 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
+				className="flex items-center gap-1 rounded-md px-2 py-1 border border-transparent opacity-70 hover:opacity-100 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
 				aria-label="Recargar datos"
 			>
 				{showFeedback && targetTime && (

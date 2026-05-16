@@ -11,3 +11,9 @@
 **Aprendizaje:** El uso de atributos `title` para tooltips en elementos no interactivos (como un `span`) oculta información crítica a usuarios de teclado. Al añadir `tabIndex={0}` y estilos de foco (`focus-visible:ring-2`), estos elementos se vuelven accesibles, permitiendo que el navegador muestre el tooltip nativo al recibir el foco.
 
 **Acción:** Siempre que un elemento no interactivo use `title` para proporcionar información extra (como fechas completas o mensajes largos), añadir `tabIndex={0}` y anillos de foco para asegurar la accesibilidad por teclado.
+
+## 2026-05-20 - Estandarización de micro-UX y accesibilidad en componentes de información
+
+**Aprendizaje:** La falta de estados de foco consistentes en enlaces de commits, tags y botones de acción en tarjetas de IA crea una experiencia fragmentada para usuarios de teclado. Al estandarizar el patrón `focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded-md` y asegurar `aria-label` en botones de solo icono, se logra una interfaz mucho más predecible y accesible sin ruido visual para usuarios de ratón.
+
+**Acción:** Aplicar el patrón de anillo de foco con offset y bordes redondeados medianos (`rounded-md`) en todos los elementos interactivos pequeños, y nunca omitir el `aria-label` en botones que solo contienen iconos, incluso si tienen un `title`.
