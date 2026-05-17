@@ -250,7 +250,7 @@ export function LogsViewer({
 							<select
 								value={selectedResourceId || resources[0].id}
 								onChange={(e) => onResourceChange?.(e.target.value)}
-								className="bg-background border rounded px-2 py-1 text-sm"
+								className="bg-background border rounded px-2 py-1 text-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-sm"
 								aria-label="Seleccionar recurso"
 							>
 								{resources.map((resource) => (
@@ -274,7 +274,7 @@ export function LogsViewer({
 								type="button"
 								onClick={handleSummarizeWithAI}
 								disabled={isGenerating || availability !== "available" || !currentLogs}
-								className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+								className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-sm"
 							>
 								{isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
 								{isGenerating ? getStatusMessage : "Resumir"}
@@ -296,7 +296,7 @@ export function LogsViewer({
 									<select
 										value={logLevelFilter}
 										onChange={(e) => setLogLevelFilter(e.target.value as "all" | "ERROR" | "WARN" | "INFO" | "DEBUG")}
-										className="bg-background border rounded px-2 py-1 text-sm"
+										className="bg-background border rounded px-2 py-1 text-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-sm"
 										aria-label="Filtrar por nivel de log"
 									>
 										<option value="all">Todos</option>
@@ -326,7 +326,7 @@ export function LogsViewer({
 										onChange={(e) => setFilter(e.target.value)}
 										placeholder="Buscar (Cmd+F)"
 										aria-label="Buscar logs"
-										className="pl-7 pr-2 py-1 text-sm bg-background border rounded w-48 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1"
+										className="pl-7 pr-2 py-1 text-sm bg-background border rounded w-48 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-sm"
 									/>
 								</div>
 							</Tooltip.Trigger>
@@ -364,7 +364,13 @@ export function LogsViewer({
 					</div>
 				</div>
 			</Tooltip.Provider>
-			<div ref={logsContainerRef} className="flex-1 min-h-0 overflow-auto bg-black text-green-400 p-4 font-mono text-xs p-3">
+			<div
+				ref={logsContainerRef}
+				tabIndex={0}
+				role="log"
+				aria-label="Panel de logs"
+				className="flex-1 min-h-0 overflow-auto bg-black text-green-400 p-4 font-mono text-xs p-3 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset focus-visible:outline-none"
+			>
 				{processedError && (
 					<div className="mb-4 p-3 bg-red-900 border border-red-500/30 rounded-lg sticky top-0 z-10">
 						<div className="flex items-center justify-between gap-2 mb-2">
@@ -373,8 +379,10 @@ export function LogsViewer({
 								<span className="text-red-300 font-semibold text-sm">Error</span>
 							</div>
 							<button
+								type="button"
 								onClick={() => setProcessedError(null)}
-								className="text-xs text-red-300 hover:text-red-200 hover:bg-red-800/30 rounded px-2 py-1 transition-colors"
+								className="text-xs text-red-300 hover:text-red-200 hover:bg-red-800/30 rounded px-2 py-1 transition-colors focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none focus-visible:ring-offset-1"
+								aria-label="Cerrar error"
 							>
 								<X className="w-3 h-3" />
 							</button>
