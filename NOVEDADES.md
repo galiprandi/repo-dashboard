@@ -2,6 +2,12 @@
 
 ---
 
+### 🗓️ 20 de Mayo de 2026
+
+- ✨ Proyectos: Gestión avanzada de proyectos con edición de metadatos (nombre/descripción) y eliminación segura.
+- ✨ UX: Integración distribuida del selector de proyectos en el dashboard y buscador para una organización más fluida.
+- 🎨 UI: Refactorización de componentes de filtrado para soporte total de temas semánticos.
+
 ### 🗓️ 12 de Mayo de 2026
 
 - ✨ Logs: Streaming en tiempo real para logs de Docker y Kubernetes con actualización automática.

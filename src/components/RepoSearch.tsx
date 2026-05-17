@@ -3,6 +3,7 @@ import { Search, Star, ExternalLink, Loader2, GitBranch, X } from 'lucide-react'
 import { useRepoSearch } from '@/hooks/useRepoSearch'
 import { useUserCollections } from '@/hooks/useUserCollections'
 import { useUserReposSummary } from '@/hooks/useUserReposSummary'
+import { ProjectSelector } from '@/components/ProjectSelector'
 import { Link, useNavigate } from '@tanstack/react-router'
 
 export function RepoSearch() {
@@ -222,6 +223,7 @@ export function RepoSearch() {
 
                       {/* Actions */}
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <ProjectSelector repo={repo.fullName} />
                         <button
                           type="button"
                           onClick={() => toggleFavorite(repo.fullName)}

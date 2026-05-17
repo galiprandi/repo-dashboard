@@ -5,10 +5,12 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import { DisplayInfo } from "@/components/DisplayInfo";
 import { CommitLink } from "@/components/CommitLink";
 import { TagLink } from "@/components/TagLink";
+import { ProjectSelector } from "@/components/ProjectSelector";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { ForceRedeployDialog } from "@/components/ForceRedeployDialog";
 import { FreezeDialog } from "@/components/FreezeDialog";
 import { CommitsModal } from "@/components/CommitsModal";
+import { ProjectSettingsDialog } from "@/components/ProjectSettingsDialog";
 import { useUserCollections } from "@/hooks/useUserCollections";
 import { useUserReposSummary } from "@/hooks/useUserReposSummary";
 import { useGitCommits } from "@/hooks/useGitCommits";
@@ -61,32 +63,42 @@ function Dashboard() {
 	return (
 		<div className="space-y-6">
 			{/* Tabs */}
-			<div className="flex gap-1 bg-muted rounded-lg p-1 overflow-x-auto">
-				{tabs.map((tab) => {
-					const Icon = tab.icon;
-					const isActive = activeTab === tab.id;
-					return (
-						<button
-							key={tab.id}
-							type="button"
-							onClick={() => setActiveTab(tab.id)}
-							className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-all whitespace-nowrap ${
-								isActive
-									? "bg-background shadow-sm text-foreground font-medium"
-									: "text-muted-foreground hover:text-foreground"
-							}`}
-							title={tab.description}
-						>
-							<Icon className={`w-4 h-4 ${isActive ? "text-primary" : ""}`} />
-							{tab.label}
-							{tab.count > 0 && (
-								<span className="text-xs bg-muted-foreground/20 px-1.5 py-0.5 rounded-full">
-									{tab.count}
-								</span>
-								)}
-						</button>
-					);
-				})}
+			<div className="flex items-center justify-between gap-4">
+				<div className="flex gap-1 bg-muted rounded-lg p-1 overflow-x-auto">
+					{tabs.map((tab) => {
+						const Icon = tab.icon;
+						const isActive = activeTab === tab.id;
+						return (
+							<button
+								key={tab.id}
+								type="button"
+								onClick={() => setActiveTab(tab.id)}
+								className={`flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md transition-all whitespace-nowrap ${
+									isActive
+										? "bg-background shadow-sm text-foreground font-medium"
+										: "text-muted-foreground hover:text-foreground"
+								}`}
+								title={tab.description}
+							>
+								<Icon className={`w-4 h-4 ${isActive ? "text-primary" : ""}`} />
+								{tab.label}
+								{tab.count > 0 && (
+									<span className="text-xs bg-muted-foreground/20 px-1.5 py-0.5 rounded-full">
+										{tab.count}
+									</span>
+									)}
+							</button>
+						);
+					})}
+				</div>
+
+				{activeTab !== "favorites" && (
+					<div className="flex items-center gap-2">
+						{projects.find(p => p.id === activeTab) && (
+							<ProjectSettingsDialog project={projects.find(p => p.id === activeTab)!} />
+						)}
+					</div>
+				)}
 			</div>
 
 			{/* Content */}
@@ -406,6 +418,7 @@ function RepoRow({ repo, isFavorite, onToggleFavorite }: RepoRowProps) {
 				</td>
 				<td className="px-4 py-3 text-center w-16">
 					<div className="flex items-center justify-center gap-2">
+						<ProjectSelector repo={repo.fullName} />
 						<FreezeDialog repo={repo.fullName} iconOnly={true} />
 						<ForceRedeployDialog repo={repo.fullName} iconOnly={true} />
 						<PromoteDialog repo={repo.fullName} latestTag={latestTag?.name} iconOnly={true} />
