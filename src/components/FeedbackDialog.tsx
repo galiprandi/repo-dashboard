@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo } from "react"
 import React from "react"
-import * as Dialog from "@radix-ui/react-dialog"
 import { MessageSquare, Loader2, CheckCircle2, Send, AlertCircle, Sparkles, Terminal } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useAISummarize } from "@galiprandi/react-tools"
@@ -231,16 +230,16 @@ export function FeedbackDialog() {
 	const dialogWidth = step === "success" ? "max-w-sm" : step === "error" ? "max-w-md" : "max-w-lg"
 
 	return (
-		<Dialog.Root open={open} onOpenChange={handleOpenChange}>
-			<Dialog.Trigger asChild>
-				<button
-					type="button"
-					className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
-				>
-					<MessageSquare className="w-4 h-4" />
-					Feedback
-				</button>
-			</Dialog.Trigger>
+		<>
+			<button
+				type="button"
+				onClick={() => handleOpenChange(true)}
+				aria-haspopup="dialog"
+				className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
+			>
+				<MessageSquare className="w-4 h-4" />
+				Feedback
+			</button>
 			<BaseDialog
 				open={open}
 				onOpenChange={handleOpenChange}
@@ -410,11 +409,13 @@ export function FeedbackDialog() {
 									</a>
 								)}
 							</div>
-							<Dialog.Close asChild>
-								<button className="mt-4 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
-									Cerrar
-								</button>
-							</Dialog.Close>
+							<button
+								type="button"
+								onClick={() => handleOpenChange(false)}
+								className="mt-4 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+							>
+								Cerrar
+							</button>
 						</div>
 					)}
 
@@ -462,14 +463,17 @@ export function FeedbackDialog() {
 								)}
 							</div>
 							<div className="flex gap-2">
-								<Dialog.Close asChild>
-									<button className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-accent transition-colors">
-										Cerrar
-									</button>
-								</Dialog.Close>
 								<button
+									type="button"
+									onClick={() => handleOpenChange(false)}
+									className="px-4 py-2 text-sm font-medium border rounded-md hover:bg-accent transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+								>
+									Cerrar
+								</button>
+								<button
+									type="button"
 									onClick={() => setStep("review")}
-									className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+									className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
 								>
 									Reintentar
 								</button>
@@ -477,6 +481,6 @@ export function FeedbackDialog() {
 						</div>
 					)}
 			</BaseDialog>
-		</Dialog.Root>
+		</>
 	)
 }
