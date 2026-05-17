@@ -110,6 +110,10 @@ Después de operaciones de escritura (crear tag, etc.), invalidar queries releva
 
 Los archivos de test unitarios deben ubicarse en el mismo directorio que el archivo que prueban, usando la extensión `.test.ts` o `.test.tsx`. Se debe evitar el uso de carpetas `__tests__` para nuevos módulos.
 
+### Estándares de Diseño y UI
+
+Consultar siempre `DESIGN.md` para patrones de tokens de tema, accesibilidad (ARIA) y uso de componentes compartidos. Nunca usar colores hardcoded.
+
 ## Local Requirements
 
 1. **Node.js** (v22+)
