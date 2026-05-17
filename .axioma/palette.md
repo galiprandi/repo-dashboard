@@ -17,3 +17,15 @@
 **Aprendizaje:** Los componentes de diálogo (Radix UI) requieren una descripción para ser plenamente accesibles; integrar un fallback automático en `BaseDialog` previene advertencias de consola y mejora la experiencia con lectores de pantalla. En componentes con fondos saturados (como las cards de IA), los anillos de foco estándar pueden perderse; el uso de `focus-visible:ring-white` con offset asegura visibilidad crítica para navegación por teclado.
 
 **Acción:** Asegurar que `BaseDialog` siempre renderice una descripción (incluso si es `sr-only`) y adaptar el color del anillo de foco al contraste del fondo del componente para mantener la accesibilidad visual.
+
+## 2024-05-20 - Accesibilidad avanzada en paneles de logs
+
+**Aprendizaje:** Para que un panel de logs sea verdaderamente accesible para usuarios de teclado y lectores de pantalla, no basta con hacerlo focusable (). Es fundamental añadir un rol semántico () y una etiqueta descriptiva () para que las tecnologías de asistencia identifiquen el propósito del contenedor. Además, el uso de `focus-visible:ring-inset` asegura que el anillo de foco sea visible incluso cuando el contenedor llega a los bordes del viewport.
+
+**Acción:** En cualquier componente de visualización de datos scrolleable (logs, terminales, listas largas), usar `tabIndex={0}`, `role="log"` (o similar) y `focus-visible:ring-inset` para una navegación por teclado robusta y clara.
+
+## 2024-05-20 - Accesibilidad avanzada en paneles de logs
+
+**Aprendizaje:** Para que un panel de logs sea verdaderamente accesible para usuarios de teclado y lectores de pantalla, no basta con hacerlo focusable (`tabIndex={0}`). Es fundamental añadir un rol semántico (`role="log"`) y una etiqueta descriptiva (`aria-label`) para que las tecnologías de asistencia identifiquen el propósito del contenedor. Además, el uso de `focus-visible:ring-inset` asegura que el anillo de foco sea visible incluso cuando el contenedor llega a los bordes del viewport.
+
+**Acción:** En cualquier componente de visualización de datos scrolleable (logs, terminales, listas largas), usar `tabIndex={0}`, `role="log"` (o similar) y `focus-visible:ring-inset` para una navegación por teclado robusta y clara.

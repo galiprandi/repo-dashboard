@@ -5,6 +5,7 @@ import { NovedadesDialog } from "@/components/NovedadesDialog";
 import { ProjectSelector } from "@/components/ProjectSelector";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CommitsModal } from "@/components/CommitsModal";
+import { LogsViewer } from "@/components/shared/LogsViewer";
 import { MiniTimeline } from "@/components/SekiMonitor/MiniTimeline";
 import { DisplayInfo } from "@/components/DisplayInfo";
 import type { Event } from "@/api/seki.type";
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/verification-page")({
 
 function VerificationPage() {
 	const [isCommitsModalOpen, setIsCommitsModalOpen] = useState(false);
+	const [isLogsViewerOpen, setIsLogsViewerOpen] = useState(false);
 	const mockCommits = [
 		{
 			hash: "hash1",
@@ -101,6 +103,13 @@ function VerificationPage() {
                         >
                             Ver Commits (Modal)
                         </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsLogsViewerOpen(true)}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium border rounded-md hover:bg-muted transition-colors"
+                        >
+                            Ver LogsViewer
+                        </button>
                     </div>
                     <div className="text-sm text-muted-foreground">
                         <p className="font-medium mb-1">Pruebas:</p>
@@ -119,6 +128,18 @@ function VerificationPage() {
                         prodCommitHash="hash-none"
                         prodTag="v1.2.2"
                     />
+                    {isLogsViewerOpen && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+                            <div className="w-full max-w-4xl h-[80vh]">
+                                <LogsViewer
+                                    queryFn={async () => "2024-05-20 INFO: Application started\n2024-05-20 WARN: Low memory\n2024-05-20 ERROR: Connection failed\n2024-05-20 DEBUG: Initializing components"}
+                                    onClose={() => setIsLogsViewerOpen(false)}
+                                    asModal={false}
+                                    resources={[{ id: "main", name: "Main Container", type: "pod" }]}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </section>
 
                 <section className="p-8 border rounded-xl bg-card shadow-sm space-y-6">
