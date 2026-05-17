@@ -222,7 +222,7 @@ function ProductSection({
 
                       {/* Response time */}
                       {endpoint.responseTime !== undefined && (
-                        <span className={`text-xs ${endpoint.isHealthy ? 'text-green-600' : 'text-destructive'}`}>
+                        <span className={`text-xs ${endpoint.isHealthy ? 'text-success' : 'text-destructive'}`}>
                           {endpoint.responseTime}ms
                         </span>
                       )}
@@ -283,7 +283,7 @@ function ProductSection({
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="p-1 text-muted-foreground hover:text-green-600 hover:bg-green-50 rounded transition-colors focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:outline-none"
+                          className="p-1 text-muted-foreground hover:text-success hover:bg-success/10 rounded transition-colors focus-visible:ring-2 focus-visible:ring-success focus-visible:outline-none"
                           title="Abrir /health"
                           aria-label="Abrir endpoint /health en nueva pestaña"
                         >
@@ -312,7 +312,6 @@ function ProductSection({
                     {/* Details expandible con animación */}
                     <div
                       id={`details-${endpoint.id}`}
-                      aria-hidden={!expandedEndpoints.has(endpoint.id)}
                       className={`overflow-hidden transition-all duration-300 ease-in-out ${
                         expandedEndpoints.has(endpoint.id) ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                       }`}
@@ -360,7 +359,6 @@ function HealthMonitorPage() {
     removeEndpoint,
     removeProductEndpoints,
     isChecking,
-    stats,
   } = useHealthMonitor();
 
   const { favorites } = useUserCollections();
@@ -462,8 +460,9 @@ function HealthMonitorPage() {
         rightContent={
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-muted-foreground">Ordenar:</span>
+              <label htmlFor="health-sort" className="text-sm font-medium text-muted-foreground">Ordenar:</label>
               <select
+                id="health-sort"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'default' | 'errors' | 'recent')}
                 className="px-3 py-1.5 text-sm border bg-background rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
@@ -475,20 +474,23 @@ function HealthMonitorPage() {
             </div>
 
             <div className="flex gap-2">
-              {stats.unhealthy > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const unhealthy = filteredEndpoints.filter((ep) => ep.isHealthy === false);
-                    unhealthy.forEach((ep) => checkEndpoint(ep.id));
-                  }}
-                  disabled={isChecking}
-                  className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm border border-destructive/20 text-destructive rounded-md hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:outline-none focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isChecking ? 'animate-spin' : ''}`} />
-                  {isChecking ? 'Verificando...' : `Verificar ${stats.unhealthy}`}
-                </button>
-              )}
+              {(() => {
+                const unhealthyInView = filteredEndpoints.filter((ep) => ep.isHealthy === false);
+                if (unhealthyInView.length === 0) return null;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      unhealthyInView.forEach((ep) => checkEndpoint(ep.id));
+                    }}
+                    disabled={isChecking}
+                    className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm border border-destructive/20 text-destructive rounded-md hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:outline-none focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isChecking ? 'animate-spin' : ''}`} />
+                    {isChecking ? 'Verificando...' : `Verificar ${unhealthyInView.length}`}
+                  </button>
+                );
+              })()}
 
               <button
                 type="button"

@@ -13,7 +13,7 @@ Este documento detalla los patrones de diseño y UX establecidos para asegurar l
 - **Anillos de Foco**: Todos los elementos interactivos deben usar el patrón:
   `focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-md`
 - **Botones con Iconos**: Deben incluir siempre un `aria-label` descriptivo.
-- **Secciones Expandibles**: Deben usar `aria-expanded` en el trigger y `aria-controls` apuntando al ID del contenido, el cual debe usar `aria-hidden` cuando esté colapsado.
+- **Secciones Expandibles**: Deben usar `aria-expanded` en el trigger y `aria-controls` apuntando al ID del contenido. Para ocultar el contenido colapsado, preferir clases de CSS (ej: `hidden`, `max-h-0`) en lugar de `aria-hidden`, a menos que el contenido sea puramente decorativo.
 
 ## Componentes Compartidos
 - **FilterBar**: Utilizar para todas las vistas que requieran filtrado por categorías y búsqueda textual.

@@ -166,7 +166,7 @@ function VerificationPage() {
                             </div>
                             <div className="p-2 space-y-1">
                                 <div className="flex items-center gap-3 px-4 py-1 hover:bg-muted/50 rounded group cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1">
-                                    <span className="text-green-500">🟢</span>
+                                    <span className="text-success">🟢</span>
                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-primary/10 text-primary">STAGING</span>
                                     <span className="flex-1 text-xs text-muted-foreground truncate">https://api.staging.example.com/health</span>
                                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -176,10 +176,10 @@ function VerificationPage() {
                                         <button className="p-1 text-muted-foreground hover:text-purple-600 hover:bg-purple-50 rounded focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none" aria-label="Copy">
                                             <Copy className="w-3 h-3" />
                                         </button>
-                                        <button className="p-1 text-muted-foreground hover:text-green-600 hover:bg-green-50 rounded focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:outline-none" aria-label="Open">
+                                        <button className="p-1 text-muted-foreground hover:text-success hover:bg-success/10 rounded focus-visible:ring-2 focus-visible:ring-success focus-visible:outline-none" aria-label="Open">
                                             <ExternalLink className="w-3 h-3" />
                                         </button>
-                                        <button className="p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none" aria-label="Delete">
+                                        <button className="p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded focus-visible:ring-2 focus-visible:ring-destructive focus-visible:outline-none" aria-label="Delete">
                                             <Trash2 className="w-3 h-3" />
                                         </button>
                                     </div>
