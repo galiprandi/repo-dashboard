@@ -3,6 +3,7 @@ import { useState } from "react";
 import { PromoteDialog } from "@/components/PromoteDialog";
 import { NovedadesDialog } from "@/components/NovedadesDialog";
 import { ProjectSelector } from "@/components/ProjectSelector";
+import { ProjectSettingsDialog } from "@/components/ProjectSettingsDialog";
 import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CommitsModal } from "@/components/CommitsModal";
 import { LogsViewer } from "@/components/shared/LogsViewer";
@@ -143,14 +144,30 @@ function VerificationPage() {
                 </section>
 
                 <section className="p-8 border rounded-xl bg-card shadow-sm space-y-6">
-                    <h2 className="text-lg font-semibold border-b pb-2">Selectores de Proyecto</h2>
-                    <ProjectSelector repo="galiprandi/release-hub" />
+                    <h2 className="text-lg font-semibold border-b pb-2">Gestión de Proyectos</h2>
+                    <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm font-medium">Selector:</span>
+                            <ProjectSelector repo="galiprandi/release-hub" />
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm font-medium">Ajustes:</span>
+                            <ProjectSettingsDialog
+                                project={{
+                                    id: "mock-project",
+                                    name: "Proyecto Mock",
+                                    description: "Una descripción de prueba",
+                                    repos: ["galiprandi/release-hub"]
+                                }}
+                            />
+                        </div>
+                    </div>
                     <div className="text-sm text-muted-foreground">
                         <p className="font-medium mb-1">Pruebas:</p>
                         <ul className="list-disc list-inside space-y-1">
-                            <li>Verificar rotación de flecha al abrir.</li>
-                            <li>Verificar animación de entrada del dropdown.</li>
-                            <li>Verificar navegación por teclado y ARIA roles.</li>
+                            <li>Selector: Verificar rotación de flecha, animación y ARIA.</li>
+                            <li>Ajustes: Verificar edición de nombre/descripción y flujo de eliminación con confirmación.</li>
+                            <li>Ajustes: Verificar que el botón de guardado se deshabilite si no hay cambios.</li>
                         </ul>
                     </div>
                 </section>

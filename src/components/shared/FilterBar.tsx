@@ -28,16 +28,17 @@ export function FilterBar({
 		<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 			<div className="flex flex-wrap items-center gap-4">
 				<div className="flex items-center gap-2">
-					<span className="text-sm font-medium text-gray-600">Filtrar:</span>
+					<span className="text-sm font-medium text-muted-foreground">Filtrar:</span>
 					{filters.map((filter) => (
 						<button
 							key={filter.value}
+							type="button"
 							onClick={() => onFilterChange(filter.value)}
 							aria-pressed={activeFilter === filter.value}
 							className={`px-3 py-1 text-sm rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 ${
 								activeFilter === filter.value
-									? 'bg-primary text-primary-foreground'
-									: 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+									? 'bg-primary text-primary-foreground font-medium'
+									: 'bg-muted text-muted-foreground hover:bg-muted/80'
 							}`}
 						>
 							{filter.label}
@@ -51,7 +52,7 @@ export function FilterBar({
 						placeholder={searchPlaceholder}
 						value={searchValue}
 						onChange={(e) => onSearchChange(e.target.value)}
-						className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus:ring-primary focus:border-transparent"
+						className="px-3 py-1.5 text-sm border border-input bg-background rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 placeholder:text-muted-foreground"
 					/>
 				</div>
 			</div>
