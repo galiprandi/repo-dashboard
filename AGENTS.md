@@ -65,7 +65,14 @@ Antes de cualquier cambio, revisar los docs relevantes para evaluar impacto y ev
 - CommitsModal: Solo mostrar botón de resumen AI si `availability === "available"`.
 - LogsModal: Solo mostrar botón de resumen AI si `availability === "available"`.
 
-### 3. Validación Antes de Implementar
+### 3. Fortificación de Adapters CLI
+
+Al trabajar con adaptadores CLI (Docker, Kubectl, GH):
+1. **Priorizar JSON**: Usar flags `--format json` o similares para obtener datos estructurados y evitar fragilidad en el parsing manual.
+2. **Sanitización Obligatoria**: Todas las funciones que acepten IDs o nombres externos deben pasar por un sanitizador para prevenir inyección de comandos.
+3. **Manejo de Errores Silenciosos**: Capturar excepciones de `runCommand` y devolver estados neutros ([], null) para no romper la UI, asegurando el logueo del error para depuración.
+
+### 4. Validación Antes de Implementar
 
 ⚠️ **MUY IMPORTANTE**: Antes de implementar o modificar cualquier función que use comandos externos (gh api, curl, git, kubectl, etc.), SIEMPRE:
 
