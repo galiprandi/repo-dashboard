@@ -7,6 +7,8 @@ import { FeedbackDialog } from "@/components/FeedbackDialog";
 import { CommitsModal } from "@/components/CommitsModal";
 import { MiniTimeline } from "@/components/SekiMonitor/MiniTimeline";
 import { DisplayInfo } from "@/components/DisplayInfo";
+import { FilterBar } from "@/components/shared/FilterBar";
+import { RefreshCw, Trash2, ExternalLink, Copy } from 'lucide-react';
 import type { Event } from "@/api/seki.type";
 
 export const Route = createFileRoute("/verification-page")({
@@ -130,6 +132,68 @@ function VerificationPage() {
                             <li>Verificar rotación de flecha al abrir.</li>
                             <li>Verificar animación de entrada del dropdown.</li>
                             <li>Verificar navegación por teclado y ARIA roles.</li>
+                        </ul>
+                    </div>
+                </section>
+
+				<section className="p-8 border rounded-xl bg-card shadow-sm space-y-6 md:col-span-2">
+                    <h2 className="text-lg font-semibold border-b pb-2">Salud y Monitoreo (Health Monitor)</h2>
+                    <div className="space-y-6">
+                        <FilterBar
+                            filters={[
+                                { value: 'all', label: 'Todos (12)' },
+                                { value: 'staging', label: 'Staging (8)' },
+                                { value: 'production', label: 'Production (4)' },
+                            ]}
+                            activeFilter="all"
+                            onFilterChange={() => {}}
+                            searchPlaceholder="Buscar servicio..."
+                            searchValue=""
+                            onSearchChange={() => {}}
+                            rightContent={
+                                <div className="flex gap-2">
+                                    <button type="button" className="p-1.5 border rounded-md hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none">
+                                        <RefreshCw className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            }
+                        />
+
+                        <div className="border rounded-lg overflow-hidden">
+                            <div className="flex items-center justify-between py-2 px-4 bg-muted/30 border-b">
+                                <span className="font-semibold text-sm text-foreground">Mock Product</span>
+                                <span className="text-xs text-muted-foreground">3 servicios</span>
+                            </div>
+                            <div className="p-2 space-y-1">
+                                <div className="flex items-center gap-3 px-4 py-1 hover:bg-muted/50 rounded group cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1">
+                                    <span className="text-green-500">🟢</span>
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase bg-primary/10 text-primary">STAGING</span>
+                                    <span className="flex-1 text-xs text-muted-foreground truncate">https://api.staging.example.com/health</span>
+                                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none" aria-label="Refresh">
+                                            <RefreshCw className="w-3 h-3" />
+                                        </button>
+                                        <button className="p-1 text-muted-foreground hover:text-purple-600 hover:bg-purple-50 rounded focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none" aria-label="Copy">
+                                            <Copy className="w-3 h-3" />
+                                        </button>
+                                        <button className="p-1 text-muted-foreground hover:text-green-600 hover:bg-green-50 rounded focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:outline-none" aria-label="Open">
+                                            <ExternalLink className="w-3 h-3" />
+                                        </button>
+                                        <button className="p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none" aria-label="Delete">
+                                            <Trash2 className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                        <p className="font-medium mb-1">Pruebas:</p>
+                        <ul className="list-disc list-inside space-y-1">
+                            <li>Verificar integración de FilterBar en la vista de Salud.</li>
+                            <li>Verificar estandarización de colores (bg-muted/30, bg-primary/10).</li>
+                            <li>Verificar anillos de foco y estados interactivos en las filas de endpoints.</li>
+                            <li>Verificar etiquetas ARIA en botones de acción.</li>
                         </ul>
                     </div>
                 </section>

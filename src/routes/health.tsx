@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Activity, RefreshCw, Trash2, ExternalLink, ChevronDown, ChevronUp, Copy } from 'lucide-react';
 import { useHealthMonitor } from '@/hooks/useHealthMonitor';
 import { useUserCollections } from '@/hooks/useUserCollections';
+import { FilterBar } from '@/components/shared/FilterBar';
 
 export const Route = createFileRoute('/health')({
   component: HealthMonitorPage,
@@ -28,28 +29,30 @@ function InfoBanner() {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg overflow-hidden">
+    <div className="bg-muted/50 border border-border rounded-lg overflow-hidden">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-blue-100/50 transition-colors"
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/80 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
+        aria-expanded={isExpanded}
+        aria-controls="info-banner-content"
       >
         <div className="flex items-center gap-2">
-          <Activity className="w-5 h-5 text-blue-600" />
-          <span className="font-medium text-blue-800">Cómo funciona</span>
+          <Activity className="w-5 h-5 text-primary" />
+          <span className="font-medium text-foreground">Cómo funciona</span>
         </div>
         {isExpanded ? (
-          <ChevronUp className="w-5 h-5 text-blue-600" />
+          <ChevronUp className="w-5 h-5 text-muted-foreground" />
         ) : (
-          <ChevronDown className="w-5 h-5 text-blue-600" />
+          <ChevronDown className="w-5 h-5 text-muted-foreground" />
         )}
       </button>
 
       {isExpanded && (
-        <div className="px-4 pb-4">
-          <div className="text-sm text-blue-800 pt-2 border-t border-blue-200">
+        <div id="info-banner-content" className="px-4 pb-4 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="text-sm text-muted-foreground pt-2 border-t border-border">
             <ul className="space-y-1 list-disc list-inside">
               <li>Los endpoints se detectan automáticamente desde los pipelines de deploy</li>
-              <li>Se verifica el endpoint <code className="bg-blue-100 px-1 rounded">/health</code> en cada URL</li>
+              <li>Se verifica el endpoint <code className="bg-muted px-1 rounded font-mono">/health</code> en cada URL</li>
               <li>Los servicios se eliminan automáticamente cuando quitas un repo de favoritos</li>
             </ul>
           </div>
@@ -99,12 +102,12 @@ function ProductSection({
       {/* Contenedor del producto con padding base */}
       <div className="px-4">
         {/* Header del producto */}
-        <div className="flex items-center justify-between py-3 bg-gray-50 border-b -mx-4 px-4">
+        <div className="flex items-center justify-between py-3 bg-muted/30 border-b -mx-4 px-4">
           <div className="flex items-center gap-2">
             <Link
               to="/product/$org/$product"
               params={{ org, product: productName }}
-              className="font-semibold text-gray-800 hover:text-blue-600 transition-colors"
+              className="font-semibold text-foreground hover:text-primary transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 rounded-sm"
             >
               {productName}
             </Link>
@@ -130,8 +133,8 @@ function ProductSection({
                     </span>
                   )}
                   {unhealthy > 0 && (
-                    <span className="flex items-center gap-1 text-red-600 font-medium">
-                      <div className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="flex items-center gap-1 text-destructive font-medium">
+                      <div className="w-2 h-2 rounded-full bg-destructive" />
                       {unhealthy} Error
                     </span>
                   )}
@@ -157,7 +160,7 @@ function ProductSection({
           return (
             <div key={service}>
               {/* Servicio */}
-              <div className="font-medium text-gray-700 py-1">
+              <div className="font-medium text-muted-foreground py-1">
                 {service === '/' ? '/' : `/${service}`}
               </div>
               
@@ -166,7 +169,7 @@ function ProductSection({
                 {sortedEndpoints.map((endpoint) => (
                   <div key={endpoint.id}>
                     <div
-                      className="flex items-center gap-3 px-4 py-1 hover:bg-gray-50 rounded group cursor-pointer"
+                      className="flex items-center gap-3 px-4 py-1 hover:bg-muted/50 rounded group cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
                       onClick={() => {
                         const newSet = new Set(expandedEndpoints);
                         if (newSet.has(endpoint.id)) {
@@ -211,7 +214,7 @@ function ProductSection({
                         className={`px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
                           endpoint.environment === 'production'
                             ? 'bg-purple-100 text-purple-700'
-                            : 'bg-blue-100 text-blue-700'
+                            : 'bg-primary/10 text-primary'
                         }`}
                       >
                         {endpoint.environment}
@@ -219,14 +222,14 @@ function ProductSection({
 
                       {/* Response time */}
                       {endpoint.responseTime !== undefined && (
-                        <span className={`text-xs ${endpoint.isHealthy ? 'text-green-600' : 'text-red-600'}`}>
+                        <span className={`text-xs ${endpoint.isHealthy ? 'text-green-600' : 'text-destructive'}`}>
                           {endpoint.responseTime}ms
                         </span>
                       )}
 
                       {/* Error message */}
                       {endpoint.error && (
-                        <span className="text-xs text-red-600 truncate max-w-[300px]" title={endpoint.error}>
+                        <span className="text-xs text-destructive truncate max-w-[300px]" title={endpoint.error}>
                           {(() => {
                             if (endpoint.details) {
                               try {
@@ -247,7 +250,7 @@ function ProductSection({
                       </span>
 
                       {/* URL */}
-                      <span className="flex-1 text-xs text-gray-500 truncate">
+                      <span className="flex-1 text-xs text-muted-foreground truncate">
                         {endpoint.url}
                       </span>
 
@@ -259,7 +262,7 @@ function ProductSection({
                         <button
                           onClick={() => onCheckEndpoint(endpoint.id)}
                           disabled={isChecking}
-                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                          className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none"
                           title="Verificar ahora"
                           aria-label="Verificar estado del endpoint ahora"
                         >
@@ -269,7 +272,7 @@ function ProductSection({
                           onClick={() => {
                             navigator.clipboard.writeText(endpoint.url);
                           }}
-                          className="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                          className="p-1 text-muted-foreground hover:text-purple-600 hover:bg-purple-50 rounded transition-colors focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
                           title="Copiar URL"
                           aria-label="Copiar URL del endpoint"
                         >
@@ -280,7 +283,7 @@ function ProductSection({
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
-                          className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded transition-colors"
+                          className="p-1 text-muted-foreground hover:text-green-600 hover:bg-green-50 rounded transition-colors focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:outline-none"
                           title="Abrir /health"
                           aria-label="Abrir endpoint /health en nueva pestaña"
                         >
@@ -288,7 +291,7 @@ function ProductSection({
                         </a>
                         <button
                           onClick={() => onRemoveEndpoint(endpoint.id)}
-                          className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          className="p-1 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded transition-colors focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
                           title="Eliminar del monitoreo"
                           aria-label="Eliminar endpoint del monitoreo"
                         >
@@ -297,11 +300,11 @@ function ProductSection({
                       </div>
 
                       {/* Chevron indicator */}
-                      <span className="text-gray-400">
+                      <span className="text-muted-foreground/60">
                         {expandedEndpoints.has(endpoint.id) ? (
-                          <ChevronUp className="w-3 h-3" />
+                          <ChevronUp className="w-3 h-3" aria-hidden="true" />
                         ) : (
-                          <ChevronDown className="w-3 h-3" />
+                          <ChevronDown className="w-3 h-3" aria-hidden="true" />
                         )}
                       </span>
                     </div>
@@ -309,6 +312,7 @@ function ProductSection({
                     {/* Details expandible con animación */}
                     <div
                       id={`details-${endpoint.id}`}
+                      aria-hidden={!expandedEndpoints.has(endpoint.id)}
                       className={`overflow-hidden transition-all duration-300 ease-in-out ${
                         expandedEndpoints.has(endpoint.id) ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
                       }`}
@@ -443,85 +447,62 @@ function HealthMonitorPage() {
 
   return (
     <div className="space-y-6">
-      {/* Filtros por ambiente + CTAs */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-600">Filtrar:</span>
-            {[
-              { value: 'all' as const, label: `Todos (${filteredEndpoints.length})` },
-              { value: 'staging' as const, label: `Staging (${filteredEndpoints.filter(e => e.environment === 'staging').length})` },
-              { value: 'production' as const, label: `Production (${filteredEndpoints.filter(e => e.environment === 'production').length})` },
-              { value: 'unhealthy' as const, label: `Con errores (${filteredEndpoints.filter(e => e.isHealthy === false).length})` },
-            ].map((filter) => (
-              <button
-                key={filter.value}
-                onClick={() => setEnvironmentFilter(filter.value)}
-                className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                  environmentFilter === filter.value
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+      <FilterBar
+        filters={[
+          { value: 'all', label: `Todos (${endpoints.length})` },
+          { value: 'staging', label: `Staging (${endpoints.filter((e) => e.environment === 'staging').length})` },
+          { value: 'production', label: `Production (${endpoints.filter((e) => e.environment === 'production').length})` },
+          { value: 'unhealthy', label: `Con errores (${endpoints.filter((e) => e.isHealthy === false).length})` },
+        ]}
+        activeFilter={environmentFilter}
+        onFilterChange={(val) => setEnvironmentFilter(val as 'all' | 'staging' | 'production' | 'unhealthy')}
+        searchPlaceholder="Buscar servicio o URL..."
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        rightContent={
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">Ordenar:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'default' | 'errors' | 'recent')}
+                className="px-3 py-1.5 text-sm border bg-background rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
               >
-                {filter.label}
+                <option value="default">Por defecto</option>
+                <option value="errors">Con errores primero</option>
+                <option value="recent">Más recientes</option>
+              </select>
+            </div>
+
+            <div className="flex gap-2">
+              {stats.unhealthy > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const unhealthy = filteredEndpoints.filter((ep) => ep.isHealthy === false);
+                    unhealthy.forEach((ep) => checkEndpoint(ep.id));
+                  }}
+                  disabled={isChecking}
+                  className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm border border-destructive/20 text-destructive rounded-md hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive focus-visible:outline-none focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isChecking ? 'animate-spin' : ''}`} />
+                  {isChecking ? 'Verificando...' : `Verificar ${stats.unhealthy}`}
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => checkAllEndpoints()}
+                disabled={isChecking}
+                className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm border bg-background text-foreground rounded-md hover:bg-muted focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isChecking ? 'animate-spin' : ''}`} />
+                {isChecking ? 'Verificando...' : 'Verificar todos'}
               </button>
-            ))}
+            </div>
           </div>
-
-          {/* Búsqueda de servicios */}
-          <div>
-            <input
-              type="text"
-              placeholder="Buscar servicio o URL..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          {/* Ordenamiento */}
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-600">Ordenar:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'default' | 'errors' | 'recent')}
-              className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="default">Por defecto</option>
-              <option value="errors">Con errores primero</option>
-              <option value="recent">Más recientes</option>
-            </select>
-          </div>
-        </div>
-
-        {/* CTAs */}
-        <div className="flex gap-2">
-          {/* CTA Principal: Verificar solo los con fallo */}
-          {stats.unhealthy > 0 && (
-            <button
-              onClick={() => {
-                const unhealthy = filteredEndpoints.filter((ep) => ep.isHealthy === false);
-                unhealthy.forEach((ep) => checkEndpoint(ep.id));
-              }}
-              disabled={isChecking}
-              className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm border border-red-300 text-red-600 rounded-md hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isChecking ? 'animate-spin' : ''}`} />
-              {isChecking ? 'Verificando...' : `Verificar ${stats.unhealthy}`}
-            </button>
-          )}
-
-          {/* CTA Secundario: Verificar todos */}
-          <button
-            onClick={() => checkAllEndpoints()}
-            disabled={isChecking}
-            className="flex items-center justify-center gap-2 px-3 py-1.5 text-sm border border-gray-300 text-gray-600 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isChecking ? 'animate-spin' : ''}`} />
-            {isChecking ? 'Verificando...' : 'Verificar todos'}
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Info banner - expandible */}
       <InfoBanner />
@@ -537,7 +518,7 @@ function HealthMonitorPage() {
           {environmentFilter === 'all' && (
             <Link
               to="/"
-              className="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="inline-block mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1"
             >
               Ir al inicio
             </Link>
