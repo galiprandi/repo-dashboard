@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import * as Dialog from "@radix-ui/react-dialog"
 import * as Tooltip from "@radix-ui/react-tooltip"
 import { Rocket, Loader2, CheckCircle2, ChevronRight, ChevronLeft, GitCommit, Sparkles } from "lucide-react"
 import axios from "axios"
@@ -174,19 +173,19 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 	const dialogWidth = step === 'success' ? 'max-w-md' : (hasPendingCommits && showCommits ? 'max-w-5xl' : 'max-w-xl')
 
 	return (
-		<Dialog.Root open={open} onOpenChange={handleOpenChange}>
+		<>
 			<Tooltip.Provider>
 				<Tooltip.Root>
 					<Tooltip.Trigger asChild>
-						<Dialog.Trigger asChild>
-							<button
-								type="button"
-								className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-							>
-								<Rocket className="w-4 h-4" />
-								{!iconOnly && <span>Promocionar</span>}
-							</button>
-						</Dialog.Trigger>
+						<button
+							type="button"
+							onClick={() => handleOpenChange(true)}
+							aria-haspopup="dialog"
+							className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:outline-none"
+						>
+							<Rocket className="w-4 h-4" />
+							{!iconOnly && <span>Promocionar</span>}
+						</button>
 					</Tooltip.Trigger>
 					<Tooltip.Portal>
 						<Tooltip.Content
@@ -238,7 +237,7 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 											value={tagName}
 											onChange={(e) => setTagName(e.target.value)}
 											placeholder={suggestedTag}
-											className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+											className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-all"
 										/>
 									</div>
 
@@ -251,7 +250,7 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 												type="button"
 												onClick={() => generateCommitSummary(pendingCommits)}
 												disabled={isGeneratingSummary || !summaryAvailable || !hasPendingCommits}
-												className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+												className="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-1 focus-visible:outline-none"
 												title="Regenerar descripción con IA"
 											>
 												{isGeneratingSummary ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
@@ -265,7 +264,7 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 											placeholder="Descripción del release..."
 											rows={8}
 											disabled={isGeneratingSummary}
-											className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-y disabled:opacity-50"
+											className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-all resize-y disabled:opacity-50"
 										/>
 									</div>
 
@@ -280,16 +279,18 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 										<button
 											type="button"
 											onClick={() => setShowCommits(!showCommits)}
-											className="w-full flex items-center justify-between px-3 py-2 bg-muted/50 hover:bg-muted border rounded-md transition-colors text-sm"
+											aria-expanded={showCommits}
+											aria-controls="pending-commits-list"
+											className="w-full flex items-center justify-between px-3 py-2 bg-muted/50 hover:bg-muted border rounded-md transition-all text-sm focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:outline-none"
 										>
 											<span className="flex items-center gap-2">
 												<GitCommit className="w-4 h-4 text-muted-foreground" />
 												<span className="font-medium">{pendingCommits.length} commit{pendingCommits.length !== 1 ? 's' : ''} a promocionar</span>
 											</span>
 											{showCommits ? (
-												<ChevronRight className="w-4 h-4 text-muted-foreground" />
-											) : (
 												<ChevronLeft className="w-4 h-4 text-muted-foreground" />
+											) : (
+												<ChevronRight className="w-4 h-4 text-muted-foreground" />
 											)}
 										</button>
 									)}
@@ -307,7 +308,7 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 									<button
 										onClick={handleCreateTag}
 										disabled={isCreating || !tagName.trim() || (!canCreateTags && !isLoadingPerms)}
-										className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+										className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:outline-none"
 									>
 										{isCreating ? <><Loader2 className="w-4 h-4 animate-spin" /> Publicando...</> : <><Rocket className="w-4 h-4" /> Publicar Tag</>}
 									</button>
@@ -316,7 +317,7 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 
 							{/* Right column: Commits list (only when expanded) */}
 							{showCommits && pendingCommits.length > 0 && (
-								<div className="w-1/2 flex flex-col border-l pl-6">
+								<div id="pending-commits-list" className="w-1/2 flex flex-col border-l pl-6">
 									<div className="mb-3">
 										<div className="flex items-center gap-2">
 											<GitCommit className="w-4 h-4 text-muted-foreground" />
@@ -365,15 +366,17 @@ export function PromoteDialog({ repo, latestTag, iconOnly = false }: PromoteDial
 									</p>
 								)}
 							</div>
-							<Dialog.Close asChild>
-								<button className="mt-4 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors">
-									Cerrar
-								</button>
-							</Dialog.Close>
+							<button
+								type="button"
+								onClick={() => handleOpenChange(false)}
+								className="mt-4 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-all focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:outline-none"
+							>
+								Cerrar
+							</button>
 						</div>
 					)}
 			</BaseDialog>
-		</Dialog.Root>
+		</>
 	)
 }
 
