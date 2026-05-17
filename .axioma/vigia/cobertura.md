@@ -6,3 +6,4 @@
 ## 2026-05-13 - pulsarAdapter.ts | Cobertura Ganada: [+85%] | Aprendizaje: Uso de mockResolvedValueOnce para simular flujos multi-comando de GH CLI (ID de workflow -> runs -> jobs -> commit info).
 ## 2026-05-14 - docker.ts | Cobertura Ganada: [+30%] | Aprendizaje: Creación de tests unitarios iniciales para el módulo de Docker, mockeando runCommand para validar la lógica de parsing básica.
 ## 2026-05-15 - src/api/seki.ts | Cobertura Ganada: [+5%] | Aprendizaje: El uso de `vi.spyOn(apiSeki, 'get')` permite testear funciones de alto nivel que dependen de instancias de axios configuradas con serializadores complejos sin necesidad de mockear axios globalmente.
+## 2026-05-16 - src/api/kubectl.ts | Cobertura Ganada: [+98%] | Aprendizaje: El testeo de sanitizadores y parsers de CLI requiere simular diferentes formatos de salida de kubectl (con y sin namespaces) para asegurar la resiliencia del adaptador.
