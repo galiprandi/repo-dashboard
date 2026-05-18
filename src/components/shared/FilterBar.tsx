@@ -29,30 +29,32 @@ export function FilterBar({
 			<div className="flex flex-wrap items-center gap-4">
 				<div className="flex items-center gap-2">
 					<span className="text-sm font-medium text-muted-foreground">Filtrar:</span>
-					{filters.map((filter) => (
-						<button
-							key={filter.value}
-							type="button"
-							onClick={() => onFilterChange(filter.value)}
-							aria-pressed={activeFilter === filter.value}
-							className={`px-3 py-1 text-sm rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 ${
-								activeFilter === filter.value
-									? 'bg-primary text-primary-foreground font-medium'
-									: 'bg-muted text-muted-foreground hover:bg-muted/80'
-							}`}
-						>
-							{filter.label}
-						</button>
-					))}
+					<div className="flex items-center gap-1.5">
+						{filters.map((filter) => (
+							<button
+								key={filter.value}
+								type="button"
+								onClick={() => onFilterChange(filter.value)}
+								aria-pressed={activeFilter === filter.value}
+								className={`px-3 py-1.5 text-sm rounded-md transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 font-medium ${
+									activeFilter === filter.value
+										? 'bg-primary text-primary-foreground shadow-sm'
+										: 'bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+								}`}
+							>
+								{filter.label}
+							</button>
+						))}
+					</div>
 				</div>
 
-				<div>
+				<div className="relative">
 					<input
 						type="text"
 						placeholder={searchPlaceholder}
 						value={searchValue}
 						onChange={(e) => onSearchChange(e.target.value)}
-						className="px-3 py-1.5 text-sm border border-input bg-background rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 placeholder:text-muted-foreground"
+						className="px-3 py-1.5 text-sm bg-background border border-input rounded-md focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1 transition-all placeholder:text-muted-foreground w-64"
 					/>
 				</div>
 			</div>
