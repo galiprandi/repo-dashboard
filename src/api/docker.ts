@@ -51,15 +51,19 @@ export async function checkDockerAccess(): Promise<boolean> {
 }
 
 function parseContainers(output: string): ContainerInfo[] {
-	try {
-		// Docker --format json returns one JSON object per line, not an array
-		const lines = output.trim().split('\n');
-		const containers: ContainerInfo[] = [];
+	if (!output || !output.trim()) {
+		return [];
+	}
 
-		for (const line of lines) {
-			if (!line.trim()) continue;
+	const lines = output.trim().split('\n');
+	const containers: ContainerInfo[] = [];
 
-			const container = JSON.parse(line) as {
+	for (const line of lines) {
+		const trimmedLine = line.trim();
+		if (!trimmedLine) continue;
+
+		try {
+			const container = JSON.parse(trimmedLine) as {
 				ID: string
 				Image: string
 				Status: string
@@ -70,20 +74,21 @@ function parseContainers(output: string): ContainerInfo[] {
 			}
 
 			containers.push({
-				id: container.ID,
-				image: container.Image,
-				status: container.Status,
-				ports: container.Ports,
-				created: container.CreatedAt,
-				name: container.Names,
-				runningFor: container.RunningFor,
+				id: container.ID || 'unknown',
+				image: container.Image || 'unknown',
+				status: container.Status || 'unknown',
+				ports: container.Ports || '',
+				created: container.CreatedAt || '',
+				name: container.Names || 'unnamed',
+				runningFor: container.RunningFor || '',
 			})
+		} catch (e) {
+			console.warn('[Docker] Failed to parse container line:', trimmedLine, e);
+			continue;
 		}
-
-		return containers;
-	} catch {
-		return []
 	}
+
+	return containers;
 }
 
 /**
@@ -103,14 +108,19 @@ export async function getContainers(): Promise<ContainerInfo[]> {
  * Gets logs from a container (fallback for when SSE is not available).
  */
 export async function getContainerLogs(containerId: string, tail = 100): Promise<string> {
-	const sanitizedId = sanitizeContainerId(containerId);
-	const result = await runCommand(`docker logs --tail=${tail} ${sanitizedId}`);
-	// Some containers use stdout, others use stderr
-	// Use stderr if it has content, otherwise use stdout
-	const logs = result.stderr.trim() || result.stdout.trim();
-	// Replace literal \n with actual newlines
-	const cleanLogs = logs.replace(/\\n/g, '\n');
-	return cleanLogs;
+	try {
+		const sanitizedId = sanitizeContainerId(containerId);
+		const result = await runCommand(`docker logs --tail=${tail} ${sanitizedId}`);
+		// Some containers use stdout, others use stderr
+		// Use stderr if it has content, otherwise use stdout
+		const logs = (result.stderr || '').trim() || (result.stdout || '').trim();
+		// Replace literal \n with actual newlines
+		const cleanLogs = logs.replace(/\\n/g, '\n');
+		return cleanLogs;
+	} catch (error) {
+		console.error(`[Docker] Error getting logs for container ${containerId}:`, error);
+		return '';
+	}
 }
 
 /**
@@ -164,33 +174,54 @@ export interface ContainerStats {
 }
 
 function parseStats(output: string): ContainerStats {
-	const lines = output.trim().split('\n');
-	const stats: ContainerStats = {
+	const defaultStats: ContainerStats = {
 		cpuPercent: '0%',
 		memUsage: 'N/A',
 		memPercent: '0%',
 		netIO: 'N/A',
 		blockIO: 'N/A',
 	};
-	
-	// Skip header
-	for (const line of lines) {
-		const trimmed = line.trim();
-		if (!trimmed || trimmed.startsWith('CONTAINER')) continue;
+
+	if (!output || !output.trim()) {
+		return defaultStats;
+	}
+
+	try {
+		// Attempt to parse as JSON first (if we used --format json)
+		const data = JSON.parse(output.trim());
+		return {
+			cpuPercent: data.CPUPerc || '0%',
+			memUsage: (data.MemUsage || 'N/A').split(' / ')[0],
+			memPercent: data.MemPerc || '0%',
+			netIO: data.NetIO || 'N/A',
+			blockIO: data.BlockIO || 'N/A',
+		};
+	} catch {
+		// Fallback to manual parsing if not JSON (standard output)
+		const lines = output.trim().split('\n');
 		
-		// Docker stats --no-stream format: CONTAINER CPU % MEM USAGE / LIMIT MEM % NET I/O BLOCK I/O
-		const parts = trimmed.split(/\s+/);
-		
-		if (parts.length >= 7) {
-			stats.cpuPercent = parts[1];
-			stats.memUsage = parts[2];
-			stats.memPercent = parts[3];
-			stats.netIO = parts[4];
-			stats.blockIO = parts[5];
-			break; // Only process first container (should be the one we queried)
+		for (const line of lines) {
+			const trimmed = line.trim();
+			if (!trimmed || trimmed.startsWith('CONTAINER')) continue;
+
+			// Heuristic parsing for standard docker stats output
+			const parts = trimmed.split(/\s+/);
+			if (parts.length < 2) continue;
+
+			// In standard output, columns are usually:
+			// ID NAME CPU% MEM_USAGE / LIMIT MEM% NET_IO BLOCK_IO PIDS
+			// We look for patterns to identify fields
+			const cpuPercent = parts.find(p => p.includes('%')) || '0%';
+			const memUsage = parts.find(p => (p.includes('B') || p.includes('iB')) && !p.includes('%')) || 'N/A';
+
+			return {
+				...defaultStats,
+				cpuPercent,
+				memUsage,
+			};
 		}
 	}
-	return stats;
+	return defaultStats;
 }
 
 /**
@@ -199,10 +230,11 @@ function parseStats(output: string): ContainerStats {
 export async function getContainerStats(containerId: string): Promise<ContainerStats | null> {
 	try {
 		const sanitizedId = sanitizeContainerId(containerId);
-		const result = await runCommand(`docker stats --no-stream ${sanitizedId}`);
+		// Use --format json for reliable parsing
+		const result = await runCommand(`docker stats --no-stream --format json ${sanitizedId}`);
 		return parseStats(result.stdout);
 	} catch (error) {
-		console.error('[Docker] Error getting container stats:', error);
+		console.error(`[Docker] Error getting stats for container ${containerId}:`, error);
 		return null;
 	}
 }

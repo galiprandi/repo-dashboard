@@ -7,3 +7,4 @@
 ## 2026-05-14 - docker.ts | Cobertura Ganada: [+30%] | Aprendizaje: Creación de tests unitarios iniciales para el módulo de Docker, mockeando runCommand para validar la lógica de parsing básica.
 ## 2026-05-15 - src/api/seki.ts | Cobertura Ganada: [+5%] | Aprendizaje: El uso de `vi.spyOn(apiSeki, 'get')` permite testear funciones de alto nivel que dependen de instancias de axios configuradas con serializadores complejos sin necesidad de mockear axios globalmente.
 ## 2026-05-16 - src/api/kubectl.ts | Cobertura Ganada: [+98%] | Aprendizaje: El testeo de sanitizadores y parsers de CLI requiere simular diferentes formatos de salida de kubectl (con y sin namespaces) para asegurar la resiliencia del adaptador.
+## 2026-05-17 - src/api/docker.ts | Cobertura Ganada: [+100%] | Aprendizaje: La implementación de --format json en comandos CLI (como docker stats) simplifica drásticamente el parsing y aumenta la confiabilidad del adaptador frente a cambios de versión.
