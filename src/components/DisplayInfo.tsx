@@ -35,10 +35,10 @@ export const DisplayInfo = ({
 		);
 	const iconColor =
 		type === "commit"
-			? "text-blue-500"
+			? "text-primary"
 			: type === "tag"
-				? "text-purple-500"
-				: "text-gray-500";
+				? "text-ai"
+				: "text-muted-foreground";
 
 	const displayValue =
 		value && maxChar && value.length > maxChar
@@ -64,7 +64,7 @@ export const DisplayInfo = ({
 			)}
 			<span
 				className={cn(
-					"text-sm text-gray-700",
+					"text-sm text-foreground",
 					hasTooltip &&
 						"focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm",
 				)}

@@ -24,6 +24,12 @@
 
 **Acción:** En cualquier componente de visualización de datos scrolleable (logs, terminales, listas largas), usar `tabIndex={0}`, `role="log"` (o similar) y `focus-visible:ring-inset` para una navegación por teclado robusta y clara.
 
+## 2026-05-22 - Resonancia Visual y Tematización Semántica Progresiva
+
+**Aprendizaje:** El uso de colores hardcodeados (como `blue-600` o `gray-100`) crea fragmentación visual y rompe la experiencia en modo oscuro. Al abstraer estos valores a tokens semánticos (`primary`, `muted`, `accent`), el sistema gana en coherencia y flexibilidad. Además, pequeños detalles como fondos sutiles detrás de iconos (`bg-primary/10`) aumentan la "resonancia visual", haciendo que los componentes se sientan más integrados y profesionales.
+
+**Acción:** Eliminar progresivamente colores hardcodeados en favor de tokens semánticos y utilizar variaciones de opacidad del color primario para añadir profundidad visual sin introducir nuevos colores a la paleta.
+
 ## 2024-05-20 - Accesibilidad avanzada en paneles de logs
 
 **Aprendizaje:** Para que un panel de logs sea verdaderamente accesible para usuarios de teclado y lectores de pantalla, no basta con hacerlo focusable (`tabIndex={0}`). Es fundamental añadir un rol semántico (`role="log"`) y una etiqueta descriptiva (`aria-label`) para que las tecnologías de asistencia identifiquen el propósito del contenedor. Además, el uso de `focus-visible:ring-inset` asegura que el anillo de foco sea visible incluso cuando el contenedor llega a los bordes del viewport.

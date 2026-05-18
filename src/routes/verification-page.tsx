@@ -8,6 +8,9 @@ import { CommitsModal } from "@/components/CommitsModal";
 import { LogsViewer } from "@/components/shared/LogsViewer";
 import { MiniTimeline } from "@/components/SekiMonitor/MiniTimeline";
 import { DisplayInfo } from "@/components/DisplayInfo";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { FilterBar } from "@/components/shared/FilterBar";
+import { Layout } from "lucide-react";
 import type { Event } from "@/api/seki.type";
 
 export const Route = createFileRoute("/verification-page")({
@@ -17,6 +20,9 @@ export const Route = createFileRoute("/verification-page")({
 function VerificationPage() {
 	const [isCommitsModalOpen, setIsCommitsModalOpen] = useState(false);
 	const [isLogsViewerOpen, setIsLogsViewerOpen] = useState(false);
+    const [activeFilter, setActiveFilter] = useState("all");
+    const [searchValue, setSearchValue] = useState("");
+
 	const mockCommits = [
 		{
 			hash: "hash1",
@@ -86,8 +92,8 @@ function VerificationPage() {
 	];
 
 	return (
-		<div className="container mx-auto p-20 flex flex-col items-center justify-center min-h-screen gap-10">
-			<h1 className="text-2xl font-bold">Panel de Verificación de UX (Croma)</h1>
+		<div className="container mx-auto p-10 flex flex-col min-h-screen gap-10">
+			<PageHeader icon={Layout} title="Panel de Verificación de UX (Croma)" />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-6xl">
                 <section className="p-8 border rounded-xl bg-card shadow-sm space-y-6">
@@ -111,16 +117,6 @@ function VerificationPage() {
                             Ver LogsViewer
                         </button>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                        <p className="font-medium mb-1">Pruebas:</p>
-                        <ul className="list-disc list-inside space-y-1">
-                            <li>Promocionar: Verificar ancho dinámico (max-w-xl -&gt; max-w-5xl).</li>
-                            <li>Novedades: Verificar título visible y ancho max-w-4xl.</li>
-                            <li>Feedback: Verificar stepper, focus rings en inputs y ancho dinámico.</li>
-                            <li>CommitsModal: Verificar lista de commits, filtrado y expansión.</li>
-                            <li>Todos: Verificar cierre con ESC y Click-outside (BaseDialog).</li>
-                        </ul>
-                    </div>
                     <CommitsModal
                         isOpen={isCommitsModalOpen}
                         onClose={() => setIsCommitsModalOpen(false)}
@@ -143,15 +139,28 @@ function VerificationPage() {
                 </section>
 
                 <section className="p-8 border rounded-xl bg-card shadow-sm space-y-6">
-                    <h2 className="text-lg font-semibold border-b pb-2">Selectores de Proyecto</h2>
-                    <ProjectSelector repo="galiprandi/release-hub" />
-                    <div className="text-sm text-muted-foreground">
-                        <p className="font-medium mb-1">Pruebas:</p>
-                        <ul className="list-disc list-inside space-y-1">
-                            <li>Verificar rotación de flecha al abrir.</li>
-                            <li>Verificar animación de entrada del dropdown.</li>
-                            <li>Verificar navegación por teclado y ARIA roles.</li>
-                        </ul>
+                    <h2 className="text-lg font-semibold border-b pb-2">Componentes Compartidos</h2>
+                    <div className="space-y-8">
+                        <div className="space-y-2">
+                            <h3 className="text-sm font-medium text-muted-foreground">FilterBar</h3>
+                            <FilterBar
+                                filters={[
+                                    { value: "all", label: "Todos" },
+                                    { value: "active", label: "Activos" },
+                                    { value: "error", label: "Errores" }
+                                ]}
+                                activeFilter={activeFilter}
+                                onFilterChange={setActiveFilter}
+                                searchPlaceholder="Buscar..."
+                                searchValue={searchValue}
+                                onSearchChange={setSearchValue}
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <h3 className="text-sm font-medium text-muted-foreground">ProjectSelector</h3>
+                            <ProjectSelector repo="galiprandi/release-hub" />
+                        </div>
                     </div>
                 </section>
 
@@ -161,19 +170,20 @@ function VerificationPage() {
                         <div className="p-4 bg-muted/20 rounded-lg">
                             <MiniTimeline events={mockEvents} />
                         </div>
-                        <div className="flex gap-8 p-4 bg-muted/10 rounded-lg">
+                        <div className="flex flex-wrap gap-8 p-4 bg-muted/10 rounded-lg">
+                            <DisplayInfo type="commit" value="a1b2c3d" />
+                            <DisplayInfo type="tag" value="v1.5.0" />
                             <DisplayInfo type="dates" value="2024-05-20T10:00:00Z" />
                             <DisplayInfo type="author" value="Jules Agent" />
                             <DisplayInfo type="message" value="This is a very long commit message that should definitely trigger a tooltip when hovered or focused by the user." maxChar={20} />
                         </div>
                     </div>
                     <div className="text-sm text-muted-foreground">
-                        <p className="font-medium mb-1">Pruebas:</p>
+                        <p className="font-medium mb-1">Pruebas Visuales:</p>
                         <ul className="list-disc list-inside space-y-1">
-                            <li>Verificar tamaño estandarizado (h-2 w-7).</li>
-                            <li>Verificar transiciones de escala y sombra al hover/focus.</li>
-                            <li>Verificar anillos de foco (ring-primary).</li>
-                            <li>DisplayInfo: Verificar tabIndex={0} y focus rings cuando hay tooltip.</li>
+                            <li>PageHeader: Verificar icono con fondo sutil y color primario.</li>
+                            <li>FilterBar: Verificar colores semánticos, bordes de input y anillos de foco con offset.</li>
+                            <li>DisplayInfo: Verificar colores semánticos (azul para commit, púrpura/ai para tag).</li>
                         </ul>
                     </div>
                 </section>

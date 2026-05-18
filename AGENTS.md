@@ -117,6 +117,15 @@ Después de operaciones de escritura (crear tag, etc.), invalidar queries releva
 
 Los archivos de test unitarios deben ubicarse en el mismo directorio que el archivo que prueban, usando la extensión `.test.ts` o `.test.tsx`. Se debe evitar el uso de carpetas `__tests__` para nuevos módulos.
 
+### 7. Consistencia UI y Tematización Semántica
+
+⚠️ **CRÍTICO**: Para asegurar la consistencia visual y el soporte de temas (claro/oscuro), seguir estas reglas:
+
+1. **Priorizar clases semánticas**: Usar tokens semánticos de Tailwind (ej: `text-muted-foreground`, `bg-muted`, `text-primary`, `border-input`) en lugar de colores hardcodeados (ej: `text-gray-600`, `bg-blue-500`).
+2. **Anillos de Foco Estándar**: Todos los elementos interactivos deben usar el patrón: `focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none focus-visible:ring-offset-1`.
+3. **Componentes Compartidos**: Antes de crear un nuevo componente visual, verificar si puede ser una extensión de `FilterBar`, `PageHeader`, `BaseDialog` o `DisplayInfo`.
+4. **Referencia de Diseño**: Consultar `DESIGN.md` para la lista completa de tokens y principios de accesibilidad.
+
 ## Local Requirements
 
 1. **Node.js** (v22+)
